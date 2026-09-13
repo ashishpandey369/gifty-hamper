@@ -154,20 +154,34 @@ document.addEventListener('DOMContentLoaded', () => {
     badges.style.alignItems = 'center';
     badges.style.justifyContent = isMobile ? 'flex-start' : 'flex-end';
     badges.style.flexWrap = 'wrap';
-    badges.style.gap = '6px';
+    badges.style.gap = '7px';
   });
-  document.querySelectorAll('.payment-badge').forEach((badge) => {
-    badge.style.minWidth = '43px';
-    badge.style.height = '25px';
-    badge.style.padding = '3px 5px';
+  document.querySelectorAll('.payment-badge').forEach((badge, index) => {
+    badge.style.width = isMobile ? '58px' : '64px';
+    badge.style.height = isMobile ? '32px' : '35px';
+    badge.style.padding = '4px 6px';
     badge.style.display = 'grid';
     badge.style.placeItems = 'center';
-    badge.style.background = '#fff';
-    badge.style.color = '#111';
-    badge.style.borderRadius = '2px';
-    badge.style.fontSize = '0.5rem';
-    badge.style.fontWeight = '800';
+    badge.style.borderRadius = '5px';
+    badge.style.fontSize = isMobile ? '0.48rem' : '0.52rem';
+    badge.style.fontWeight = '900';
     badge.style.lineHeight = '1';
+    badge.style.letterSpacing = '-0.02em';
+    badge.style.boxShadow = '0 2px 7px rgba(0,0,0,.22)';
+    badge.style.border = '1px solid rgba(255,255,255,.25)';
+
+    // Give each payment method a recognizable card treatment instead of plain black text.
+    const treatments = [
+      { background: '#fff', color: '#1434cb' },
+      { background: 'linear-gradient(90deg,#eb001b 0 50%,#f79e1b 50% 100%)', color: '#fff' },
+      { background: '#fff', color: '#003087' },
+      { background: '#1677b8', color: '#fff' },
+      { background: '#fff', color: '#1b4b8f' },
+      { background: '#0a4f9b', color: '#fff' }
+    ];
+    const treatment = treatments[index] || treatments[0];
+    badge.style.background = treatment.background;
+    badge.style.color = treatment.color;
   });
 
   const year = new Date().getFullYear();

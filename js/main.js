@@ -66,7 +66,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Reference-inspired footer treatment: dark, spacious and readable.
+  // Footer treatment follows the supplied reference: logo and social row stacked on the left,
+  // four balanced columns, generous vertical spacing, and a thin payment/copyright row.
   document.querySelectorAll('.site-footer').forEach((footer) => {
     footer.style.background = '#101010';
     footer.style.color = '#fff';
@@ -77,9 +78,16 @@ document.addEventListener('DOMContentLoaded', () => {
     grid.style.gap = isMobile ? '34px' : '52px';
     grid.style.paddingBottom = isMobile ? '38px' : '48px';
   });
+  document.querySelectorAll('.footer-brand').forEach((brand) => {
+    brand.style.display = 'flex';
+    brand.style.flexDirection = 'column';
+    brand.style.alignItems = 'flex-start';
+    brand.style.justifyContent = 'flex-start';
+  });
   document.querySelectorAll('.footer-brand .brand-logo').forEach((logo) => {
-    logo.style.height = isMobile ? '72px' : '96px';
-    logo.style.maxWidth = isMobile ? '235px' : '300px';
+    logo.style.height = isMobile ? '92px' : '124px';
+    logo.style.maxWidth = isMobile ? '285px' : '315px';
+    logo.style.width = 'auto';
   });
   document.querySelectorAll('.site-footer .footer-brand p, .site-footer .footer-grid > div:last-child p').forEach((text) => {
     text.style.color = '#c8c8c8';
@@ -105,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
     link.style.fontSize = '0.9rem';
   });
   document.querySelectorAll('.footer-follow').forEach((label) => {
-    label.style.display = 'inline-block';
+    label.style.display = 'block';
     label.style.marginTop = '18px';
     label.style.fontSize = isMobile ? '1.05rem' : '1.1rem';
     label.style.fontWeight = '700';
@@ -113,12 +121,35 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.footer-socials').forEach((socials) => {
     socials.style.display = 'flex';
     socials.style.alignItems = 'center';
-    socials.style.gap = '8px';
-    socials.style.marginTop = '8px';
+    socials.style.gap = '10px';
+    socials.style.marginTop = '10px';
   });
+
+  // Brand icons are stored locally in /assets and sourced from the researched Simple Icons set.
+  const socialAssets = {
+    Facebook: 'assets/social-facebook.svg',
+    X: 'assets/social-x.svg',
+    Pinterest: 'assets/social-pinterest.svg',
+    LinkedIn: 'assets/social-linkedin.svg'
+  };
   document.querySelectorAll('.footer-social').forEach((social) => {
-    social.style.width = '30px';
-    social.style.height = '30px';
+    const label = social.getAttribute('aria-label') || '';
+    const asset = socialAssets[label];
+    if (asset) {
+      social.textContent = '';
+      const image = document.createElement('img');
+      image.src = asset;
+      image.alt = label;
+      image.width = 18;
+      image.height = 18;
+      image.style.width = '18px';
+      image.style.height = '18px';
+      image.style.display = 'block';
+      image.style.objectFit = 'contain';
+      social.appendChild(image);
+    }
+    social.style.width = isMobile ? '34px' : '34px';
+    social.style.height = isMobile ? '34px' : '34px';
     social.style.display = 'grid';
     social.style.placeItems = 'center';
     social.style.borderRadius = '50%';
@@ -126,7 +157,10 @@ document.addEventListener('DOMContentLoaded', () => {
     social.style.color = '#fff';
     social.style.fontSize = '0.78rem';
     social.style.fontWeight = '700';
+    social.style.padding = '0';
+    social.style.overflow = 'hidden';
   });
+
   document.querySelectorAll('.footer-contact-details').forEach((details) => {
     details.style.display = 'grid';
     details.style.gap = '18px';
@@ -154,34 +188,44 @@ document.addEventListener('DOMContentLoaded', () => {
     badges.style.alignItems = 'center';
     badges.style.justifyContent = isMobile ? 'flex-start' : 'flex-end';
     badges.style.flexWrap = 'wrap';
-    badges.style.gap = '7px';
+    badges.style.gap = '6px';
   });
-  document.querySelectorAll('.payment-badge').forEach((badge, index) => {
-    badge.style.width = isMobile ? '58px' : '64px';
-    badge.style.height = isMobile ? '32px' : '35px';
-    badge.style.padding = '4px 6px';
+
+  // Payment marks use Simple Icons CDN artwork instead of manually typed brand names.
+  const paymentAssets = {
+    VISA: 'https://cdn.simpleicons.org/visa/1a1f71',
+    MasterCard: 'https://cdn.simpleicons.org/mastercard/eb001b',
+    PayPal: 'https://cdn.simpleicons.org/paypal/003087',
+    AMEX: 'https://cdn.simpleicons.org/americanexpress/2e77bc',
+    RuPay: 'https://cdn.simpleicons.org/rupay/005baa'
+  };
+  document.querySelectorAll('.payment-badge').forEach((badge) => {
+    const label = badge.textContent.trim().replace(/\s+/g, ' ');
+    const asset = paymentAssets[label];
+    if (asset) {
+      badge.textContent = '';
+      const image = document.createElement('img');
+      image.src = asset;
+      image.alt = label;
+      image.style.maxWidth = '54px';
+      image.style.maxHeight = '18px';
+      image.style.width = 'auto';
+      image.style.height = 'auto';
+      image.style.display = 'block';
+      badge.appendChild(image);
+    }
+    badge.style.minWidth = '64px';
+    badge.style.height = '32px';
+    badge.style.padding = '5px 7px';
     badge.style.display = 'grid';
     badge.style.placeItems = 'center';
-    badge.style.borderRadius = '5px';
-    badge.style.fontSize = isMobile ? '0.48rem' : '0.52rem';
-    badge.style.fontWeight = '900';
+    badge.style.background = '#fff';
+    badge.style.color = '#111';
+    badge.style.borderRadius = '3px';
+    badge.style.boxShadow = '0 1px 2px rgba(0,0,0,.2)';
+    badge.style.fontSize = '0.5rem';
+    badge.style.fontWeight = '800';
     badge.style.lineHeight = '1';
-    badge.style.letterSpacing = '-0.02em';
-    badge.style.boxShadow = '0 2px 7px rgba(0,0,0,.22)';
-    badge.style.border = '1px solid rgba(255,255,255,.25)';
-
-    // Give each payment method a recognizable card treatment instead of plain black text.
-    const treatments = [
-      { background: '#fff', color: '#1434cb' },
-      { background: 'linear-gradient(90deg,#eb001b 0 50%,#f79e1b 50% 100%)', color: '#fff' },
-      { background: '#fff', color: '#003087' },
-      { background: '#1677b8', color: '#fff' },
-      { background: '#fff', color: '#1b4b8f' },
-      { background: '#0a4f9b', color: '#fff' }
-    ];
-    const treatment = treatments[index] || treatments[0];
-    badge.style.background = treatment.background;
-    badge.style.color = treatment.color;
   });
 
   const year = new Date().getFullYear();

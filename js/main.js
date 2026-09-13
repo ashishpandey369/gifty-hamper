@@ -178,7 +178,6 @@ document.addEventListener('DOMContentLoaded', () => {
     VISA: 'assets/payment-visa.svg',
     MasterCard: 'assets/payment-mastercard.svg',
     PayPal: 'assets/payment-paypal.svg',
-    AMEX: 'assets/payment-amex.svg',
     'VISA Electron': 'assets/payment-visa-electron.svg',
     RuPay: 'assets/payment-rupay.svg'
   };
@@ -194,11 +193,21 @@ document.addEventListener('DOMContentLoaded', () => {
       const label = badge.textContent.trim().replace(/\s+/g, ' ');
       const asset = label === 'UPI' ? 'assets/payment-upi.svg' : paymentAssets[label];
       badge.textContent = '';
-      if (asset) {
+
+      if (label === 'VISA Electron') {
+        const visa = document.createElement('strong');
+        visa.textContent = 'VISA';
+        visa.style.cssText = 'display:block;color:#1f4fa3;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:900;font-style:italic;line-height:1';
+        const electron = document.createElement('span');
+        electron.textContent = 'Electron';
+        electron.style.cssText = 'display:block;color:#1f4fa3;font-family:Arial,Helvetica,sans-serif;font-size:8px;font-weight:700;line-height:1.1;margin-top:2px';
+        badge.appendChild(visa);
+        badge.appendChild(electron);
+      } else if (asset) {
         const image = document.createElement('img');
         image.src = asset;
         image.alt = label;
-        image.style.maxWidth = label === 'VISA Electron' ? '58px' : '52px';
+        image.style.maxWidth = label === 'UPI' ? '52px' : '58px';
         image.style.maxHeight = '20px';
         image.style.width = 'auto';
         image.style.height = 'auto';

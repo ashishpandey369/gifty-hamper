@@ -1,18 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // Use the real Gifty Hamper logo everywhere the shared brand-mark exists.
-  document.querySelectorAll('.brand-mark').forEach((mark) => {
-    const logo = document.createElement('img');
-    logo.src = 'assets/gifty-hampers.png';
-    logo.alt = 'Gifty Hamper';
-    logo.className = 'brand-logo';
-    logo.style.width = '38px';
-    logo.style.height = '38px';
+  // The supplied Gifty Hamper logo already contains the icon and wordmark, so use it as the complete brand lockup.
+  document.querySelectorAll('.brand-logo').forEach((logo) => {
+    logo.style.width = 'auto';
+    logo.style.height = '44px';
+    logo.style.maxWidth = '190px';
     logo.style.objectFit = 'contain';
     logo.style.display = 'block';
-    mark.replaceWith(logo);
-  });
-
-  document.querySelectorAll('.brand-logo').forEach((logo) => {
     logo.addEventListener('error', () => {
       logo.style.display = 'none';
     }, { once: true });

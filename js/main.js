@@ -14,6 +14,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.login-button').forEach((button) => { button.style.display = 'inline-flex'; button.style.alignItems = 'center'; button.style.justifyContent = 'center'; button.style.gap = '7px'; button.style.minHeight = isMobile ? '36px' : '42px'; button.style.padding = isMobile ? '0 9px' : '0 15px'; button.style.borderRadius = '999px'; button.style.background = '#f0eee9'; button.style.color = '#20201e'; button.style.fontSize = isMobile ? '0.82rem' : '0.9rem'; button.style.fontWeight = '600'; button.style.whiteSpace = 'nowrap'; button.style.border = '1px solid rgba(32,32,30,.06)'; });
   if (isMobile) document.querySelectorAll('.login-button span').forEach((label) => { label.style.display = 'none'; });
 
+  document.querySelectorAll('.hero-copy').forEach((text) => { text.style.fontSize = isMobile ? '1.0528rem' : '1.176rem'; });
+  document.querySelectorAll('.hero-actions .button, .hero-actions .text-link').forEach((link) => { link.style.fontSize = isMobile ? '0.9184rem' : '0.9184rem'; });
+  document.querySelectorAll('.hero-trust').forEach((trust) => { trust.style.fontSize = isMobile ? '0.8064rem' : '0.8064rem'; });
+
   document.querySelectorAll('.site-footer').forEach((footer) => { footer.style.background = '#101010'; footer.style.color = '#fff'; footer.style.padding = isMobile ? '42px 0 18px' : '54px 0 18px'; });
   document.querySelectorAll('.site-footer .container').forEach((container) => { container.style.width = isMobile ? 'calc(100% - 30px)' : 'calc(100% - 160px)'; container.style.maxWidth = isMobile ? '1180px' : '1206px'; });
   document.querySelectorAll('.footer-grid').forEach((grid) => { grid.style.gridTemplateColumns = isMobile ? '1fr' : '290px 300px 305px 1fr'; grid.style.gap = isMobile ? '34px' : '20px'; grid.style.paddingBottom = isMobile ? '34px' : '44px'; });

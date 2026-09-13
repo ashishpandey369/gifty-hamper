@@ -66,17 +66,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Footer treatment follows the supplied reference: logo and social row stacked on the left,
-  // four balanced columns, generous vertical spacing, and a thin payment/copyright row.
+  // Footer: final desktop alignment is intentionally close to the supplied reference screenshot.
   document.querySelectorAll('.site-footer').forEach((footer) => {
     footer.style.background = '#101010';
     footer.style.color = '#fff';
-    footer.style.padding = isMobile ? '48px 0 18px' : '58px 0 18px';
+    footer.style.padding = isMobile ? '42px 0 18px' : '54px 0 18px';
+  });
+  document.querySelectorAll('.site-footer .container').forEach((container) => {
+    container.style.width = isMobile ? 'calc(100% - 30px)' : 'calc(100% - 160px)';
+    container.style.maxWidth = isMobile ? '1180px' : '1206px';
   });
   document.querySelectorAll('.footer-grid').forEach((grid) => {
-    grid.style.gridTemplateColumns = isMobile ? '1fr' : '1.35fr 1.15fr 1.15fr 1.25fr';
-    grid.style.gap = isMobile ? '34px' : '52px';
-    grid.style.paddingBottom = isMobile ? '38px' : '48px';
+    grid.style.gridTemplateColumns = isMobile ? '1fr' : '290px 300px 305px 1fr';
+    grid.style.gap = isMobile ? '34px' : '20px';
+    grid.style.paddingBottom = isMobile ? '34px' : '44px';
   });
   document.querySelectorAll('.footer-brand').forEach((brand) => {
     brand.style.display = 'flex';
@@ -85,38 +88,35 @@ document.addEventListener('DOMContentLoaded', () => {
     brand.style.justifyContent = 'flex-start';
   });
   document.querySelectorAll('.footer-brand .brand-logo').forEach((logo) => {
-    logo.style.height = isMobile ? '92px' : '124px';
-    logo.style.maxWidth = isMobile ? '285px' : '315px';
-    logo.style.width = 'auto';
-  });
-  document.querySelectorAll('.site-footer .footer-brand p, .site-footer .footer-grid > div:last-child p').forEach((text) => {
-    text.style.color = '#c8c8c8';
-    text.style.fontSize = isMobile ? '0.86rem' : '0.9rem';
-    text.style.lineHeight = '1.7';
+    logo.style.width = isMobile ? '285px' : '300px';
+    logo.style.height = 'auto';
+    logo.style.maxWidth = isMobile ? '285px' : '300px';
   });
   document.querySelectorAll('.site-footer .footer-grid h3').forEach((heading) => {
     heading.style.fontFamily = "'DM Sans', Arial, sans-serif";
     heading.style.textTransform = 'none';
     heading.style.letterSpacing = '0';
-    heading.style.fontSize = isMobile ? '1.05rem' : '1.12rem';
+    heading.style.fontSize = isMobile ? '1.05rem' : '20px';
     heading.style.fontWeight = '700';
-    heading.style.margin = '0 0 18px';
+    heading.style.margin = '0 0 16px';
+    heading.style.color = '#fff';
   });
   document.querySelectorAll('.site-footer .footer-grid > div:not(:first-child) > a').forEach((link) => {
     link.style.color = '#f2f2f2';
-    link.style.fontSize = isMobile ? '0.88rem' : '0.9rem';
+    link.style.fontSize = isMobile ? '0.88rem' : '15px';
     link.style.lineHeight = '1.45';
-    link.style.margin = '0 0 11px';
+    link.style.margin = '0 0 9px';
   });
   document.querySelectorAll('.site-footer .footer-contact').forEach((link) => {
     link.style.color = '#fff';
-    link.style.fontSize = '0.9rem';
+    link.style.fontSize = '15px';
   });
   document.querySelectorAll('.footer-follow').forEach((label) => {
     label.style.display = 'block';
-    label.style.marginTop = '18px';
-    label.style.fontSize = isMobile ? '1.05rem' : '1.1rem';
+    label.style.marginTop = isMobile ? '12px' : '10px';
+    label.style.fontSize = isMobile ? '1.05rem' : '16px';
     label.style.fontWeight = '700';
+    label.style.color = '#fff';
   });
   document.querySelectorAll('.footer-socials').forEach((socials) => {
     socials.style.display = 'flex';
@@ -132,6 +132,12 @@ document.addEventListener('DOMContentLoaded', () => {
     Pinterest: 'assets/social-pinterest.svg',
     LinkedIn: 'assets/social-linkedin.svg'
   };
+  const socialColors = {
+    Facebook: '#1877F2',
+    X: '#000000',
+    Pinterest: '#E60023',
+    LinkedIn: '#0A66C2'
+  };
   document.querySelectorAll('.footer-social').forEach((social) => {
     const label = social.getAttribute('aria-label') || '';
     const asset = socialAssets[label];
@@ -146,14 +152,15 @@ document.addEventListener('DOMContentLoaded', () => {
       image.style.height = '18px';
       image.style.display = 'block';
       image.style.objectFit = 'contain';
+      image.style.filter = 'brightness(0) invert(1)';
       social.appendChild(image);
     }
-    social.style.width = isMobile ? '34px' : '34px';
-    social.style.height = isMobile ? '34px' : '34px';
+    social.style.width = '34px';
+    social.style.height = '34px';
     social.style.display = 'grid';
     social.style.placeItems = 'center';
     social.style.borderRadius = '50%';
-    social.style.background = '#242424';
+    social.style.background = socialColors[label] || '#242424';
     social.style.color = '#fff';
     social.style.fontSize = '0.78rem';
     social.style.fontWeight = '700';
@@ -168,8 +175,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.footer-contact-details p').forEach((item) => {
     item.style.margin = '0';
     item.style.color = '#f2f2f2';
-    item.style.fontSize = isMobile ? '0.88rem' : '0.9rem';
-    item.style.lineHeight = '1.65';
+    item.style.fontSize = isMobile ? '0.88rem' : '15px';
+    item.style.lineHeight = '1.55';
   });
   document.querySelectorAll('.footer-contact-details a').forEach((item) => {
     item.style.color = '#fff';
@@ -179,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bottom.style.borderTop = '1px solid #303030';
     bottom.style.paddingTop = '18px';
     bottom.style.color = '#d0d0d0';
-    bottom.style.fontSize = isMobile ? '0.76rem' : '0.8rem';
+    bottom.style.fontSize = isMobile ? '0.76rem' : '14px';
     bottom.style.gap = '16px';
     bottom.style.flexWrap = 'wrap';
   });

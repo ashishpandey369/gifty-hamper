@@ -33,21 +33,18 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.footer-bottom').forEach((bottom) => { bottom.style.borderTop = '1px solid #303030'; bottom.style.paddingTop = '18px'; bottom.style.color = '#d0d0d0'; bottom.style.fontSize = isMobile ? '0.76rem' : '14px'; bottom.style.gap = '16px'; bottom.style.flexWrap = 'wrap'; });
   document.querySelectorAll('.payment-badges').forEach((badges) => { badges.style.display = 'flex'; badges.style.alignItems = 'center'; badges.style.justifyContent = isMobile ? 'flex-start' : 'flex-end'; badges.style.flexWrap = 'wrap'; badges.style.gap = '5px'; });
 
-  const paymentAssets = { VISA: 'assets/payment-visa.svg', MasterCard: 'assets/payment-mastercard.svg', PayPal: 'assets/payment-paypal.svg', 'VISA Electron': 'assets/payment-visa-electron.svg', RuPay: 'assets/payment-rupay.svg' };
+  const paymentAssets = { VISA: 'assets/payment-visa.svg', MasterCard: 'assets/payment-mastercard.svg', PayPal: 'assets/payment-paypal.svg', RuPay: 'assets/payment-rupay.svg' };
   document.querySelectorAll('.payment-badges').forEach((badges) => {
-    const labels = Array.from(badges.querySelectorAll('.payment-badge')).map((badge) => badge.textContent.trim().replace(/\s+/g, ' '));
-    if (!labels.includes('UPI')) { const upiBadge = document.createElement('span'); upiBadge.className = 'payment-badge'; upiBadge.textContent = 'UPI'; badges.appendChild(upiBadge); }
     badges.querySelectorAll('.payment-badge').forEach((badge) => {
       const label = badge.textContent.trim().replace(/\s+/g, ' ');
+      if (label === 'VISA Electron') { badge.remove(); return; }
       const asset = label === 'UPI' ? 'assets/payment-upi.svg' : paymentAssets[label];
       badge.textContent = '';
-      if (label === 'VISA Electron') {
-        badge.innerHTML = '<strong style="display:block;color:#25459A;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:900;font-style:italic;line-height:1">VISA</strong><span style="display:block;color:#25459A;font-family:Arial,Helvetica,sans-serif;font-size:8px;font-weight:700;line-height:1.1;margin-top:2px">Electron</span>';
-      } else if (asset) {
+      if (asset) {
         const image = document.createElement('img'); image.src = asset; image.alt = label;
-        image.style.maxWidth = label === 'UPI' ? '68px' : '58px'; image.style.maxHeight = label === 'UPI' ? '25px' : '20px'; image.style.width = 'auto'; image.style.height = 'auto'; image.style.display = 'block'; image.style.objectFit = 'contain'; badge.appendChild(image);
+        image.style.maxWidth = label === 'UPI' ? '71px' : '61px'; image.style.maxHeight = label === 'UPI' ? '26px' : '21px'; image.style.width = 'auto'; image.style.height = 'auto'; image.style.display = 'block'; image.style.objectFit = 'contain'; badge.appendChild(image);
       }
-      badge.style.minWidth = label === 'UPI' ? '78px' : (label === 'VISA Electron' ? '70px' : '60px'); badge.style.height = '32px'; badge.style.padding = '4px 6px'; badge.style.display = 'grid'; badge.style.placeItems = 'center'; badge.style.background = '#fff'; badge.style.color = '#111'; badge.style.borderRadius = '3px'; badge.style.boxShadow = '0 1px 2px rgba(0,0,0,.2)'; badge.style.fontSize = '0.5rem'; badge.style.fontWeight = '800'; badge.style.lineHeight = '1';
+      badge.style.minWidth = label === 'UPI' ? '82px' : '63px'; badge.style.height = '32px'; badge.style.padding = '4px 6px'; badge.style.display = 'grid'; badge.style.placeItems = 'center'; badge.style.background = '#fff'; badge.style.color = '#111'; badge.style.borderRadius = '3px'; badge.style.boxShadow = '0 1px 2px rgba(0,0,0,.2)'; badge.style.fontSize = '0.5rem'; badge.style.fontWeight = '800'; badge.style.lineHeight = '1';
     });
   });
 

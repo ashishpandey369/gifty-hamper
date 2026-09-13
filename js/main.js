@@ -1,14 +1,26 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // Use the real Gifty Hamper logo everywhere the shared brand-mark exists.
+  document.querySelectorAll('.brand-mark').forEach((mark) => {
+    const logo = document.createElement('img');
+    logo.src = 'assets/gifty-hampers.png';
+    logo.alt = 'Gifty Hamper';
+    logo.className = 'brand-logo';
+    logo.style.width = '38px';
+    logo.style.height = '38px';
+    logo.style.objectFit = 'contain';
+    logo.style.display = 'block';
+    mark.replaceWith(logo);
+  });
+
+  document.querySelectorAll('.brand-logo').forEach((logo) => {
+    logo.addEventListener('error', () => {
+      logo.style.display = 'none';
+    }, { once: true });
+  });
+
   const cartCount = document.querySelector('#cart-count');
   const menuToggle = document.querySelector('.menu-toggle');
   const primaryNav = document.querySelector('#primary-nav');
-
-  // Use the approved brand asset everywhere instead of the temporary text mark.
-  document.querySelectorAll('.brand').forEach((brand) => {
-    const mark = brand.querySelector('.brand-mark');
-    if (!mark) return;
-    mark.outerHTML = '<img class="brand-logo" src="assets/gifty-hampers.png" alt="Gifty Hamper" width="42" height="42">';
-  });
 
   if (cartCount) {
     try {

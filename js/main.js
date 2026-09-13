@@ -1,9 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // The supplied Gifty Hamper logo already contains the icon and wordmark, so use it as the complete brand lockup.
+  // The supplied landscape Gifty Hamper logo contains the complete icon and wordmark.
+  // Keep it responsive and 10% larger than the previous 190px / 44px treatment.
   document.querySelectorAll('.brand-logo').forEach((logo) => {
     logo.style.width = 'auto';
-    logo.style.height = '44px';
-    logo.style.maxWidth = '190px';
+    logo.style.height = '48.4px';
+    logo.style.maxWidth = '209px';
     logo.style.objectFit = 'contain';
     logo.style.display = 'block';
     logo.addEventListener('error', () => {

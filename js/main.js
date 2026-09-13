@@ -1,19 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
   const isMobile = window.matchMedia('(max-width: 760px)').matches;
 
-  // Header sizing: increase the current logo treatment by another 10%.
   document.querySelectorAll('.brand-logo').forEach((logo) => {
     logo.style.width = 'auto';
     logo.style.height = isMobile ? '60.5px' : '82.5px';
     logo.style.maxWidth = isMobile ? '187px' : '231px';
     logo.style.objectFit = 'contain';
     logo.style.display = 'block';
-    logo.addEventListener('error', () => {
-      logo.style.display = 'none';
-    }, { once: true });
+    logo.addEventListener('error', () => { logo.style.display = 'none'; }, { once: true });
   });
 
-  // Reference-style contact ribbon, with a 10% larger information treatment.
   document.querySelectorAll('.announcement-bar').forEach((bar) => {
     bar.style.background = '#f3f3f3';
     bar.style.color = '#20201e';
@@ -26,7 +22,6 @@ document.addEventListener('DOMContentLoaded', () => {
     inner.style.flexWrap = 'wrap';
   });
 
-  // Slightly enlarge the main header controls and navigation.
   document.querySelectorAll('.site-header').forEach((header) => {
     header.style.minHeight = isMobile ? '76px' : '90px';
   });
@@ -44,7 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
     button.style.fontSize = isMobile ? '1rem' : '1.15rem';
   });
 
-  // Account button is UI-only for now. Authentication and order history will be added later.
   document.querySelectorAll('.login-button').forEach((button) => {
     button.style.display = 'inline-flex';
     button.style.alignItems = 'center';
@@ -60,13 +54,8 @@ document.addEventListener('DOMContentLoaded', () => {
     button.style.whiteSpace = 'nowrap';
     button.style.border = '1px solid rgba(32,32,30,.06)';
   });
-  if (isMobile) {
-    document.querySelectorAll('.login-button span').forEach((label) => {
-      label.style.display = 'none';
-    });
-  }
+  if (isMobile) document.querySelectorAll('.login-button span').forEach((label) => { label.style.display = 'none'; });
 
-  // Footer: final desktop alignment is intentionally close to the supplied reference screenshot.
   document.querySelectorAll('.site-footer').forEach((footer) => {
     footer.style.background = '#101010';
     footer.style.color = '#fff';
@@ -125,34 +114,23 @@ document.addEventListener('DOMContentLoaded', () => {
     socials.style.marginTop = '10px';
   });
 
-  // Brand icons are stored locally in /assets and sourced from the researched Simple Icons set.
   const socialAssets = {
     Facebook: 'assets/social-facebook.svg',
     X: 'assets/social-x.svg',
     Pinterest: 'assets/social-pinterest.svg',
     LinkedIn: 'assets/social-linkedin.svg'
   };
-  const socialColors = {
-    Facebook: '#1877F2',
-    X: '#000000',
-    Pinterest: '#E60023',
-    LinkedIn: '#0A66C2'
-  };
+  const socialColors = { Facebook: '#1877F2', X: '#000000', Pinterest: '#E60023', LinkedIn: '#0A66C2' };
   document.querySelectorAll('.footer-social').forEach((social) => {
     const label = social.getAttribute('aria-label') || '';
-    const asset = socialAssets[label];
-    if (asset) {
+    if (socialAssets[label]) {
       social.textContent = '';
       const image = document.createElement('img');
-      image.src = asset;
+      image.src = socialAssets[label];
       image.alt = label;
       image.width = 18;
       image.height = 18;
-      image.style.width = '18px';
-      image.style.height = '18px';
-      image.style.display = 'block';
-      image.style.objectFit = 'contain';
-      image.style.filter = 'brightness(0) invert(1)';
+      image.style.cssText = 'width:18px;height:18px;display:block;object-fit:contain;filter:brightness(0) invert(1)';
       social.appendChild(image);
     }
     social.style.width = '34px';
@@ -162,8 +140,6 @@ document.addEventListener('DOMContentLoaded', () => {
     social.style.borderRadius = '50%';
     social.style.background = socialColors[label] || '#242424';
     social.style.color = '#fff';
-    social.style.fontSize = '0.78rem';
-    social.style.fontWeight = '700';
     social.style.padding = '0';
     social.style.overflow = 'hidden';
   });
@@ -195,64 +171,69 @@ document.addEventListener('DOMContentLoaded', () => {
     badges.style.alignItems = 'center';
     badges.style.justifyContent = isMobile ? 'flex-start' : 'flex-end';
     badges.style.flexWrap = 'wrap';
-    badges.style.gap = '6px';
+    badges.style.gap = '5px';
   });
 
-  // Payment marks use Simple Icons CDN artwork instead of manually typed brand names.
   const paymentAssets = {
-    VISA: 'https://cdn.simpleicons.org/visa/1a1f71',
-    MasterCard: 'https://cdn.simpleicons.org/mastercard/eb001b',
-    PayPal: 'https://cdn.simpleicons.org/paypal/003087',
-    AMEX: 'https://cdn.simpleicons.org/americanexpress/2e77bc',
-    RuPay: 'https://cdn.simpleicons.org/rupay/005baa'
+    VISA: 'assets/payment-visa.svg',
+    MasterCard: 'assets/payment-mastercard.svg',
+    PayPal: 'assets/payment-paypal.svg',
+    AMEX: 'assets/payment-amex.svg',
+    'VISA Electron': 'assets/payment-visa-electron.svg',
+    RuPay: 'assets/payment-rupay.svg'
   };
-  document.querySelectorAll('.payment-badge').forEach((badge) => {
-    const label = badge.textContent.trim().replace(/\s+/g, ' ');
-    const asset = paymentAssets[label];
-    if (asset) {
-      badge.textContent = '';
-      const image = document.createElement('img');
-      image.src = asset;
-      image.alt = label;
-      image.style.maxWidth = '54px';
-      image.style.maxHeight = '18px';
-      image.style.width = 'auto';
-      image.style.height = 'auto';
-      image.style.display = 'block';
-      badge.appendChild(image);
+  document.querySelectorAll('.payment-badges').forEach((badges) => {
+    let labels = Array.from(badges.querySelectorAll('.payment-badge')).map((badge) => badge.textContent.trim().replace(/\s+/g, ' '));
+    if (!labels.includes('UPI')) {
+      const upiBadge = document.createElement('span');
+      upiBadge.className = 'payment-badge';
+      upiBadge.textContent = 'UPI';
+      badges.appendChild(upiBadge);
     }
-    badge.style.minWidth = '64px';
-    badge.style.height = '32px';
-    badge.style.padding = '5px 7px';
-    badge.style.display = 'grid';
-    badge.style.placeItems = 'center';
-    badge.style.background = '#fff';
-    badge.style.color = '#111';
-    badge.style.borderRadius = '3px';
-    badge.style.boxShadow = '0 1px 2px rgba(0,0,0,.2)';
-    badge.style.fontSize = '0.5rem';
-    badge.style.fontWeight = '800';
-    badge.style.lineHeight = '1';
+    badges.querySelectorAll('.payment-badge').forEach((badge) => {
+      const label = badge.textContent.trim().replace(/\s+/g, ' ');
+      const asset = label === 'UPI' ? 'assets/payment-upi.svg' : paymentAssets[label];
+      badge.textContent = '';
+      if (asset) {
+        const image = document.createElement('img');
+        image.src = asset;
+        image.alt = label;
+        image.style.maxWidth = label === 'VISA Electron' ? '58px' : '52px';
+        image.style.maxHeight = '20px';
+        image.style.width = 'auto';
+        image.style.height = 'auto';
+        image.style.display = 'block';
+        image.style.objectFit = 'contain';
+        badge.appendChild(image);
+      }
+      badge.style.minWidth = '60px';
+      badge.style.height = '32px';
+      badge.style.padding = '4px 6px';
+      badge.style.display = 'grid';
+      badge.style.placeItems = 'center';
+      badge.style.background = '#fff';
+      badge.style.color = '#111';
+      badge.style.borderRadius = '3px';
+      badge.style.boxShadow = '0 1px 2px rgba(0,0,0,.2)';
+      badge.style.fontSize = '0.5rem';
+      badge.style.fontWeight = '800';
+      badge.style.lineHeight = '1';
+    });
   });
 
   const year = new Date().getFullYear();
-  document.querySelectorAll('[data-current-year]').forEach((node) => {
-    node.textContent = year;
-  });
+  document.querySelectorAll('[data-current-year]').forEach((node) => { node.textContent = year; });
 
   const cartCount = document.querySelector('#cart-count');
-  const menuToggle = document.querySelector('.menu-toggle');
-  const primaryNav = document.querySelector('#primary-nav');
-
   if (cartCount) {
     try {
       const cart = JSON.parse(localStorage.getItem('gifty-hamper-cart') || '[]');
       cartCount.textContent = cart.reduce((total, item) => total + Number(item.quantity || 0), 0);
-    } catch {
-      cartCount.textContent = '0';
-    }
+    } catch { cartCount.textContent = '0'; }
   }
 
+  const menuToggle = document.querySelector('.menu-toggle');
+  const primaryNav = document.querySelector('#primary-nav');
   if (menuToggle && primaryNav) {
     menuToggle.addEventListener('click', () => {
       const open = menuToggle.getAttribute('aria-expanded') === 'true';
@@ -260,7 +241,6 @@ document.addEventListener('DOMContentLoaded', () => {
       menuToggle.setAttribute('aria-label', open ? 'Open navigation' : 'Close navigation');
       primaryNav.classList.toggle('open', !open);
     });
-
     primaryNav.querySelectorAll('a').forEach((link) => {
       link.addEventListener('click', () => {
         menuToggle.setAttribute('aria-expanded', 'false');

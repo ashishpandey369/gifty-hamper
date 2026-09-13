@@ -37,14 +37,20 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.payment-badges').forEach((badges) => {
     badges.querySelectorAll('.payment-badge').forEach((badge) => {
       const label = badge.textContent.trim().replace(/\s+/g, ' ');
-      if (label === 'VISA Electron') { badge.remove(); return; }
+      if (label === 'VISA Electron') { badge.remove(); }
+    });
+    if (!Array.from(badges.querySelectorAll('.payment-badge')).some((badge) => badge.textContent.trim().replace(/\s+/g, ' ') === 'UPI')) {
+      const upiBadge = document.createElement('span'); upiBadge.className = 'payment-badge'; upiBadge.textContent = 'UPI'; badges.appendChild(upiBadge);
+    }
+    badges.querySelectorAll('.payment-badge').forEach((badge) => {
+      const label = badge.textContent.trim().replace(/\s+/g, ' ');
       const asset = label === 'UPI' ? 'assets/payment-upi.svg' : paymentAssets[label];
       badge.textContent = '';
       if (asset) {
         const image = document.createElement('img'); image.src = asset; image.alt = label;
-        image.style.maxWidth = label === 'UPI' ? '71px' : '61px'; image.style.maxHeight = label === 'UPI' ? '26px' : '21px'; image.style.width = 'auto'; image.style.height = 'auto'; image.style.display = 'block'; image.style.objectFit = 'contain'; badge.appendChild(image);
+        image.style.maxWidth = label === 'UPI' ? '74px' : '64px'; image.style.maxHeight = label === 'UPI' ? '27px' : '22px'; image.style.width = 'auto'; image.style.height = 'auto'; image.style.display = 'block'; image.style.objectFit = 'contain'; badge.appendChild(image);
       }
-      badge.style.minWidth = label === 'UPI' ? '82px' : '63px'; badge.style.height = '32px'; badge.style.padding = '4px 6px'; badge.style.display = 'grid'; badge.style.placeItems = 'center'; badge.style.background = '#fff'; badge.style.color = '#111'; badge.style.borderRadius = '3px'; badge.style.boxShadow = '0 1px 2px rgba(0,0,0,.2)'; badge.style.fontSize = '0.5rem'; badge.style.fontWeight = '800'; badge.style.lineHeight = '1';
+      badge.style.minWidth = label === 'UPI' ? '82px' : '66px'; badge.style.height = '32px'; badge.style.padding = '4px 6px'; badge.style.display = 'grid'; badge.style.placeItems = 'center'; badge.style.background = '#fff'; badge.style.color = '#111'; badge.style.borderRadius = '3px'; badge.style.boxShadow = '0 1px 2px rgba(0,0,0,.2)'; badge.style.fontSize = '0.5rem'; badge.style.fontWeight = '800'; badge.style.lineHeight = '1';
     });
   });
 

@@ -1,15 +1,27 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // The supplied landscape Gifty Hamper logo contains the complete icon and wordmark.
-  // Keep it responsive and 10% larger than the previous 190px / 44px treatment.
+  // Match the reference site's larger Gifty Hamper logo treatment while keeping it responsive.
   document.querySelectorAll('.brand-logo').forEach((logo) => {
+    const mobile = window.matchMedia('(max-width: 760px)').matches;
     logo.style.width = 'auto';
-    logo.style.height = '48.4px';
-    logo.style.maxWidth = '209px';
+    logo.style.height = mobile ? '55px' : '75px';
+    logo.style.maxWidth = mobile ? '170px' : '210px';
     logo.style.objectFit = 'contain';
     logo.style.display = 'block';
     logo.addEventListener('error', () => {
       logo.style.display = 'none';
     }, { once: true });
+  });
+
+  // Match the reference site's light contact-information ribbon.
+  document.querySelectorAll('.announcement-bar').forEach((bar) => {
+    bar.style.background = '#f3f3f3';
+    bar.style.color = '#20201e';
+  });
+  document.querySelectorAll('.announcement-inner').forEach((inner) => {
+    inner.style.minHeight = '40px';
+    inner.style.justifyContent = 'flex-start';
+    inner.style.gap = '22px';
+    inner.style.flexWrap = 'wrap';
   });
 
   const cartCount = document.querySelector('#cart-count');

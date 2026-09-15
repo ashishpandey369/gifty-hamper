@@ -1,49 +1,25 @@
 (() => {
   const style = document.createElement('style');
   style.textContent = `
-    @keyframes ghGiftEnter { 0% { transform: translateY(80px) scale(.72) rotate(-4deg); opacity:0; } 55% { transform: translateY(-8px) scale(1.04) rotate(1deg); opacity:1; } 100% { transform: translateY(0) scale(1) rotate(0); opacity:1; } }
-    @keyframes ghGiftLid { 0%,45% { transform: translateY(0) rotate(0); } 70%,100% { transform: translateY(-48px) rotate(-14deg); } }
-    @keyframes ghGiftGlow { 0%,100% { opacity:.25; transform:scale(.8); } 50% { opacity:.9; transform:scale(1.25); } }
-    @keyframes ghGiftSpark { 0% { transform:translate(0,20px) scale(.2); opacity:0; } 35% { opacity:1; } 100% { transform:translate(var(--x),var(--y)) scale(1); opacity:0; } }
-    @keyframes ghGiftClose { to { opacity:0; } }
-    .gh-transition { position:fixed; inset:0; z-index:100000; display:flex; align-items:center; justify-content:center; background:rgba(255,253,249,.96); backdrop-filter:blur(7px); opacity:1; animation:ghGiftClose .35s ease 1.15s forwards; pointer-events:auto; }
-    .gh-transition-box { position:relative; width:150px; height:125px; animation:ghGiftEnter .6s cubic-bezier(.2,.8,.2,1) both; }
-    .gh-gift-glow { position:absolute; left:50%; top:55%; width:210px; height:150px; transform:translate(-50%,-50%); border-radius:50%; background:rgba(166,93,71,.2); filter:blur(30px); animation:ghGiftGlow 1s ease-in-out infinite; }
-    .gh-gift-body { position:absolute; left:18px; right:18px; bottom:8px; height:82px; border-radius:8px 8px 12px 12px; background:linear-gradient(135deg,#b86b50,#93472f); box-shadow:0 18px 35px rgba(88,45,33,.2); overflow:hidden; }
-    .gh-gift-body:before { content:''; position:absolute; left:50%; top:0; bottom:0; width:18px; transform:translateX(-50%); background:#e4b08f; }
-    .gh-gift-lid { position:absolute; left:8px; right:8px; top:30px; height:28px; border-radius:7px; background:linear-gradient(135deg,#c77a5d,#9d4e35); box-shadow:0 8px 15px rgba(88,45,33,.16); transform-origin:15% 90%; z-index:3; animation:ghGiftLid .9s cubic-bezier(.2,.8,.2,1) both; }
-    .gh-gift-lid:after { content:''; position:absolute; left:50%; top:-5px; width:18px; height:38px; transform:translateX(-50%); background:#e4b08f; border-radius:4px; }
-    .gh-gift-ribbon { position:absolute; left:50%; top:10px; width:5px; height:25px; transform:translateX(-50%); background:#f0c4a7; z-index:4; border-radius:5px; }
-    .gh-gift-spark { position:absolute; left:50%; top:38%; color:#b35f45; font-size:24px; font-weight:700; animation:ghGiftSpark 1s ease-out both; }
-    .gh-spark-1 { --x:-110px; --y:-90px; animation-delay:.35s; }
-    .gh-spark-2 { --x:105px; --y:-80px; animation-delay:.45s; }
-    .gh-spark-3 { --x:-85px; --y:80px; animation-delay:.55s; font-size:17px; }
-    .gh-spark-4 { --x:95px; --y:70px; animation-delay:.65s; font-size:17px; }
-    @media (prefers-reduced-motion: reduce) { .gh-transition *, .gh-transition { animation-duration:.01ms !important; animation-iteration-count:1 !important; } }
+    @keyframes ghGiftEnter{0%{transform:translateY(120px) scale(.62) rotate(-5deg);opacity:0}55%{transform:translateY(-10px) scale(1.05) rotate(1deg);opacity:1}100%{transform:translateY(0) scale(1) rotate(0);opacity:1}}
+    @keyframes ghGiftLid{0%,42%{transform:translateY(0) rotate(0)}70%,100%{transform:translateY(-52px) rotate(-15deg)}}
+    @keyframes ghGiftGlow{0%,100%{opacity:.18;transform:translate(-50%,-50%) scale(.78)}50%{opacity:.9;transform:translate(-50%,-50%) scale(1.3)}}
+    @keyframes ghGiftSpark{0%{transform:translate(0,28px) scale(.15);opacity:0}28%{opacity:1}100%{transform:translate(var(--x),var(--y)) scale(1.1);opacity:0}}
+    @keyframes ghGiftPetal{0%{transform:translateY(35px) scale(.2) rotate(0);opacity:0}25%{opacity:.8}100%{transform:translateY(-125px) translateX(var(--x)) scale(1) rotate(180deg);opacity:0}}
+    @keyframes ghGiftClose{to{opacity:0}}
+    @keyframes ghBgWave{0%{transform:translateY(100%) scale(1);opacity:0}20%{opacity:1}70%{opacity:.8}100%{transform:translateY(-20%) scale(1.08);opacity:0}}
+    .gh-transition{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(circle at 50% 48%,rgba(255,225,235,.98) 0%,rgba(255,244,247,.97) 38%,rgba(255,250,252,.98) 72%,rgba(255,255,255,.98) 100%);backdrop-filter:blur(9px);opacity:1;animation:ghGiftClose .42s ease 1.55s forwards;pointer-events:auto}
+    .gh-transition:before,.gh-transition:after{content:'';position:absolute;left:-15%;width:130%;height:72%;bottom:-35%;border-radius:50% 50% 0 0;background:radial-gradient(ellipse at center,rgba(235,126,160,.22),rgba(246,180,199,.1) 48%,transparent 72%);filter:blur(18px);animation:ghBgWave 1.65s ease-out both;pointer-events:none}.gh-transition:after{animation-delay:.16s;opacity:.65;transform:scale(1.15)}
+    .gh-transition-box{position:relative;width:150px;height:125px;z-index:5;animation:ghGiftEnter .7s cubic-bezier(.2,.8,.2,1) both}
+    .gh-gift-glow{position:absolute;left:50%;top:55%;width:250px;height:180px;transform:translate(-50%,-50%);border-radius:50%;background:rgba(231,112,151,.22);filter:blur(32px);animation:ghGiftGlow 1.15s ease-in-out infinite;z-index:-1}
+    .gh-gift-body{position:absolute;left:18px;right:18px;bottom:8px;height:82px;border-radius:8px 8px 12px 12px;background:linear-gradient(135deg,#c06b8b,#a74b6d);box-shadow:0 20px 42px rgba(142,55,84,.22);overflow:hidden}.gh-gift-body:before{content:'';position:absolute;left:50%;top:0;bottom:0;width:18px;transform:translateX(-50%);background:#f1b6c9}
+    .gh-gift-lid{position:absolute;left:8px;right:8px;top:30px;height:28px;border-radius:7px;background:linear-gradient(135deg,#d37d9d,#ad5275);box-shadow:0 8px 16px rgba(120,48,72,.18);transform-origin:15% 90%;z-index:3;animation:ghGiftLid .95s cubic-bezier(.2,.8,.2,1) both}.gh-gift-lid:after{content:'';position:absolute;left:50%;top:-5px;width:18px;height:38px;transform:translateX(-50%);background:#f1b6c9;border-radius:4px}
+    .gh-gift-ribbon{position:absolute;left:50%;top:10px;width:5px;height:25px;transform:translateX(-50%);background:#ffd9e4;z-index:4;border-radius:5px}
+    .gh-gift-spark{position:absolute;left:50%;top:38%;color:#d45d89;font-size:24px;font-weight:700;text-shadow:0 0 12px rgba(255,255,255,.8);animation:ghGiftSpark 1.1s ease-out both}.gh-spark-1{--x:-120px;--y:-92px;animation-delay:.34s}.gh-spark-2{--x:112px;--y:-84px;animation-delay:.43s}.gh-spark-3{--x:-88px;--y:82px;animation-delay:.52s;font-size:17px}.gh-spark-4{--x:100px;--y:74px;animation-delay:.61s}
+    .gh-gift-petal{position:absolute;left:50%;top:56%;width:10px;height:16px;border-radius:70% 30% 70% 30%;background:rgba(239,123,158,.72);animation:ghGiftPetal 1.45s ease-out both;z-index:2}.gh-petal-1{--x:-145px;animation-delay:.15s}.gh-petal-2{--x:-82px;animation-delay:.3s}.gh-petal-3{--x:70px;animation-delay:.42s}.gh-petal-4{--x:138px;animation-delay:.22s}
+    @media(prefers-reduced-motion:reduce){.gh-transition *,.gh-transition{animation-duration:.01ms!important;animation-iteration-count:1!important}}
   `;
   document.head.appendChild(style);
-
-  function navigateWithGift(url) {
-    if (!url || location.href === url) return;
-    const overlay = document.createElement('div');
-    overlay.className = 'gh-transition';
-    overlay.setAttribute('aria-label', 'Opening gift');
-    overlay.setAttribute('role', 'status');
-    overlay.innerHTML = '<div class="gh-transition-box"><div class="gh-gift-glow"></div><div class="gh-gift-body"></div><div class="gh-gift-lid"></div><div class="gh-gift-ribbon"></div><span class="gh-gift-spark gh-spark-1">✦</span><span class="gh-gift-spark gh-spark-2">✦</span><span class="gh-gift-spark gh-spark-3">✧</span><span class="gh-gift-spark gh-spark-4">✧</span></div>';
-    document.body.appendChild(overlay);
-    setTimeout(() => { window.location.href = url; }, 950);
-  }
-
-  document.addEventListener('click', (event) => {
-    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    const link = event.target.closest('a[href]');
-    if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
-    const raw = link.getAttribute('href');
-    if (!raw || raw === '#' || raw.startsWith('#') || raw.startsWith('mailto:') || raw.startsWith('tel:') || raw.startsWith('javascript:')) return;
-    const url = new URL(raw, location.href);
-    if (url.origin !== location.origin) return;
-    if (url.pathname === location.pathname && url.search === location.search && url.hash) return;
-    event.preventDefault();
-    navigateWithGift(url.href);
-  });
+  function navigateWithGift(url){if(!url||location.href===url)return;const overlay=document.createElement('div');overlay.className='gh-transition';overlay.setAttribute('aria-label','Opening gift');overlay.setAttribute('role','status');overlay.innerHTML='<div class="gh-transition-box"><div class="gh-gift-glow"></div><div class="gh-gift-body"></div><div class="gh-gift-lid"></div><div class="gh-gift-ribbon"></div><span class="gh-gift-spark gh-spark-1">✦</span><span class="gh-gift-spark gh-spark-2">✦</span><span class="gh-gift-spark gh-spark-3">✧</span><span class="gh-gift-spark gh-spark-4">✧</span><span class="gh-gift-petal gh-petal-1"></span><span class="gh-gift-petal gh-petal-2"></span><span class="gh-gift-petal gh-petal-3"></span><span class="gh-gift-petal gh-petal-4"></span></div>';document.body.appendChild(overlay);setTimeout(()=>{window.location.href=url},1200)}
+  document.addEventListener('click',(event)=>{if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;const link=event.target.closest('a[href]');if(!link||link.target==='_blank'||link.hasAttribute('download'))return;const raw=link.getAttribute('href');if(!raw||raw==='#'||raw.startsWith('#')||raw.startsWith('mailto:')||raw.startsWith('tel:')||raw.startsWith('javascript:'))return;const url=new URL(raw,location.href);if(url.origin!==location.origin)return;if(url.pathname===location.pathname&&url.search===location.search&&url.hash)return;event.preventDefault();navigateWithGift(url.href)})
 })();

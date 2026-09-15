@@ -1,6 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
   const isMobile = window.matchMedia('(max-width: 760px)').matches;
 
+  // Branded page loader: the Gifty Hamper logo softly brightens while the page loads.
+  const loader = document.createElement('div');
+  loader.setAttribute('aria-label', 'Loading Gifty Hamper');
+  loader.setAttribute('role', 'status');
+  loader.innerHTML = '<div class="gh-loader-logo-wrap"><img src="assets/gifty-hampers-landscape.png" alt="Gifty Hamper" class="gh-loader-logo"><span class="gh-loader-shine"></span></div><span class="gh-loader-text">Loading...</span>';
+  loader.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#fffdf9;opacity:1;visibility:visible;transition:opacity .45s ease,visibility .45s ease;pointer-events:auto;';
+  const loaderStyle = document.createElement('style');
+  loaderStyle.textContent = '@keyframes ghLogoPulse{0%,100%{filter:brightness(.72) drop-shadow(0 0 0 rgba(166,93,71,0));transform:scale(.985)}50%{filter:brightness(1.22) drop-shadow(0 0 18px rgba(166,93,71,.28));transform:scale(1.015)}}@keyframes ghShine{0%{left:-45%;opacity:0}18%{opacity:.85}55%{left:120%;opacity:.2}100%{left:120%;opacity:0}}@keyframes ghLoaderText{0%,100%{opacity:.45}50%{opacity:1}}.gh-loader-logo-wrap{position:relative;width:min(300px,72vw);overflow:hidden;display:flex;justify-content:center;align-items:center}.gh-loader-logo{width:100%;height:auto;display:block;object-fit:contain;animation:ghLogoPulse 1.55s ease-in-out infinite}.gh-loader-shine{position:absolute;top:-20%;left:-45%;width:25%;height:140%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.9),transparent);transform:skewX(-18deg);animation:ghShine 1.9s ease-in-out infinite;pointer-events:none}.gh-loader-text{font:600 .78rem/1.2 "DM Sans",Arial,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#706e68;animation:ghLoaderText 1.2s ease-in-out infinite}.gh-loader-hide{opacity:0!important;visibility:hidden!important;pointer-events:none!important}';
+  document.head.appendChild(loaderStyle);
+  document.body.prepend(loader);
+  const hideLoader = () => { loader.classList.add('gh-loader-hide'); setTimeout(() => { loader.remove(); loaderStyle.remove(); }, 500); };
+  if (document.readyState === 'complete') setTimeout(hideLoader, 250); else window.addEventListener('load', () => setTimeout(hideLoader, 250), { once: true });
+
   document.querySelectorAll('.brand-logo').forEach((logo) => {
     logo.style.width = 'auto'; logo.style.height = isMobile ? '60.5px' : '82.5px'; logo.style.maxWidth = isMobile ? '187px' : '231px'; logo.style.objectFit = 'contain'; logo.style.display = 'block';
     logo.addEventListener('error', () => { logo.style.display = 'none'; }, { once: true });
@@ -15,8 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (isMobile) document.querySelectorAll('.login-button span').forEach((label) => { label.style.display = 'none'; });
 
   document.querySelectorAll('.hero-copy').forEach((text) => { text.style.fontSize = isMobile ? '1.0528rem' : '1.176rem'; });
-  document.querySelectorAll('.hero-actions .button, .hero-actions .text-link').forEach((link) => { link.style.fontSize = isMobile ? '0.9184rem' : '0.9184rem'; });
-  document.querySelectorAll('.hero-trust').forEach((trust) => { trust.style.fontSize = isMobile ? '0.8064rem' : '0.8064rem'; });
+  document.querySelectorAll('.hero-actions .button, .hero-actions .text-link').forEach((link) => { link.style.fontSize = '0.9184rem'; });
+  document.querySelectorAll('.hero-trust').forEach((trust) => { trust.style.fontSize = '0.8064rem'; });
 
   document.querySelectorAll('.site-footer').forEach((footer) => { footer.style.background = '#101010'; footer.style.color = '#fff'; footer.style.padding = isMobile ? '42px 0 18px' : '54px 0 18px'; });
   document.querySelectorAll('.site-footer .container').forEach((container) => { container.style.width = isMobile ? 'calc(100% - 30px)' : 'calc(100% - 160px)'; container.style.maxWidth = isMobile ? '1180px' : '1206px'; });

@@ -19,7 +19,16 @@
     .gh-gift-petal{position:absolute;left:50%;top:56%;width:10px;height:16px;border-radius:70% 30% 70% 30%;background:rgba(239,123,158,.72);animation:ghGiftPetal 1.45s ease-out both;z-index:2}.gh-petal-1{--x:-145px;animation-delay:.15s}.gh-petal-2{--x:-82px;animation-delay:.3s}.gh-petal-3{--x:70px;animation-delay:.42s}.gh-petal-4{--x:138px;animation-delay:.22s}
     .gh-gift-ready-message{position:relative;z-index:6;margin-top:22px;text-align:center;font-family:"DM Sans",Arial,sans-serif;color:#5f3546;animation:ghGiftMessage .55s ease .55s both}.gh-gift-ready-message strong{display:block;font-size:1.45rem;letter-spacing:.01em}.gh-gift-ready-message span{display:block;margin-top:7px;font-size:.9rem;color:#7d6870}
     @keyframes ghGiftMessage{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
-    @media(prefers-reduced-motion:reduce){.gh-gift-ready *,.gh-gift-ready{animation-duration:.01ms!important;animation-iteration-count:1!important}}
+    /* Premium visual polish */
+    .hero-card,.occasion-card,.product-image,.newsletter-section,.hero-art .gift-box,.card-one,.card-two{border-radius:24px}
+    .product-image,.occasion-card{box-shadow:0 8px 28px rgba(38,32,25,.045)}
+    .product-card a{border-radius:24px;overflow:hidden;transition:transform .28s ease,box-shadow .28s ease}
+    .product-card a:hover{transform:translateY(-5px);box-shadow:0 20px 42px rgba(38,32,25,.12)}
+    .occasion-card:hover{box-shadow:0 16px 34px rgba(38,32,25,.09)}
+    .hero-card{border:1px solid rgba(255,255,255,.82)}
+    .hero-content h1 span{display:inline-block;animation:ghHeroShimmer 3.8s ease-in-out infinite}
+    @keyframes ghHeroShimmer{0%,100%{opacity:.58;text-shadow:0 0 0 rgba(255,255,255,0)}45%{opacity:1;text-shadow:0 0 14px rgba(255,255,255,.42),0 0 28px rgba(244,157,184,.24)}60%{opacity:.72;text-shadow:0 0 4px rgba(255,255,255,.16)}}
+    @media(prefers-reduced-motion:reduce){.gh-gift-ready *,.gh-gift-ready{animation-duration:.01ms!important;animation-iteration-count:1!important}.hero-content h1 span{animation:none}.product-card a,.occasion-card{transition:none}}
   `;
   document.head.appendChild(style);
 

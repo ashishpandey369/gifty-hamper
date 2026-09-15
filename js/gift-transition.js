@@ -26,9 +26,12 @@
     .product-card a:hover{transform:translateY(-5px);box-shadow:0 20px 42px rgba(38,32,25,.12)}
     .occasion-card:hover{box-shadow:0 16px 34px rgba(38,32,25,.09)}
     .hero-card{border:1px solid rgba(255,255,255,.82)}
-    .hero-content h1 span{display:inline-block;animation:ghHeroShimmer 3.8s ease-in-out infinite}
-    @keyframes ghHeroShimmer{0%,100%{opacity:.58;text-shadow:0 0 0 rgba(255,255,255,0)}45%{opacity:1;text-shadow:0 0 14px rgba(255,255,255,.42),0 0 28px rgba(244,157,184,.24)}60%{opacity:.72;text-shadow:0 0 4px rgba(255,255,255,.16)}}
-    @media(prefers-reduced-motion:reduce){.gh-gift-ready *,.gh-gift-ready{animation-duration:.01ms!important;animation-iteration-count:1!important}.hero-content h1 span{animation:none}.product-card a,.occasion-card{transition:none}}
+    /* Glass reflection sweep for the hero headline */
+    .hero-content h1 span{display:inline-block;color:transparent;background:linear-gradient(105deg,#fff 0%,#fff 36%,rgba(255,255,255,.58) 43%,#fff 49%,rgba(255,255,255,.98) 53%,#fff 61%,#fff 100%);background-size:240% 100%;background-position:115% 0;background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 18px rgba(255,255,255,.12);animation:ghGlassSweep 4.8s cubic-bezier(.45,0,.2,1) infinite}
+    @keyframes ghGlassSweep{0%,22%{background-position:115% 0}48%{background-position:-25% 0}68%,100%{background-position:-25% 0}}
+    .hero-content h1 span:after{content:'';display:inline-block;width:2px;height:.9em;margin-left:-.08em;vertical-align:-.05em;background:rgba(255,255,255,.88);filter:blur(1px);opacity:0;animation:ghGlassEdge 4.8s cubic-bezier(.45,0,.2,1) infinite}
+    @keyframes ghGlassEdge{0%,28%{opacity:0;transform:translateX(-120px) skewX(-18deg)}46%{opacity:.8;transform:translateX(0) skewX(-18deg)}56%,100%{opacity:0;transform:translateX(80px) skewX(-18deg)}}
+    @media(prefers-reduced-motion:reduce){.gh-gift-ready *,.gh-gift-ready{animation-duration:.01ms!important;animation-iteration-count:1!important}.hero-content h1 span,.hero-content h1 span:after{animation:none}.hero-content h1 span{background-position:50% 0}.product-card a,.occasion-card{transition:none}}
   `;
   document.head.appendChild(style);
 

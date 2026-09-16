@@ -1,13 +1,13 @@
 /* Temporary catalog data. This module is deliberately isolated so it can later be replaced by WooCommerce API data. */
 const GIFTS = [
-  { id: 'little-joy', name: 'The Little Joy Hamper', description: 'Thoughtful everyday gifting', price: 1499, category: 'Birthday', label: 'Everyday', imageClass: 'image-sage' },
-  { id: 'good-things', name: 'Good Things Gift Box', description: 'A warm collection of favourites', price: 1999, category: 'Thank You', label: 'Curated', imageClass: 'image-sand' },
-  { id: 'just-for-you', name: 'Just For You Hamper', description: 'Made for meaningful moments', price: 2499, category: 'Birthday', label: 'Special', imageClass: 'image-rose' },
-  { id: 'signature-luxe', name: 'Signature Luxe Hamper', description: 'Premium gifting, beautifully packed', price: 3999, category: 'Corporate', label: 'Premium', imageClass: 'image-night' },
-  { id: 'festive-glow', name: 'Festive Glow Box', description: 'A bright celebration in a box', price: 1799, category: 'Festive', label: 'Festive', imageClass: 'image-sand' },
-  { id: 'office-cheer', name: 'Office Cheer Hamper', description: 'A polished team appreciation gift', price: 2299, category: 'Corporate', label: 'Teams', imageClass: 'image-sage' },
-  { id: 'warm-thanks', name: 'Warm Thanks Box', description: 'A simple way to say thank you', price: 1299, category: 'Thank You', label: 'Thoughtful', imageClass: 'image-rose' },
-  { id: 'grand-celebration', name: 'Grand Celebration Hamper', description: 'A premium gift for big moments', price: 4999, category: 'Festive', label: 'Premium', imageClass: 'image-night' }
+  { id: 'little-joy', name: 'The Little Joy Hamper', description: 'Thoughtful everyday gifting', price: 1499, occasion: 'Birthday', categories: ['Gift Sets', 'Appreciation Gifts'], label: 'Everyday', imageClass: 'image-sage' },
+  { id: 'good-things', name: 'Good Things Gift Box', description: 'A warm collection of favourites', price: 1999, occasion: 'Thank You', categories: ['Gift Sets', 'Premium Gifts'], label: 'Curated', imageClass: 'image-sand' },
+  { id: 'just-for-you', name: 'Just For You Hamper', description: 'Made for meaningful moments', price: 2499, occasion: 'Birthday', categories: ['Gift Sets', 'Celebration Gifts'], label: 'Special', imageClass: 'image-rose' },
+  { id: 'signature-luxe', name: 'Signature Luxe Hamper', description: 'Premium gifting, beautifully packed', price: 3999, occasion: 'Corporate', categories: ['Premium Gifts', 'Employee Gifts', 'Gift Sets'], label: 'Premium', imageClass: 'image-night' },
+  { id: 'festive-glow', name: 'Festive Glow Box', description: 'A bright celebration in a box', price: 1799, occasion: 'Festive', categories: ['Festive Gifts', 'Gift Sets'], label: 'Festive', imageClass: 'image-sand' },
+  { id: 'office-cheer', name: 'Office Cheer Hamper', description: 'A polished team appreciation gift', price: 2299, occasion: 'Corporate', categories: ['Office Accessories', 'Employee Gifts', 'Appreciation Gifts'], label: 'Teams', imageClass: 'image-sage' },
+  { id: 'warm-thanks', name: 'Warm Thanks Box', description: 'A simple way to say thank you', price: 1299, occasion: 'Thank You', categories: ['Appreciation Gifts', 'Gift Sets'], label: 'Thoughtful', imageClass: 'image-rose' },
+  { id: 'grand-celebration', name: 'Grand Celebration Hamper', description: 'A premium gift for big moments', price: 4999, occasion: 'Festive', categories: ['Celebration Gifts', 'Premium Gifts', 'Gift Sets'], label: 'Premium', imageClass: 'image-night' }
 ];
 
 function formatPrice(value) {
@@ -25,14 +25,17 @@ function renderCatalog() {
 
   const search = (document.querySelector('#catalog-search')?.value || '').trim().toLowerCase();
   const categories = [...document.querySelectorAll('input[name="category"]:checked')].map(input => input.value);
+  const occasions = [...document.querySelectorAll('input[name="occasion"]:checked')].map(input => input.value);
   const prices = [...document.querySelectorAll('input[name="price"]:checked')].map(input => input.value);
   const sort = document.querySelector('#sort-products')?.value || 'featured';
 
   let products = GIFTS.filter(product => {
-    const matchesSearch = !search || `${product.name} ${product.description} ${product.category}`.toLowerCase().includes(search);
-    const matchesCategory = !categories.length || categories.includes(product.category);
+    const searchable = `${product.name} ${product.description} ${product.occasion} ${product.categories.join(' ')}`.toLowerCase();
+    const matchesSearch = !search || searchable.includes(search);
+    const matchesCategory = !categories.length || categories.some(category => product.categories.includes(category));
+    const matchesOccasion = !occasions.length || occasions.includes(product.occasion);
     const matchesPrice = !prices.length || prices.some(range => range === 'under-1500' ? product.price < 1500 : range === '1500-2500' ? product.price >= 1500 && product.price <= 2500 : product.price > 2500);
-    return matchesSearch && matchesCategory && matchesPrice;
+    return matchesSearch && matchesCategory && matchesOccasion && matchesPrice;
   });
 
   if (sort === 'price-low') products.sort((a, b) => a.price - b.price);

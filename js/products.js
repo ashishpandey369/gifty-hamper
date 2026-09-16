@@ -19,6 +19,25 @@ function productCard(product) {
   return `<article class="product-card" data-product-id="${slug}"><a href="product.html?id=${encodeURIComponent(slug)}"><div class="product-image ${product.imageClass}"><span>${product.label}</span><b>${product.name.split(' ').slice(0, 2).join('<br>')}</b></div><div class="product-info"><div><h3>${product.name}</h3><p>${product.description}</p></div><strong>${formatPrice(product.price)}</strong></div></a></article>`;
 }
 
+function applyBudgetFromUrl() {
+  const key = new URLSearchParams(window.location.search).get('price');
+  if (!key) return;
+  const input = document.querySelector(`input[name="price"][value="${key}"]`);
+  if (input) input.checked = true;
+
+  const labels = {
+    'under-999': 'Under ₹999',
+    '999-1999': '₹999 – ₹1,999',
+    '1999-2999': '₹1,999 – ₹2,999',
+    '3000-4999': '₹3,000 – ₹4,999',
+    'over-5000': '₹5,000+'
+  };
+  const heading = document.querySelector('.shop-hero h1');
+  const eyebrow = document.querySelector('.shop-hero .eyebrow');
+  if (heading && labels[key]) heading.innerHTML = `Gifts <em>${labels[key]}</em>`;
+  if (eyebrow && labels[key]) eyebrow.textContent = 'Budget collection';
+}
+
 function renderCatalog() {
   const grid = document.querySelector('#catalog-products');
   if (!grid) return;
@@ -57,6 +76,34 @@ function renderCatalog() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  const priceGroup = document.querySelector('#filters input[name="price"]')?.closest('.filter-group');
+  if (priceGroup) {
+    const ranges = [
+      ['under-999', 'Under ₹999'],
+      ['999-1999', '₹999 – ₹1,999'],
+      ['1999-2999', '₹1,999 – ₹2,999'],
+      ['3000-4999', '₹3,000 – ₹4,999'],
+      ['over-5000', '₹5,000+']
+    ];
+    priceGroup.querySelectorAll('label').forEach((label, index) => {
+      const range = ranges[index];
+      if (!range) return;
+      const input = label.querySelector('input');
+      input.value = range[0];
+      label.innerHTML = '';
+      label.append(input, document.createTextNode(` ${range[1]}`));
+    });
+    if (priceGroup.querySelectorAll('label').length < ranges.length) {
+      ranges.slice(priceGroup.querySelectorAll('label').length).forEach(([value, text]) => {
+        const label = document.createElement('label');
+        label.innerHTML = `<input type="checkbox" name="price" value="${value}"> ${text}`;
+        priceGroup.insertBefore(label, priceGroup.querySelector('.clear-filters') || null);
+        label.querySelector('input').addEventListener('change', renderCatalog);
+      });
+    }
+  }
+
+  applyBudgetFromUrl();
   renderCatalog();
   document.querySelector('#catalog-search')?.addEventListener('input', renderCatalog);
   document.querySelector('#sort-products')?.addEventListener('change', renderCatalog);

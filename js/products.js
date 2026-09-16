@@ -34,7 +34,14 @@ function renderCatalog() {
     const matchesSearch = !search || searchable.includes(search);
     const matchesCategory = !categories.length || categories.some(category => product.categories.includes(category));
     const matchesOccasion = !occasions.length || occasions.includes(product.occasion);
-    const matchesPrice = !prices.length || prices.some(range => range === 'under-1500' ? product.price < 1500 : range === '1500-2500' ? product.price >= 1500 && product.price <= 2500 : product.price > 2500);
+    const matchesPrice = !prices.length || prices.some(range => {
+      if (range === 'under-999') return product.price < 999;
+      if (range === '999-1999') return product.price >= 999 && product.price <= 1999;
+      if (range === '1999-2999') return product.price >= 1999 && product.price <= 2999;
+      if (range === '3000-4999') return product.price >= 3000 && product.price <= 4999;
+      if (range === 'over-5000') return product.price >= 5000;
+      return false;
+    });
     return matchesSearch && matchesCategory && matchesOccasion && matchesPrice;
   });
 

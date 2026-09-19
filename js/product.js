@@ -12,9 +12,30 @@ function renderProduct(product) {
   document.querySelector('#product-description').textContent = product.description;
 
   const visual = document.querySelector('#product-visual');
-  visual.className = `product-visual ${product.imageClass}`;
-  document.querySelector('#product-label').textContent = product.label;
-  document.querySelector('#product-art').innerHTML = product.name.split(' ').slice(0, 2).join('<br>');
+  visual.className = `product-visual ${product.imageClass || ''}`;
+
+  const images = Array.isArray(product.images) && product.images.length
+    ? product.images
+    : (product.image ? [product.image] : []);
+
+  const image = images[0];
+  const label = document.querySelector('#product-label');
+  const art = document.querySelector('#product-art');
+
+  if (image) {
+    visual.style.backgroundImage = `url("${image.replace(/"/g, '%22')}")`;
+    visual.style.backgroundSize = 'cover';
+    visual.style.backgroundPosition = 'center';
+    visual.style.backgroundRepeat = 'no-repeat';
+    if (label) label.textContent = product.label || '';
+    if (art) art.innerHTML = '';
+    visual.classList.add('has-product-image');
+  } else {
+    visual.style.backgroundImage = '';
+    if (label) label.textContent = product.label || '';
+    if (art) art.innerHTML = product.name.split(' ').slice(0, 2).join('<br>');
+    visual.classList.remove('has-product-image');
+  }
 }
 
 function addToCart(product, quantity) {

@@ -38,6 +38,13 @@ const staffCreatorAuth = getAuth(staffCreatorApp);
 
 const $ = (selector) => document.querySelector(selector);
 
+function withTimeout(promise, message = "Firebase request timed out after 10 seconds.") {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(message)), 10000))
+  ]);
+}
+
 function showAccess(message, detail) {
   const box = $("#staff-access");
   box.hidden = false;
@@ -67,8 +74,10 @@ async function loadStaff(currentRole, currentUid) {
     // Owner sees their own Owner profile so they can always see
     // their account status and expiry, plus the Admin profiles.
     const [ownerSnapshot, adminSnapshot] = await Promise.all([
-      getDoc(doc(db, "users", currentUid)),
-      getDocs(query(collection(db, "users"), where("role", "==", "admin")))
+      withTimeout(getDoc(doc(db, "users", currentUid))),
+      withTimeout(
+        getDocs(query(collection(db, "users"), where("role", "==", "admin")))
+      )
     ]);
 
     if (ownerSnapshot.exists()) {
@@ -86,15 +95,7 @@ async function loadStaff(currentRole, currentUid) {
       }))
     );
   } else {
-    const snapshot = await Promise.race([
-      getDocs(collection(db, "users")),
-      new Promise((_, reject) =>
-        setTimeout(
-          () => reject(new Error("Firestore request timed out after 10 seconds.")),
-          10000
-        )
-      )
-    ]);
+    const snapshot = await withTimeout(getDocs(collection(db, "users")));
 
     users = snapshot.docs.map(item => ({
       id: item.id,
@@ -399,7 +400,7 @@ onAuthStateChanged(auth, async (user) => {
   try {
     const tokenResult = await user.getIdTokenResult(true);
     const claimRole = tokenResult.claims.role || "";
-    const profileSnapshot = await getDoc(doc(db, "users", user.uid));
+    const profileSnapshot = await withTimeout(getDoc(doc(db, "users", user.uid)));
     const profile = profileSnapshot.exists() ? profileSnapshot.data() : null;
     const profileRole = profile?.role || "";
 

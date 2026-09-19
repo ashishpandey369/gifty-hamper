@@ -99,8 +99,15 @@ async function loadSales(role, uid, period = "week") {
   $("#stat-items").textContent = totalItems;
   $("#stat-average").textContent = money(sales.length ? totalSales / sales.length : 0);
 
+  const periodLabel = {
+    week: "This week",
+    month: "This month",
+    year: "This year",
+    all: "All time"
+  }[period] || "This week";
+
   $("#sales-heading").textContent =
-    role === "admin" ? "My sales" : "All sales";
+    periodLabel + " — " + (role === "admin" ? "My sales" : "All sales");
 
   const list = $("#sales-list");
 

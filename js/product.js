@@ -6,6 +6,14 @@ import {
 
 let GIFTS = DEFAULT_CATALOG.map(product => ({ ...product }));
 
+function formatPrice(value) {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0
+  }).format(Number(value) || 0);
+}
+
 function getProductFromUrl() {
   const id = new URLSearchParams(window.location.search).get('id');
   return GIFTS.find(product => product.id === id) || GIFTS[0];

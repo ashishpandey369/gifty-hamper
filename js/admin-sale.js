@@ -12,6 +12,8 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
+import { showBillPdf } from "./bill.js";
+
 const KEY = "gifty-hamper-catalog";
 
 const DEFAULT_SALE_PRODUCTS = [
@@ -212,11 +214,24 @@ async function completeSale() {
     renderProducts();
     renderCart();
 
-    alert(
-      "Sale completed successfully!\n\n" +
-      "Order ID: " + orderId + "\n" +
-      "Total: " + money(total)
-    );
+    const completedSale = {
+      id: orderId,
+      orderId,
+      sellerUid: signedInUser.uid,
+      sellerEmail: signedInUser.email || "",
+      items,
+      itemCount: items.length,
+      totalQuantity: items.reduce((sum, item) => sum + item.quantity, 0),
+      total,
+      createdAt: new Date()
+    };
+
+    try {
+      await showBillPdf(completedSale);
+    } catch (pdfError) {
+      console.error("Bill PDF error:", pdfError);
+      alert("Sale was saved successfully, but the bill PDF could not be generated. Please open Sales and use Regenerate bill.");
+    }
   } catch (error) {
     console.error("Complete sale error:", error);
     alert(

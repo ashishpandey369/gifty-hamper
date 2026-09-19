@@ -1,7 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
   const KEY = 'gifty-hamper-catalog';
   const CAT_KEY = 'gifty-hamper-categories';
+  const MAJOR_CAT_KEY = 'gifty-hamper-major-categories';
   const DEFAULT_CATS = ['Appreciation Gifts','Celebration Gifts','Eco Friendly Gifts','Employee Gifts','Festive Gifts','Gadgets and Electronic Gifts','Gift Sets','MR Gifts','Office Accessories','Premium Gifts'];
+  const DEFAULT_MAJOR_CATS = ['Gifts'];
   const OCC = ['Birthday','Anniversary','Rakhi','Corporate','Festive','Thank You','Personalized','Wedding','Other'];
   const DEFAULT_ADMIN_PRODUCTS = [
     {id:'little-joy',name:'The Little Joy Hamper',description:'Thoughtful everyday gifting',price:1499,occasion:'Birthday',categories:['Gift Sets','Appreciation Gifts'],label:'Everyday',imageClass:'image-sage'},
@@ -24,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     lowStock: product.lowStock ?? 5,
     featured: product.featured ?? false,
     active: product.active ?? true,
+    majorCategory: product.majorCategory || 'Gifts',
     images: Array.isArray(product.images) && product.images.length
       ? product.images
       : (product.image ? [product.image] : [])
@@ -51,32 +54,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const saveCatalog = (items) => localStorage.setItem(KEY, JSON.stringify(items));
   const saveCategories = (items) => localStorage.setItem(CAT_KEY, JSON.stringify(items));
+  const saveMajorCategories = (items) => localStorage.setItem(MAJOR_CAT_KEY, JSON.stringify(items));
 
   let catalog = readCatalog();
   let categories = readCategories();
+  let majorCategories = (() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(MAJOR_CAT_KEY) || 'null');
+      return Array.isArray(saved) && saved.length ? saved : [...DEFAULT_MAJOR_CATS];
+    } catch (_) { return [...DEFAULT_MAJOR_CATS]; }
+  })();
   let editingId = '';
 
   function fillOccasions() {
     $('#product-occasion').innerHTML = OCC.map(value => '<option value="' + value + '">' + value + '</option>').join('');
   }
 
-  function renderCategoryChecks(selected = []) {
-    const current = selected[0] || categories[0] || '';
-    $('#product-category').innerHTML = categories.map(category =>
+  function renderMajorCategorySelect(selected = '') {
+    const current = selected || majorCategories[0] || '';
+    $('#product-major-category').innerHTML = majorCategories.map(category =>
       '<option value="' + category.replace(/"/g, '&quot;') + '"' + (category === current ? ' selected' : '') + '>' + category + '</option>'
-    ).join('') || '<option value="">Create a category first</option>';
+    ).join('') || '<option value="">Create a major category first</option>';
+  }
+
+  function renderMinorCategoryChecks(selected = []) {
+    $('#product-categories').innerHTML = categories.map(category =>
+      '<label class="category-check"><input type="checkbox" value="' + category.replace(/"/g, '&quot;') + '"' +
+      (selected.includes(category) ? ' checked' : '') + '><span>' + category + '</span></label>'
+    ).join('') || '<p class="admin-help">Create a minor category first.</p>';
   }
 
   function renderCategoryManager() {
     $('#category-list').innerHTML = categories.map(category =>
       '<div class="category-chip"><span>' + category + '</span><button type="button" data-delete-category="' + category.replace(/"/g, '&quot;') + '" aria-label="Delete ' + category.replace(/"/g, '&quot;') + '">×</button></div>'
     ).join('');
-    renderCategoryChecks(getSelectedCategories());
+    $('#major-category-list').innerHTML = majorCategories.map(category =>
+      '<div class="category-chip"><span>' + category + '</span><button type="button" data-delete-major-category="' + category.replace(/"/g, '&quot;') + '" aria-label="Delete ' + category.replace(/"/g, '&quot;') + '">×</button></div>'
+    ).join('');
+    renderMajorCategorySelect($('#product-major-category')?.value || '');
+    renderMinorCategoryChecks(getSelectedCategories());
   }
 
   function getSelectedCategories() {
-    const selected = $('#product-category')?.value;
-    return selected ? [selected] : [];
+    return [...document.querySelectorAll('#product-categories input[type="checkbox"]:checked')].map(input => input.value);
   }
 
   function stats() {
@@ -104,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return '<tr>' +
         '<td><div class="admin-product-cell">' + (image ? '<img src="' + image + '" alt="">' : '<span class="admin-thumb-placeholder">🎁</span>') +
         '<div><div class="admin-product-name">' + product.name + '</div><div class="admin-product-id">' + product.id + '</div></div></div></td>' +
-        '<td>' + ((product.categories || []).join(', ') || '—') + '</td>' +
+        '<td><strong>' + (product.majorCategory || 'Gifts') + '</strong><br><small>' + ((product.categories || []).join(', ') || '—') + '</small></td>' +
         '<td>' + money(product.salePrice || product.price) + '</td>' +
         '<td class="' + stockClass + '">' + stock + '</td>' +
         '<td><span class="status-pill ' + (product.active === false ? 'draft' : '') + '">' + (product.active === false ? 'Draft' : 'Active') + '</span></td>' +
@@ -152,7 +172,8 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#product-active').checked = true;
     $('#product-low-stock').value = 5;
     $('#editor-title').textContent = 'Add product';
-    renderCategoryChecks([]);
+    renderMajorCategorySelect('');
+    renderMinorCategoryChecks([]);
     renderImagePreview();
   }
 
@@ -173,7 +194,8 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#product-featured').checked = !!product.featured;
     $('#product-active').checked = product.active !== false;
     window.adminProductImages = [...(product.images || [])];
-    renderCategoryChecks(product.categories || []);
+    renderMajorCategorySelect(product.majorCategory || '');
+    renderMinorCategoryChecks(product.categories || []);
     renderImagePreview();
     $('#editor-title').textContent = 'Edit product';
     $('#product-editor').scrollIntoView({ behavior:'smooth', block:'start' });
@@ -184,14 +206,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const id = $('#product-id').value.trim().toLowerCase().replace(/\s+/g, '-');
     const selectedCategories = getSelectedCategories();
+    const selectedMajorCategory = $('#product-major-category').value;
 
     if (!id || !$('#product-name').value.trim() || !Number($('#product-price').value)) {
       alert('Please enter a product name, Product ID / SKU and price.');
       return;
     }
 
+    if (!selectedMajorCategory) {
+      alert('Please select a major category.');
+      return;
+    }
+
     if (!selectedCategories.length) {
-      alert('Please select at least one category.');
+      alert('Please select at least one minor category.');
       return;
     }
 
@@ -204,7 +232,8 @@ document.addEventListener('DOMContentLoaded', () => {
       stock: Number($('#product-stock').value) || 0,
       lowStock: Number($('#product-low-stock').value) || 5,
       occasion: $('#product-occasion').value,
-      categories: editingId ? [selectedCategories[0], ...(catalog.find(item => item.id === editingId)?.categories || []).filter(category => category !== selectedCategories[0])] : selectedCategories,
+      majorCategory: selectedMajorCategory,
+      categories: selectedCategories,
       label: $('#product-label').value.trim() || 'Gift',
       images: [...(window.adminProductImages || [])],
       featured: $('#product-featured').checked,
@@ -284,6 +313,24 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCategoryManager();
   });
 
+  $('#major-category-list').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-delete-major-category]');
+    if (!button) return;
+    const category = button.dataset.deleteMajorCategory;
+    if (majorCategories.length <= 1) {
+      alert('Keep at least one major category so products can be organised.');
+      return;
+    }
+    if (!confirm('Delete the major category "' + category + '"? Products using it will be moved to the first remaining major category.')) return;
+    majorCategories = majorCategories.filter(item => item !== category);
+    const fallback = majorCategories[0];
+    catalog = catalog.map(product => ({ ...product, majorCategory: product.majorCategory === category ? fallback : (product.majorCategory || fallback) }));
+    saveMajorCategories(majorCategories);
+    saveCatalog(catalog);
+    renderCategoryManager();
+    render();
+  });
+
   $('#category-list').addEventListener('click', (event) => {
     const button = event.target.closest('[data-delete-category]');
     if (!button) return;
@@ -315,6 +362,10 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#admin-refresh').addEventListener('click', () => {
     catalog = readCatalog();
     categories = readCategories();
+    try {
+      const savedMajor = JSON.parse(localStorage.getItem(MAJOR_CAT_KEY) || 'null');
+      majorCategories = Array.isArray(savedMajor) && savedMajor.length ? savedMajor : [...DEFAULT_MAJOR_CATS];
+    } catch (_) { majorCategories = [...DEFAULT_MAJOR_CATS]; }
     renderCategoryManager();
     render();
   });

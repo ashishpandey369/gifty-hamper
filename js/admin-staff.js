@@ -104,8 +104,10 @@ async function loadStaff(currentRole, currentUid) {
           ? '<div class="staff-actions">' +
               '<select data-role-for="' + escapeHtml(user.id) + '">' + roleOptions + '</select>' +
               '<button type="button" class="admin-secondary" data-save-user="' + escapeHtml(user.id) + '">Save</button>' +
-              '<button type="button" class="admin-secondary" data-toggle-user="' + escapeHtml(user.id) + '">' + (effectiveActive ? "Deactivate" : "Activate") + '</button>' +
-              (canExtend ? '<button type="button" class="admin-secondary" data-extend-user="' + escapeHtml(user.id) + '">Extend</button>' : '') +
+              (expired
+  ? (canExtend ? '<button type="button" class="admin-secondary" data-extend-user="' + escapeHtml(user.id) + '">Extend</button>' : '')
+  : '<button type="button" class="admin-secondary" data-toggle-user="' + escapeHtml(user.id) + '">' + (effectiveActive ? "Deactivate" : "Activate") + '</button>') +
+              '' +
               (canDelete ? '<button type="button" class="admin-secondary danger" data-delete-user="' + escapeHtml(user.id) + '">Delete</button>' : '') +
               saleButton +
             '</div>'
@@ -150,7 +152,7 @@ async function loadStaff(currentRole, currentUid) {
           active: !activeNow
         });
         alert(activeNow ? "Staff account marked inactive." : "Staff account activated.");
-        await loadStaff(currentRole);
+        await loadStaff(currentRole, currentUid);
       } catch (error) {
         console.error(error);
         alert("Unable to update this staff status.");
@@ -319,13 +321,30 @@ onAuthStateChanged(auth, async (user) => {
     $("#admin-user-email").textContent =
       (user.email || "Signed-in admin") + " • " + (effectiveRole || "unknown");
 
-    if (!["super_admin", "owner"].includes(effectiveRole) || profile?.active === false) {
+    const managerExpiry = profile?.expiresAt?.toDate ? profile.expiresAt.toDate() : null;
+    const managerExpired = managerExpiry ? managerExpiry.getTime() <= Date.now() : false;
+
+    if (!["super_admin", "owner"].includes(effectiveRole) || profile?.active === false || managerExpired) {
       showAccess("Access restricted", "Only the Super Admin and active Owner can manage staff.");
       return;
     }
 
     $("#staff-access").hidden = true;
     $("#staff-content").hidden = false;
+
+    const validity = $("#admin-account-validity");
+    if (validity) {
+      if (effectiveRole === "super_admin") {
+        validity.textContent = "Unlimited access";
+      } else if (managerExpiry) {
+        const updateManagerValidity = () => {
+          const diff = managerExpiry.getTime() - Date.now();
+          validity.textContent = diff <= 0 ? "Expired" : (Math.ceil(diff / 86400000) + " days left");
+        };
+        updateManagerValidity();
+        setInterval(updateManagerValidity, 60000);
+      }
+    }
 
     $("#add-owner").hidden = effectiveRole !== "super_admin";
     $("#add-admin").hidden = !["super_admin", "owner"].includes(effectiveRole);

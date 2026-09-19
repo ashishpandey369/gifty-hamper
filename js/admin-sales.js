@@ -1,0 +1,192 @@
+import {
+  auth,
+  db,
+  doc,
+  getDoc,
+  onAuthStateChanged,
+  signOut
+} from "./firebase-auth.js";
+
+import {
+  collection,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+const $ = (selector) => document.querySelector(selector);
+
+const money = (value) => new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0
+}).format(Number(value) || 0);
+
+function showAccess(message, detail) {
+  const box = $("#sales-access");
+  box.hidden = false;
+  box.innerHTML = "<strong>" + message + "</strong><span>" + detail + "</span>";
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function saleDate(sale) {
+  if (sale.createdAt?.toDate) return sale.createdAt.toDate();
+  return null;
+}
+
+function formatDate(date) {
+  if (!date) return "Pending timestamp";
+  return new Intl.DateTimeFormat("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(date);
+}
+
+async function loadSales(role, uid) {
+  const snapshot = await getDocs(collection(db, "sales"));
+
+  let sales = snapshot.docs.map(item => ({
+    id: item.id,
+    ...item.data()
+  }));
+
+  // Firestore rules already restrict Admin reads to their own sales.
+  // This extra client-side filter keeps the UI aligned with that role.
+  if (role === "admin") {
+    sales = sales.filter(sale => sale.sellerUid === uid);
+  }
+
+  sales.sort((a, b) => {
+    const dateA = saleDate(a)?.getTime() || 0;
+    const dateB = saleDate(b)?.getTime() || 0;
+    return dateB - dateA;
+  });
+
+  const totalSales = sales.reduce((sum, sale) => sum + (Number(sale.total) || 0), 0);
+  const totalItems = sales.reduce((sum, sale) => sum + (Number(sale.totalQuantity) || 0), 0);
+
+  $("#stat-orders").textContent = sales.length;
+  $("#stat-sales").textContent = money(totalSales);
+  $("#stat-items").textContent = totalItems;
+  $("#stat-average").textContent = money(sales.length ? totalSales / sales.length : 0);
+
+  $("#sales-heading").textContent =
+    role === "admin" ? "My sales" : "All sales";
+
+  const list = $("#sales-list");
+
+  if (!sales.length) {
+    list.innerHTML = '<tr><td colspan="5" class="sales-empty-cell">No completed sales yet.</td></tr>';
+    return;
+  }
+
+  list.innerHTML = sales.map(sale => {
+    const itemNames = Array.isArray(sale.items)
+      ? sale.items.map(item => {
+          const quantity = Number(item.quantity) || 0;
+          return escapeHtml(item.productName || item.productId || "Product") +
+            " × " + quantity;
+        }).join("<br>")
+      : "—";
+
+    return `<tr>
+      <td>
+        <strong>${escapeHtml(sale.orderId || sale.id)}</strong>
+        <small class="sales-doc-id">${escapeHtml(sale.id)}</small>
+      </td>
+      <td>
+        <strong>${escapeHtml(sale.sellerEmail || "Unknown seller")}</strong>
+        <small class="sales-doc-id">${escapeHtml(sale.sellerUid || "")}</small>
+      </td>
+      <td>${itemNames}</td>
+      <td><strong>${money(sale.total)}</strong></td>
+      <td>${escapeHtml(formatDate(saleDate(sale)))}</td>
+    </tr>`;
+  }).join("");
+}
+
+async function startSales(user) {
+  const tokenResult = await user.getIdTokenResult(true);
+  const claimRole = tokenResult.claims.role || "";
+
+  const profileSnapshot = await getDoc(doc(db, "users", user.uid));
+  const profile = profileSnapshot.exists() ? profileSnapshot.data() : null;
+  const profileRole = profile?.role || "";
+
+  const role = claimRole === "super_admin" ? "super_admin" : profileRole;
+
+  if (!["super_admin", "owner", "admin"].includes(role)) {
+    showAccess("Access restricted", "Your account does not have permission to view sales.");
+    return;
+  }
+
+  $("#admin-user-email").textContent =
+    (user.email || "Signed-in admin") + " • " + role;
+
+  const expiry = profile?.expiresAt?.toDate ? profile.expiresAt.toDate() : null;
+
+  if (role === "super_admin") {
+    $("#admin-account-validity").textContent = "Unlimited access";
+  } else if (expiry) {
+    const updateValidity = () => {
+      const diff = expiry.getTime() - Date.now();
+      $("#admin-account-validity").textContent =
+        diff <= 0 ? "Expired" : Math.ceil(diff / 86400000) + " days left";
+    };
+    updateValidity();
+    setInterval(updateValidity, 60000);
+  }
+
+  await loadSales(role, user.uid);
+
+  $("#sales-access").hidden = true;
+  $("#sales-content").hidden = false;
+
+  $("#sales-refresh").addEventListener("click", async () => {
+    const button = $("#sales-refresh");
+    button.disabled = true;
+    button.textContent = "Refreshing…";
+    try {
+      await loadSales(role, user.uid);
+    } catch (error) {
+      console.error("Sales refresh error:", error);
+      alert("Unable to refresh sales.");
+    } finally {
+      button.disabled = false;
+      button.textContent = "Refresh";
+    }
+  });
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.replace("admin-login.html");
+    return;
+  }
+
+  try {
+    await startSales(user);
+  } catch (error) {
+    console.error("Sales page error:", error);
+    showAccess(
+      "Unable to load sales",
+      error?.message || "Please refresh the page and check your Firebase connection."
+    );
+  }
+
+  const logout = $("#admin-logout");
+  if (logout) {
+    logout.addEventListener("click", async () => {
+      logout.disabled = true;
+      logout.textContent = "Signing out…";
+      await signOut(auth);
+      window.location.replace("admin-login.html");
+    });
+  }
+});

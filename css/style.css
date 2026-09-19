@@ -209,3 +209,31 @@
  82%{transform:rotate(-5deg) scale(.85)}
 }
 @media(prefers-reduced-motion:reduce){.gift-box-large,.gift-box-large:after{animation:none}}
+
+/* Slow premium shine for the hero highlight and Google rating stars */
+.hero-content h1 span{
+  display:inline-block;
+  background:linear-gradient(105deg,#e83f6f 0%,#e83f6f 36%,#fff 47%,#fff 52%,#9a55e8 63%,#f2a92f 100%);
+  background-size:240% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:heroWordShine 7s ease-in-out infinite;
+}
+@keyframes heroWordShine{
+  0%,62%{background-position:100% 50%}
+  78%{background-position:0% 50%}
+  100%{background-position:100% 50%}
+}
+.google-stars{
+  display:inline-block;
+  background:linear-gradient(100deg,#f2ad16 0%,#f2ad16 34%,#fff 46%,#fff 52%,#ffcc45 63%,#f2ad16 100%);
+  background-size:240% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 8px rgba(242,173,22,.16);
+  animation:googleStarsShine 6s ease-in-out infinite;
+}
+@keyframes googleStarsShine{
+  0%,58%{background-position:100% 50%}
+  76%{background-position:0% 50%}
+  100%{background-position:100% 50%}
+}
+@media(prefers-reduced-motion:reduce){.hero-content h1 span,.google-stars{animation:none}}

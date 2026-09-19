@@ -1,7 +1,10 @@
 import { auth, db, doc, getDoc, onAuthStateChanged } from "./firebase-auth.js";
-import { deleteDoc, doc as firestoreDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+import { } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 import {
   DEFAULT_CATALOG,
+  deleteCatalogProduct,
+  ensureCatalogSkus,
+  generateSku,
   loadAdminCatalog,
   saveCatalogProduct
 } from "./catalog-store.js";
@@ -85,6 +88,10 @@ document.addEventListener('DOMContentLoaded', () => {
       for (const product of source) {
         catalog.push(await saveCatalogProduct(product));
       }
+    } else {
+      // Existing products from the earlier catalog did not have SKUs.
+      // Assign each one a permanent unique SKU once.
+      catalog = await ensureCatalogSkus(catalog);
     }
 
     render();
@@ -138,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const status = $('#admin-status').value;
 
     const rows = catalog.filter(product => {
-      const searchable = [product.name, product.id, product.description, ...(product.categories || [])].join(' ').toLowerCase();
+      const searchable = [product.name, product.sku, product.id, product.description, ...(product.categories || [])].join(' ').toLowerCase();
       const statusMatch = status === 'all' || (status === 'active' ? product.active !== false : product.active === false);
       return (!query || searchable.includes(query)) && statusMatch;
     });
@@ -197,10 +204,12 @@ document.addEventListener('DOMContentLoaded', () => {
     window.adminProductImages = [];
     $('#product-active').checked = true;
     $('#product-low-stock').value = 5;
+    $('#product-sku').value = generateSku();
     $('#editor-title').textContent = 'Add product';
     renderMajorCategorySelect('');
     renderMinorCategoryChecks([]);
     renderImagePreview();
+    updatePriceRangeLabel();
   }
 
   function editProduct(id) {
@@ -210,6 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
     editingId = product.id;
     $('#product-name').value = product.name;
     $('#product-id').value = product.id;
+    $('#product-sku').value = product.sku || generateSku();
     $('#product-price').value = product.price;
     $('#product-sale-price').value = product.salePrice ?? '';
     $('#product-stock').value = product.stock ?? 0;
@@ -230,12 +240,21 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#product-form').addEventListener('submit', async (event) => {
     event.preventDefault();
 
-    const id = $('#product-id').value.trim().toLowerCase().replace(/\s+/g, '-');
+    const existingId = $('#product-id').value.trim();
+    const name = $('#product-name').value.trim();
+    const price = Number($('#product-price').value) || 0;
+    const salePriceValue = $('#product-sale-price').value.trim();
+    const salePrice = salePriceValue ? Number(salePriceValue) : '';
     const selectedCategories = getSelectedCategories();
     const selectedMajorCategory = $('#product-major-category').value;
 
-    if (!id || !$('#product-name').value.trim() || !Number($('#product-price').value)) {
-      alert('Please enter a product name, Product ID / SKU and price.');
+    if (!name || !price) {
+      alert('Please enter a product name and price.');
+      return;
+    }
+
+    if (salePrice !== '' && (!Number.isFinite(salePrice) || salePrice < 0 || salePrice >= price)) {
+      alert('Sale price must be lower than the original price to create a discount.');
       return;
     }
 
@@ -249,12 +268,27 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    let id = existingId;
+
+    if (!id) {
+      id = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 60) || 'product';
+
+      if (catalog.some(item => item.id === id)) {
+        id = id + '-' + Date.now().toString(36);
+      }
+    }
+
     const product = {
       id,
-      name: $('#product-name').value.trim(),
+      sku: ($('#product-sku').value || generateSku()).trim().toUpperCase(),
+      name,
       description: $('#product-description').value.trim(),
-      price: Number($('#product-price').value) || 0,
-      salePrice: $('#product-sale-price').value ? Number($('#product-sale-price').value) : '',
+      price,
+      salePrice,
       stock: Number($('#product-stock').value) || 0,
       lowStock: Number($('#product-low-stock').value) || 5,
       occasion: $('#product-occasion').value,
@@ -265,31 +299,33 @@ document.addEventListener('DOMContentLoaded', () => {
       featured: $('#product-featured').checked,
       active: $('#product-active').checked,
       imageClass: 'image-sage',
-      priceRange: getPriceRange($('#product-sale-price').value ? Number($('#product-sale-price').value) : Number($('#product-price').value))
+      priceRange: getPriceRange(salePrice !== '' ? salePrice : price)
     };
 
-    if (editingId) {
-      const index = catalog.findIndex(item => item.id === editingId);
-      if (index >= 0) catalog[index] = product;
-    } else {
-      if (catalog.some(item => item.id === id)) {
-        alert('That Product ID / SKU already exists.');
-        return;
-      }
-      catalog.unshift(product);
-    }
+    const saveButton = $('#product-form button[type="submit"]');
+    saveButton.disabled = true;
+    saveButton.textContent = 'Saving…';
 
     try {
       const savedProduct = await saveCatalogProduct(product);
       const index = catalog.findIndex(item => item.id === savedProduct.id);
+
       if (index >= 0) catalog[index] = savedProduct;
       else catalog.unshift(savedProduct);
+
       resetForm();
       render();
-      alert('Product saved successfully to the shared catalog.');
+      alert('Product saved successfully. SKU: ' + savedProduct.sku);
     } catch (error) {
       console.error('Save product error:', error);
-      alert('Unable to save the product to the shared catalog. Please check Firebase rules.');
+      if (error?.message === 'SKU_COLLISION') {
+        alert('That SKU is already reserved. Please click Save again to generate another unique SKU.');
+      } else {
+        alert('Unable to save the product to the shared catalog. Please check Firebase rules.');
+      }
+    } finally {
+      saveButton.disabled = false;
+      saveButton.textContent = 'Save product';
     }
   });
 
@@ -301,14 +337,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (deleteButton) {
       const id = deleteButton.dataset.delete;
-      if (confirm('Delete this product from the catalog?')) {
-        catalog = catalog.filter(product => product.id !== id);
+      if (confirm('Delete this product from the shared catalog?')) {
         try {
-          await deleteDoc(firestoreDoc(db, 'products', id));
+          await deleteCatalogProduct(id);
+          catalog = catalog.filter(product => product.id !== id);
           render();
         } catch (error) {
           console.error('Delete product error:', error);
-          alert('Unable to delete the product from the shared catalog.');
+          alert('Unable to delete the product from the shared catalog. Please check Firebase rules.');
         }
       }
     }

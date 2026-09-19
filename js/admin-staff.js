@@ -11,14 +11,15 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/fireba
 import {
   getAuth,
   createUserWithEmailAndPassword,
-  sendPasswordResetEmail
+  deleteUser
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
 import {
   collection,
   getDocs,
   updateDoc,
-  setDoc
+  setDoc,
+  Timestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 const staffCreatorApp = initializeApp({
@@ -66,13 +67,16 @@ async function loadStaff(currentRole) {
   const list = $("#staff-list");
 
   if (!users.length) {
-    list.innerHTML = '<tr><td colspan="5">No staff profiles found.</td></tr>';
+    list.innerHTML = '<tr><td colspan="6">No staff profiles found.</td></tr>';
     return;
   }
 
   list.innerHTML = users.map(user => {
     const role = user.role || "admin";
     const active = user.active === true;
+    const expiresAt = user.expiresAt?.toDate ? user.expiresAt.toDate() : null;
+    const expired = expiresAt ? expiresAt.getTime() <= Date.now() : false;
+    const effectiveActive = active && !expired;
     const canManage = currentRole === "super_admin"
       ? role === "owner" || role === "admin"
       : role === "admin";
@@ -89,14 +93,15 @@ async function loadStaff(currentRole) {
     return '<tr>' +
       '<td><strong>' + escapeHtml(user.email || "No email") + '</strong></td>' +
       '<td><span class="staff-role">' + escapeHtml(roleLabel(role)) + '</span></td>' +
-      '<td><span class="status-pill ' + (active ? "" : "draft") + '">' + (active ? "Active" : "Inactive") + '</span></td>' +
+      '<td><span class="status-pill ' + (effectiveActive ? "" : "draft") + '">' + (expired ? "Expired" : (active ? "Active" : "Inactive")) + '</span></td>' +
+      '<td><span class="staff-validity ' + (expired ? "expired" : "") + '" data-expiry="' + (expiresAt ? expiresAt.toISOString() : "") + '">' + (expiresAt ? formatRemaining(expiresAt) : "No expiry") + '</span></td>' +
       '<td><code>' + escapeHtml(user.id) + '</code></td>' +
       '<td>' +
         (canManage
           ? '<div class="staff-actions">' +
               '<select data-role-for="' + escapeHtml(user.id) + '">' + roleOptions + '</select>' +
               '<button type="button" class="admin-secondary" data-save-user="' + escapeHtml(user.id) + '">Save</button>' +
-              '<button type="button" class="admin-secondary" data-toggle-user="' + escapeHtml(user.id) + '">' + (active ? "Deactivate" : "Activate") + '</button>' +
+              '<button type="button" class="admin-secondary" data-toggle-user="' + escapeHtml(user.id) + '">' + (effectiveActive ? "Deactivate" : "Activate") + '</button>' +
               saleButton +
             '</div>'
           : saleButton) +
@@ -152,6 +157,31 @@ async function loadStaff(currentRole) {
 }
 
 
+function formatRemaining(expiresAt) {
+  const diff = expiresAt.getTime() - Date.now();
+  if (diff <= 0) return "Expired";
+  const days = Math.ceil(diff / 86400000);
+  return days === 1 ? "1 day left" : days + " days left";
+}
+
+function refreshValidityLabels() {
+  document.querySelectorAll("[data-expiry]").forEach(element => {
+    const raw = element.dataset.expiry;
+    if (!raw) return;
+    const expiresAt = new Date(raw);
+    const diff = expiresAt.getTime() - Date.now();
+    if (diff <= 0) {
+      element.textContent = "Expired";
+      element.classList.add("expired");
+      return;
+    }
+    const days = Math.ceil(diff / 86400000);
+    element.textContent = days === 1 ? "1 day left" : days + " days left";
+  });
+}
+
+setInterval(refreshValidityLabels, 60000);
+
 let staffRoleToCreate = "admin";
 
 function openStaffModal(role) {
@@ -159,6 +189,9 @@ function openStaffModal(role) {
   $("#staff-modal-title").textContent = role === "owner" ? "Add Owner" : "Add Admin";
   $("#new-staff-role").textContent = role === "owner" ? "Owner" : "Admin";
   $("#new-staff-email").value = "";
+  $("#new-staff-password").value = "";
+  $("#new-staff-password-confirm").value = "";
+  $("#new-staff-validity").value = "30";
   $("#staff-modal-status").textContent = "";
   $("#create-staff-account").disabled = false;
   $("#staff-modal").hidden = false;
@@ -178,6 +211,9 @@ function randomTemporaryPassword() {
 
 async function createStaffAccount() {
   const email = $("#new-staff-email").value.trim().toLowerCase();
+  const password = $("#new-staff-password").value;
+  const confirmPassword = $("#new-staff-password-confirm").value;
+  const validityDays = Number($("#new-staff-validity").value);
   const status = $("#staff-modal-status");
   const button = $("#create-staff-account");
 
@@ -185,38 +221,57 @@ async function createStaffAccount() {
     status.textContent = "Enter a valid email address.";
     return;
   }
+  if (password.length < 6) {
+    status.textContent = "Password must be at least 6 characters.";
+    return;
+  }
+  if (password !== confirmPassword) {
+    status.textContent = "Passwords do not match.";
+    return;
+  }
+  if (!Number.isInteger(validityDays) || validityDays < 1 || validityDays > 3650) {
+    status.textContent = "Validity must be between 1 and 3650 days.";
+    return;
+  }
 
   button.disabled = true;
   status.textContent = "Creating Firebase account…";
 
   try {
-    const temporaryPassword = randomTemporaryPassword();
     const credential = await createUserWithEmailAndPassword(
       staffCreatorAuth,
       email,
-      temporaryPassword
+      password
     );
 
-    // Create the application profile using the still-authenticated
-    // Super Admin/Owner session on the primary Firebase Auth instance.
-    await setDoc(doc(db, "users", credential.user.uid), {
-      email,
-      role: staffRoleToCreate,
-      active: true
-    });
+    const expiresAt = new Date(Date.now() + validityDays * 86400000);
 
-    // The generated password is not shown or stored. The new staff member
-    // receives a password-reset email and chooses their own password.
-    await sendPasswordResetEmail(staffCreatorAuth, email);
+    try {
+      await setDoc(doc(db, "users", credential.user.uid), {
+        email,
+        role: staffRoleToCreate,
+        active: true,
+        expiresAt: Timestamp.fromDate(expiresAt)
+      });
+    } catch (profileError) {
+      await deleteUser(credential.user);
+      throw profileError;
+    }
 
-    status.textContent = "Account created and password-reset email sent.";
+    status.textContent = "Account created successfully.";
     $("#new-staff-email").value = "";
+    $("#new-staff-password").value = "";
+    $("#new-staff-password-confirm").value = "";
 
     setTimeout(async () => {
       closeStaffModal();
       const tokenResult = await auth.currentUser.getIdTokenResult(true);
-      await loadStaff(tokenResult.claims.role || "admin");
-    }, 900);
+      const profile = await getDoc(doc(db, "users", auth.currentUser.uid));
+      const role = tokenResult.claims.role === "super_admin"
+        ? "super_admin"
+        : (profile.exists() ? profile.data().role : "admin");
+      await loadStaff(role);
+    }, 700);
   } catch (error) {
     console.error("Create staff error:", error);
     status.textContent = error?.code === "auth/email-already-in-use"

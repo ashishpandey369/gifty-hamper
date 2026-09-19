@@ -1,5 +1,13 @@
+import { auth, db, doc, getDoc, onAuthStateChanged } from "./firebase-auth.js";
+import { deleteDoc, doc as firestoreDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+import {
+  DEFAULT_CATALOG,
+  loadAdminCatalog,
+  normaliseProduct,
+  saveCatalogProduct
+} from "./catalog-store.js";
+
 document.addEventListener('DOMContentLoaded', () => {
-  const KEY = 'gifty-hamper-catalog';
   const CAT_KEY = 'gifty-hamper-categories';
   const MAJOR_CAT_KEY = 'gifty-hamper-major-categories';
   const DEFAULT_CATS = ['Appreciation Gifts','Celebration Gifts','Eco Friendly Gifts','Employee Gifts','Festive Gifts','Gadgets and Electronic Gifts','Gift Sets','MR Gifts','Office Accessories','Premium Gifts'];
@@ -37,9 +45,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const defaults = () => DEFAULT_ADMIN_PRODUCTS.map(normaliseProduct);
 
-  const readCatalog = () => {
+  const readLegacyCatalog = () => {
     try {
-      const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+      const saved = JSON.parse(localStorage.getItem('gifty-hamper-catalog') || 'null');
       return Array.isArray(saved) && saved.length ? saved.map(normaliseProduct) : defaults();
     } catch (_) {
       return defaults();
@@ -55,11 +63,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  const saveCatalog = (items) => localStorage.setItem(KEY, JSON.stringify(items));
   const saveCategories = (items) => localStorage.setItem(CAT_KEY, JSON.stringify(items));
   const saveMajorCategories = (items) => localStorage.setItem(MAJOR_CAT_KEY, JSON.stringify(items));
 
-  let catalog = readCatalog();
+  let catalog = [];
   let categories = readCategories();
   let majorCategories = (() => {
     try {
@@ -68,6 +75,21 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (_) { return [...DEFAULT_MAJOR_CATS]; }
   })();
   let editingId = '';
+
+  async function loadSharedCatalog() {
+    catalog = await loadAdminCatalog();
+
+    if (!catalog.length) {
+      const legacy = readLegacyCatalog();
+      const source = legacy.length ? legacy : DEFAULT_CATALOG;
+      catalog = [];
+      for (const product of source) {
+        catalog.push(await saveCatalogProduct(product));
+      }
+    }
+
+    render();
+  }
 
   function fillOccasions() {
     $('#product-occasion').innerHTML = OCC.map(value => '<option value="' + value + '">' + value + '</option>').join('');
@@ -258,13 +280,21 @@ document.addEventListener('DOMContentLoaded', () => {
       catalog.unshift(product);
     }
 
-    saveCatalog(catalog);
-    resetForm();
-    render();
-    alert('Product saved successfully.');
+    try {
+      const savedProduct = await saveCatalogProduct(product);
+      const index = catalog.findIndex(item => item.id === savedProduct.id);
+      if (index >= 0) catalog[index] = savedProduct;
+      else catalog.unshift(savedProduct);
+      resetForm();
+      render();
+      alert('Product saved successfully to the shared catalog.');
+    } catch (error) {
+      console.error('Save product error:', error);
+      alert('Unable to save the product to the shared catalog. Please check Firebase rules.');
+    }
   });
 
-  $('#admin-product-list').addEventListener('click', (event) => {
+  $('#admin-product-list').addEventListener('click', async (event) => {
     const editButton = event.target.closest('[data-edit]');
     const deleteButton = event.target.closest('[data-delete]');
 
@@ -274,8 +304,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const id = deleteButton.dataset.delete;
       if (confirm('Delete this product from the catalog?')) {
         catalog = catalog.filter(product => product.id !== id);
-        saveCatalog(catalog);
-        render();
+        try {
+          await deleteDoc(firestoreDoc(db, 'products', id));
+          render();
+        } catch (error) {
+          console.error('Delete product error:', error);
+          alert('Unable to delete the product from the shared catalog.');
+        }
       }
     }
   });
@@ -346,7 +381,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const fallback = majorCategories[0];
     catalog = catalog.map(product => ({ ...product, majorCategory: product.majorCategory === category ? fallback : (product.majorCategory || fallback) }));
     saveMajorCategories(majorCategories);
-    saveCatalog(catalog);
     renderCategoryManager();
     render();
   });
@@ -363,7 +397,6 @@ document.addEventListener('DOMContentLoaded', () => {
       categories: (product.categories || []).filter(item => item !== category)
     }));
     saveCategories(categories);
-    saveCatalog(catalog);
     renderCategoryManager();
     render();
   });
@@ -382,7 +415,14 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#cancel-edit').addEventListener('click', resetForm);
 
   $('#admin-refresh').addEventListener('click', () => {
-    catalog = readCatalog();
+    loadSharedCatalog().then(() => {
+      categories = readCategories();
+      renderCategoryManager();
+      render();
+    }).catch(error => {
+      console.error('Catalog refresh error:', error);
+      alert('Unable to refresh the shared catalog.');
+    });
     categories = readCategories();
     try {
       const savedMajor = JSON.parse(localStorage.getItem(MAJOR_CAT_KEY) || 'null');
@@ -404,14 +444,39 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#reset-catalog').addEventListener('click', () => {
     if (!confirm('Reset the catalog to the original demo products?')) return;
     catalog = defaults();
-    saveCatalog(catalog);
-    render();
-    resetForm();
+    Promise.all(catalog.map(saveCatalogProduct))
+      .then(() => {
+        render();
+        resetForm();
+      })
+      .catch(error => {
+        console.error('Reset catalog error:', error);
+        alert('Unable to reset the shared catalog.');
+      });
   });
 
   fillOccasions();
   renderCategoryManager();
   resetForm();
   updatePriceRangeLabel();
-  render();
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) return;
+
+    try {
+      const profileSnapshot = await getDoc(doc(db, 'users', user.uid));
+      const profile = profileSnapshot.exists() ? profileSnapshot.data() : null;
+      const role = user.uid && profile?.role ? profile.role : 'admin';
+
+      if (!['admin', 'owner', 'super_admin'].includes(role)) {
+        alert('Your account does not have catalog access.');
+        return;
+      }
+
+      await loadSharedCatalog();
+    } catch (error) {
+      console.error('Shared catalog initialization error:', error);
+      alert('Unable to load the shared product catalog. Please check Firestore rules.');
+    }
+  });
 });

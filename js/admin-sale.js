@@ -91,7 +91,8 @@ function renderProducts() {
       </div>
       <div class="sale-product-info">
         <h3>${escapeHtml(product.name)}</h3>
-        <p>${escapeHtml(product.id)}</p>
+        <p>SKU: ${escapeHtml(product.sku || product.id)}</p>
+        ${Number(product.salePrice || 0) > 0 && Number(product.salePrice) < Number(product.price) ? "<del>" + money(product.price) + "</del> " : ""}
         <strong>${money(product.salePrice || product.price)}</strong>
         <span class="sale-stock ${stock === 0 ? "out" : ""}">${stock === 0 ? "Out of stock" : stock + " in stock"}</span>
       </div>

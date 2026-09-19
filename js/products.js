@@ -20,7 +20,11 @@ const PRICE_RANGES = [
 
 function getPriceRange(price) { return PRICE_RANGES.find(range => range.matches(Number(price) || 0)) || PRICE_RANGES[0]; }
 
-import { DEFAULT_CATALOG, loadPublicCatalog } from "./catalog-store.js";
+import {
+  DEFAULT_CATALOG,
+  getDiscountPercent,
+  loadPublicCatalog
+} from "./catalog-store.js";
 
 let GIFTS = DEFAULT_CATALOG.map(product => ({ ...product }));
 
@@ -31,7 +35,27 @@ function formatPrice(value) {
 
 function productCard(product) {
   const slug = product.id;
-  const images = Array.isArray(product.images) ? product.images : (product.image ? [product.image] : []); const visual = images[0] ? `<img class="product-photo" src="${images[0]}" alt="${product.name.replace(/\"/g, '&quot;')}" loading="lazy"><span>${product.label}</span>` : `<span>${product.label}</span><b>${product.name.split(' ').slice(0, 2).join('<br>')}</b>`; return `<article class="product-card" data-product-id="${slug}"><a href="product.html?id=${encodeURIComponent(slug)}"><div class="product-image ${product.imageClass}">${visual}</div><div class="product-info"><div><h3>${product.name}</h3><p>${product.description}</p></div><strong>${formatPrice(product.salePrice || product.price)}</strong></div></a></article>`;
+  const images = Array.isArray(product.images) ? product.images : (product.image ? [product.image] : []);
+  const visual = images[0]
+    ? `<img class="product-photo" src="${images[0]}" alt="${product.name.replace(/\\\"/g, '&quot;')}" loading="lazy"><span>${product.label || ''}</span>`
+    : `<span>${product.label || ''}</span><b>${product.name.split(' ').slice(0, 2).join('<br>')}</b>`;
+
+  const originalPrice = Number(product.price) || 0;
+  const currentPrice = Number(product.salePrice || product.price) || 0;
+  const discount = getDiscountPercent(product);
+  const priceMarkup = discount
+    ? `<div class="product-card-price"><del>${formatPrice(originalPrice)}</del><strong>${formatPrice(currentPrice)}</strong><span>${discount}% OFF</span></div>`
+    : `<div class="product-card-price"><strong>${formatPrice(currentPrice)}</strong></div>`;
+
+  return `<article class="product-card" data-product-id="${slug}">
+    <a href="product.html?id=${encodeURIComponent(slug)}">
+      <div class="product-image ${product.imageClass || ''}">${visual}</div>
+      <div class="product-info">
+        <div><h3>${product.name}</h3><p>${product.description}</p></div>
+        ${priceMarkup}
+      </div>
+    </a>
+  </article>`;
 }
 
 function applyBudgetFromUrl() {
@@ -74,8 +98,8 @@ function renderCatalog() {
     return matchesSearch && matchesMajorCategory && matchesCategory && matchesOccasion && matchesPrice;
   });
 
-  if (sort === 'price-low') products.sort((a, b) => a.price - b.price);
-  if (sort === 'price-high') products.sort((a, b) => b.price - a.price);
+  if (sort === 'price-low') products.sort((a, b) => (Number(a.salePrice || a.price) || 0) - (Number(b.salePrice || b.price) || 0));
+  if (sort === 'price-high') products.sort((a, b) => (Number(b.salePrice || b.price) || 0) - (Number(a.salePrice || a.price) || 0));
   if (sort === 'name') products.sort((a, b) => a.name.localeCompare(b.name));
 
   grid.innerHTML = products.map(productCard).join('');

@@ -237,3 +237,15 @@
   100%{background-position:100% 50%}
 }
 @media(prefers-reduced-motion:reduce){.hero-content h1 span,.google-stars{animation:none}}
+
+/* Breathing pulse for primary Shop the collection CTA */
+.hero-actions .button-primary{
+  animation:shopButtonBreath 2.6s ease-in-out infinite;
+  transform-origin:center;
+}
+@keyframes shopButtonBreath{
+  0%,100%{transform:scale(1);box-shadow:0 10px 24px rgba(190,65,130,.22)}
+  50%{transform:scale(1.045);box-shadow:0 15px 32px rgba(190,65,130,.34)}
+}
+.hero-actions .button-primary:hover{animation-play-state:paused;transform:translateY(-2px) scale(1.045)}
+@media(prefers-reduced-motion:reduce){.hero-actions .button-primary{animation:none}}

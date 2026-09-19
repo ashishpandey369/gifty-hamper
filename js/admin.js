@@ -3,7 +3,6 @@ import { deleteDoc, doc as firestoreDoc } from "https://www.gstatic.com/firebase
 import {
   DEFAULT_CATALOG,
   loadAdminCatalog,
-  normaliseProduct,
   saveCatalogProduct
 } from "./catalog-store.js";
 
@@ -228,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#product-editor').scrollIntoView({ behavior:'smooth', block:'start' });
   }
 
-  $('#product-form').addEventListener('submit', (event) => {
+  $('#product-form').addEventListener('submit', async (event) => {
     event.preventDefault();
 
     const id = $('#product-id').value.trim().toLowerCase().replace(/\s+/g, '-');

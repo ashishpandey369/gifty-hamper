@@ -3,6 +3,11 @@ import {
   onAuthStateChanged,
   signOut
 } from "./firebase-auth.js";
+import {
+  addDoc,
+  collection,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 const KEY = "gifty-hamper-catalog";
 
@@ -35,6 +40,7 @@ function readCatalog() {
 
 let catalog = [];
 let cart = new Map();
+let signedInUser = null;
 
 function showAccess(message, detail) {
   const box = $("#sale-access");
@@ -136,6 +142,76 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+async function completeSale() {
+  if (!signedInUser) {
+    alert("Your session is not ready. Please refresh and try again.");
+    return;
+  }
+
+  const entries = [...cart.entries()]
+    .map(([id, quantity]) => {
+      const product = catalog.find(item => item.id === id);
+      return product ? { product, quantity } : null;
+    })
+    .filter(Boolean);
+
+  if (!entries.length) {
+    alert("Please add at least one product.");
+    return;
+  }
+
+  const items = entries.map(({ product, quantity }) => {
+    const unitPrice = Number(product.salePrice || product.price) || 0;
+
+    return {
+      productId: String(product.id),
+      productName: String(product.name || "Product"),
+      quantity,
+      unitPrice,
+      lineTotal: unitPrice * quantity
+    };
+  });
+
+  const total = items.reduce((sum, item) => sum + item.lineTotal, 0);
+  const orderId = "GH-" + Date.now().toString(36).toUpperCase();
+
+  const button = $("#complete-sale");
+  button.disabled = true;
+  button.textContent = "Saving sale…";
+
+  try {
+    await addDoc(collection(db, "sales"), {
+      orderId,
+      sellerUid: signedInUser.uid,
+      sellerEmail: signedInUser.email || "",
+      items,
+      itemCount: items.length,
+      totalQuantity: items.reduce((sum, item) => sum + item.quantity, 0),
+      total,
+      createdAt: serverTimestamp()
+    });
+
+    cart.clear();
+    renderProducts();
+    renderCart();
+
+    alert(
+      "Sale completed successfully!\n\n" +
+      "Order ID: " + orderId + "\n" +
+      "Total: " + money(total)
+    );
+  } catch (error) {
+    console.error("Complete sale error:", error);
+    alert(
+      "Unable to save the sale.\n\n" +
+      "Please check your internet connection and try again."
+    );
+  } finally {
+    button.textContent = "Complete Sale";
+    button.disabled = cart.size === 0;
+  }
+}
+
 $("#sale-search").addEventListener("input", renderProducts);
 
 $("#sale-product-list").addEventListener("click", (event) => {
@@ -152,9 +228,7 @@ $("#sale-cart").addEventListener("click", (event) => {
   if (minus) changeQuantity(minus.dataset.cartMinus, -1);
 });
 
-$("#complete-sale").addEventListener("click", () => {
-  alert("Sale selection is ready. PDF billing, Firestore sale recording and stock deduction are the next step.");
-});
+$("#complete-sale").addEventListener("click", completeSale);
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -162,13 +236,14 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
+  signedInUser = user;
+
   try {
     const tokenResult = await user.getIdTokenResult(true);
     const role = tokenResult.claims.role || "admin";
 
     $("#admin-user-email").textContent = (user.email || "Signed-in admin") + " • " + role;
 
-    // Sale access is currently available to Admin, Owner and Super Admin.
     if (!["admin", "owner", "super_admin"].includes(role)) {
       showAccess("Access restricted", "Your account does not have permission to use sales.");
       return;

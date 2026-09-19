@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Admin Dashboard | Gifty Hamper</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+  <header class="admin-topbar">
+    <div class="admin-brand">
+      <img src="assets/gifty-hampers-landscape.png" alt="Gifty Hamper">
+      <span>Admin</span>
+    </div>
+    <div class="admin-top-actions">
+      <a href="index.html">View store ↗</a>
+      <button id="admin-refresh" type="button">Refresh</button>
+    </div>
+  </header>
+
+  <main class="admin-shell">
+    <section class="admin-intro">
+      <div>
+        <p class="eyebrow">Store management</p>
+        <h1>Product <em>dashboard.</em></h1>
+        <p>Add products, organise categories, set prices and manage stock from one place.</p>
+      </div>
+      <button class="admin-primary" id="new-product" type="button">+ Add product</button>
+    </section>
+
+    <div class="admin-notice">
+      <strong>Admin prototype</strong>
+      <span>This first version stores catalog changes in this browser. Secure admin login and shared database storage will be connected with the WooCommerce/backend stage.</span>
+    </div>
+
+    <section class="admin-stats" aria-label="Catalog overview">
+      <article><span>Total products</span><strong id="stat-products">0</strong></article>
+      <article><span>Active products</span><strong id="stat-active">0</strong></article>
+      <article><span>Low stock</span><strong id="stat-low">0</strong></article>
+      <article><span>Out of stock</span><strong id="stat-out">0</strong></article>
+    </section>
+
+    <section class="admin-grid">
+      <div class="admin-panel">
+        <div class="admin-panel-head">
+          <div><p class="eyebrow">Catalog</p><h2>Products</h2></div>
+          <div class="admin-tools">
+            <input id="admin-search" type="search" placeholder="Search products or SKU">
+            <select id="admin-status">
+              <option value="all">All status</option>
+              <option value="active">Active</option>
+              <option value="draft">Draft</option>
+            </select>
+          </div>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr></thead>
+            <tbody id="admin-product-list"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <aside class="admin-panel admin-editor" id="product-editor">
+        <div class="admin-panel-head">
+          <div><p class="eyebrow">Product editor</p><h2 id="editor-title">Add product</h2></div>
+          <button class="admin-close" id="cancel-edit" type="button" aria-label="Close editor">×</button>
+        </div>
+        <form id="product-form">
+          <input type="hidden" id="edit-id">
+          <div class="admin-form-grid">
+            <label class="wide">Product name<input id="product-name" required placeholder="Example: Premium Diwali Hamper"></label>
+            <label>Product ID / SKU<input id="product-id" required placeholder="premium-diwali-hamper"></label>
+            <label>Price (₹)<input id="product-price" type="number" min="0" step="1" required></label>
+            <label>Sale price (₹)<input id="product-sale-price" type="number" min="0" step="1" placeholder="Optional"></label>
+            <label>Stock quantity<input id="product-stock" type="number" min="0" step="1" required value="0"></label>
+            <label>Low-stock alert<input id="product-low-stock" type="number" min="0" step="1" value="5"></label>
+            <label>Category<select id="product-category" required></select></label>
+            <label>Occasion<select id="product-occasion" required></select></label>
+            <label class="wide">Description<textarea id="product-description" rows="3" placeholder="Short product description"></textarea></label>
+            <label>Label<input id="product-label" placeholder="Premium"></label>
+            <label>Image URL<input id="product-image" placeholder="assets/product.jpg"></label>
+            <label class="wide checkbox-row"><input id="product-featured" type="checkbox"> Featured product</label>
+            <label class="wide checkbox-row"><input id="product-active" type="checkbox" checked> Visible in store</label>
+          </div>
+          <div class="admin-form-actions">
+            <button class="admin-secondary" id="reset-form" type="button">Reset</button>
+            <button class="admin-primary" type="submit">Save product</button>
+          </div>
+        </form>
+      </aside>
+    </section>
+
+    <section class="admin-panel admin-catalog-tools">
+      <div>
+        <p class="eyebrow">Catalog data</p>
+        <h2>Backup & tools</h2>
+        <p>Export your current catalog before making major changes.</p>
+      </div>
+      <div class="admin-tools-actions">
+        <button class="admin-secondary" id="export-catalog" type="button">Export catalog JSON</button>
+        <button class="admin-secondary danger" id="reset-catalog" type="button">Reset demo catalog</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/products.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

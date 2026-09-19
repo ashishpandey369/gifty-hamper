@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Staff & Roles | Gifty Hamper Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/admin-staff.css">
+</head>
+<body class="admin-body">
+  <header class="admin-topbar">
+    <div class="admin-brand">
+      <img src="assets/gifty-hampers-landscape.png" alt="Gifty Hamper">
+      <span>Admin</span>
+    </div>
+    <div class="admin-top-actions">
+      <a href="admin.html">Dashboard</a>
+      <a href="index.html">View store ↗</a>
+      <span class="admin-user-email" id="admin-user-email">Checking account…</span>
+      <button id="admin-logout" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <main class="admin-shell">
+    <section class="admin-intro">
+      <div>
+        <p class="eyebrow">Access management</p>
+        <h1>Staff <em>& roles.</em></h1>
+        <p>Manage who can operate Gifty Hamper and what level of access they have.</p>
+      </div>
+    </section>
+
+    <div id="staff-access" class="admin-notice">
+      <strong>Checking access…</strong>
+      <span>Verifying your Firebase role and staff permissions.</span>
+    </div>
+
+    <section id="staff-content" class="admin-panel staff-panel" hidden>
+      <div class="admin-panel-head">
+        <div>
+          <p class="eyebrow">Team</p>
+          <h2>Application users</h2>
+        </div>
+        <button id="staff-refresh" type="button" class="admin-secondary">Refresh</button>
+      </div>
+
+      <div class="staff-role-guide">
+        <article><strong>Super Admin</strong><span>Full system access and can manage Owners and Admins.</span></article>
+        <article><strong>Owner</strong><span>Operational access and can manage Admins, but cannot create another Owner.</span></article>
+        <article><strong>Admin</strong><span>Sales, products and stock access. No staff management.</span></article>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table staff-table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>User ID</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="staff-list"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="js/admin-staff.js?v=1"></script>
+</body>
+</html>

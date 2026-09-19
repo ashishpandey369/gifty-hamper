@@ -38,7 +38,7 @@ function escapeHtml(value) {
 }
 
 async function loadStaff(currentRole) {
-  const snapshot = await getDocs(collection(db, "users"));
+  const snapshot = await Promise.race([getDocs(collection(db, "users")), new Promise((_, reject) => setTimeout(() => reject(new Error("Firestore request timed out after 10 seconds.")), 10000))]);
   const users = snapshot.docs.map(item => ({
     id: item.id,
     ...item.data()
@@ -155,7 +155,7 @@ onAuthStateChanged(auth, async (user) => {
     await loadStaff(claimRole);
   } catch (error) {
     console.error("Staff page error:", error);
-    showAccess("Unable to load staff management", "Please refresh the page and check your Firebase connection.");
+    showAccess("Unable to load staff management", error?.message || "Please refresh the page and check your Firebase connection.");
   }
 
   const logout = $("#admin-logout");

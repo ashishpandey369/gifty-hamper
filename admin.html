@@ -77,11 +77,11 @@
             <label>Sale price (₹)<input id="product-sale-price" type="number" min="0" step="1" placeholder="Optional"></label>
             <label>Stock quantity<input id="product-stock" type="number" min="0" step="1" required value="0"></label>
             <label>Low-stock alert<input id="product-low-stock" type="number" min="0" step="1" value="5"></label>
-            <label>Category<select id="product-category" required></select></label>
+            <div class="wide admin-field"><span class="admin-field-label">Categories</span><div id="product-categories" class="category-checks"></div><div class="inline-add"><input id="new-category-inline" placeholder="New category"><button id="add-category-inline" type="button" class="admin-secondary">+ Add</button></div></div>
             <label>Occasion<select id="product-occasion" required></select></label>
             <label class="wide">Description<textarea id="product-description" rows="3" placeholder="Short product description"></textarea></label>
             <label>Label<input id="product-label" placeholder="Premium"></label>
-            <label>Image URL<input id="product-image" placeholder="assets/product.jpg"></label>
+            <div class="wide admin-field"><span class="admin-field-label">Product images</span><p class="admin-help">Add multiple images using direct PNG/JPG/WebP links, or select image files from your computer. The first image is the main product image.</p><div class="image-input-row"><input id="product-image-url" placeholder="https://example.com/product.jpg"><button id="add-image-url" type="button" class="admin-secondary">+ Add image URL</button></div><label class="upload-box"><input id="product-image-files" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" multiple><span>Choose PNG / JPG / WebP images</span><small>Multiple images supported</small></label><div id="product-images-preview" class="image-preview-grid"></div></div>
             <label class="wide checkbox-row"><input id="product-featured" type="checkbox"> Featured product</label>
             <label class="wide checkbox-row"><input id="product-active" type="checkbox" checked> Visible in store</label>
           </div>
@@ -92,6 +92,8 @@
         </form>
       </aside>
     </section>
+
+    <section class="admin-panel category-manager"><div><p class="eyebrow">Store taxonomy</p><h2>Categories</h2><p>Create or remove product categories used by the admin product editor.</p></div><div class="category-manager-controls"><div class="inline-add"><input id="new-category" placeholder="New category name"><button id="create-category" type="button" class="admin-primary">Create category</button></div><div id="category-list" class="category-list"></div></div></section>
 
     <section class="admin-panel admin-catalog-tools">
       <div>

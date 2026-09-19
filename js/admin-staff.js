@@ -54,6 +54,17 @@ async function loadLatestUpdate() {
 
 loadLatestUpdate();
 
+setTimeout(() => {
+  const box = $("#staff-access");
+  const content = $("#staff-content");
+  if (box && !box.hidden && content?.hidden) {
+    showAccess(
+      "Authentication check is not completing",
+      "Firebase did not finish the sign-in check within 12 seconds. Open F12 → Console and send me the error shown there."
+    );
+  }
+}, 12000);
+
 function withTimeout(promise, message = "Firebase request timed out after 10 seconds.") {
   return Promise.race([
     promise,

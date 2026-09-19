@@ -1,5 +1,6 @@
 import {
   auth,
+  db,
   onAuthStateChanged,
   signOut
 } from "./firebase-auth.js";

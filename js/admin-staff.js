@@ -22,6 +22,7 @@ import {
   updateDoc,
   setDoc,
   deleteDoc,
+  writeBatch,
   Timestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
@@ -122,7 +123,7 @@ async function loadStaff(currentRole, currentUid) {
     const [ownerSnapshot, adminSnapshot] = await Promise.all([
       withTimeout(getDoc(doc(db, "users", currentUid))),
       withTimeout(
-        getDocs(query(collection(db, "users"), where("role", "==", "admin")))
+        getDocs(collection(db, "ownerStaff", currentUid, "admins"))
       )
     ]);
 
@@ -232,9 +233,14 @@ async function loadStaff(currentRole, currentUid) {
       button.disabled = true;
 
       try {
-        await updateDoc(doc(db, "users", userId), {
-          role: select.value
-        });
+        const batch = writeBatch(db);
+        batch.update(doc(db, "users", userId), { role: select.value });
+        if (currentRole === "owner") {
+          batch.update(doc(db, "ownerStaff", currentUid, "admins", userId), {
+            role: select.value
+          });
+        }
+        await batch.commit();
         alert("Staff role updated.");
         await loadStaff(currentRole, currentUid);
       } catch (error) {
@@ -260,7 +266,18 @@ async function loadStaff(currentRole, currentUid) {
       button.textContent = "Deleting…";
 
       try {
-        await deleteDoc(doc(db, "users", userId));
+        const batch = writeBatch(db);
+        batch.delete(doc(db, "users", userId));
+        if (currentRole === "owner") {
+          batch.delete(doc(db, "ownerStaff", currentUid, "admins", userId));
+        } else {
+          const targetProfile = await withTimeout(getDoc(doc(db, "users", userId)));
+          const targetOwnerUid = targetProfile.exists() ? targetProfile.data().ownerUid : null;
+          if (targetOwnerUid) {
+            batch.delete(doc(db, "ownerStaff", targetOwnerUid, "admins", userId));
+          }
+        }
+        await batch.commit();
         alert("Staff user deleted successfully.");
         await loadStaff(currentRole, currentUid);
       } catch (error) {
@@ -281,9 +298,14 @@ async function loadStaff(currentRole, currentUid) {
       button.disabled = true;
 
       try {
-        await updateDoc(doc(db, "users", userId), {
-          active: !activeNow
-        });
+        const batch = writeBatch(db);
+        batch.update(doc(db, "users", userId), { active: !activeNow });
+        if (currentRole === "owner") {
+          batch.update(doc(db, "ownerStaff", currentUid, "admins", userId), {
+            active: !activeNow
+          });
+        }
+        await batch.commit();
         alert(activeNow ? "Staff account marked inactive." : "Staff account activated.");
         await loadStaff(currentRole, currentUid);
       } catch (error) {
@@ -392,7 +414,7 @@ async function createStaffAccount() {
     const expiresAt = new Date(Date.now() + validityDays * 86400000);
 
     try {
-      await setDoc(doc(db, "users", credential.user.uid), {
+      const profileData = {
         email,
         role: staffRoleToCreate,
         active: true,
@@ -400,7 +422,16 @@ async function createStaffAccount() {
         ...(staffRoleToCreate === "admin" && currentManagerRole === "owner"
           ? { ownerUid: currentManagerUid }
           : {})
-      });
+      };
+
+      const batch = writeBatch(db);
+      batch.set(doc(db, "users", credential.user.uid), profileData);
+
+      if (staffRoleToCreate === "admin" && currentManagerRole === "owner") {
+        batch.set(doc(db, "ownerStaff", currentManagerUid, "admins", credential.user.uid), profileData);
+      }
+
+      await batch.commit();
     } catch (profileError) {
       await deleteUser(credential.user);
       throw profileError;

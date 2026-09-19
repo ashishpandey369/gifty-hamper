@@ -74,20 +74,9 @@ onAuthStateChanged(auth, async (user) => {
   } catch (error) {
     console.error("Unable to read Firebase admin profile:", error);
     document.documentElement.classList.remove("admin-auth-checking");
-
-    const email = document.querySelector("#admin-user-email");
-    if (email) email.textContent = user.email || "Signed-in admin";
-
-    // Keep the secure custom-claim role available even if Firestore
-    // is temporarily unavailable.
-    window.giftyAdminUser = {
-      uid: user.uid,
-      email: user.email || "",
-      role: "admin",
-      profileRole: "unavailable",
-      active: true,
-      firestoreProfile: null
-    };
+    await signOut(auth);
+    window.location.replace("admin-login.html?access_error=1");
+    return;
   }
 
   const logout = document.querySelector("#admin-logout");

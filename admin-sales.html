@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/admin.css">
   <link rel="stylesheet" href="css/admin-sales.css">
+  <link rel="stylesheet" href="css/bill.css">
 </head>
 <body class="admin-body">
   <header class="admin-topbar">
@@ -73,6 +74,7 @@
                 <th>Items</th>
                 <th>Total</th>
                 <th>Date & time</th>
+                <th>Bill</th>
               </tr>
             </thead>
             <tbody id="sales-list"></tbody>
@@ -82,6 +84,7 @@
     </section>
   </main>
 
-  <script type="module" src="js/admin-sales.js?v=2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
+  <script type="module" src="js/admin-sales.js?v=3"></script>
 </body>
 </html>

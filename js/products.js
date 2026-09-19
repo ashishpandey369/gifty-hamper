@@ -15,7 +15,7 @@ const PRICE_RANGES = [
   {id:'999-1999', label:'₹999 – ₹1,999', matches: price => price >= 999 && price <= 1999},
   {id:'1999-2999', label:'₹2,000 – ₹2,999', matches: price => price >= 2000 && price <= 2999},
   {id:'3000-4999', label:'₹3,000 – ₹4,999', matches: price => price >= 3000 && price <= 4999},
-  {id:'over-5000', label:'₹5,000+', matches: price => price >= 5000}
+  {id:'5000-plus', label:'₹5,000+', matches: price => price >= 5000}
 ];
 
 function getPriceRange(price) { return PRICE_RANGES.find(range => range.matches(Number(price) || 0)) || PRICE_RANGES[0]; }
@@ -47,7 +47,7 @@ function applyBudgetFromUrl() {
   const labels = {
     'under-999': 'Under ₹999',
     '999-1999': '₹999 – ₹1,999',
-    '1999-2999': '₹1,999 – ₹2,999',
+    '1999-2999': '₹2,000 – ₹2,999',
     '3000-4999': '₹3,000 – ₹4,999',
     'over-5000': '₹5,000+'
   };

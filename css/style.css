@@ -249,3 +249,16 @@
 }
 .hero-actions .button-primary:hover{animation-play-state:paused;transform:translateY(-2px) scale(1.045)}
 @media(prefers-reduced-motion:reduce){.hero-actions .button-primary{animation:none}}
+
+
+/* Festive header decorations: balloons + confetti in the open top space */
+.site-header{position:relative;overflow:hidden}
+.site-header:before,.site-header:after{content:'';position:absolute;pointer-events:none;z-index:0;border-radius:50% 50% 46% 46%;width:30px;height:38px;opacity:.78;filter:drop-shadow(0 7px 8px rgba(80,45,80,.12));animation:ghBalloonFloat 4.8s ease-in-out infinite}
+.site-header:before{left:3.5%;top:14px;background:radial-gradient(circle at 35% 27%,rgba(255,255,255,.82) 0 9%,transparent 10%),linear-gradient(145deg,#ff719b,#e83f6f);box-shadow:0 50px 0 -10px #7655e8,110px 20px 0 -13px #f2ad32;transform:rotate(-9deg)}
+.site-header:after{right:4%;top:20px;background:radial-gradient(circle at 35% 27%,rgba(255,255,255,.82) 0 9%,transparent 10%),linear-gradient(145deg,#9b7cff,#7655e8);box-shadow:-90px 38px 0 -12px #13a987,-145px 4px 0 -14px #f2ad32;transform:rotate(10deg);animation-delay:-2.1s}
+.header-inner{position:relative;z-index:2}
+.site-header .header-inner:before{content:'✦  •  ✧  •  ✦  •  ✧';position:absolute;left:50%;top:8px;transform:translateX(-50%);font-size:11px;letter-spacing:14px;white-space:nowrap;color:#e83f6f;opacity:.42;pointer-events:none;animation:ghConfettiDrift 5s ease-in-out infinite}
+@keyframes ghBalloonFloat{0%,100%{margin-top:0;filter:drop-shadow(0 7px 8px rgba(80,45,80,.12))}50%{margin-top:-7px;filter:drop-shadow(0 13px 12px rgba(80,45,80,.16))}}
+@keyframes ghConfettiDrift{0%,100%{opacity:.22;transform:translateX(-50%) translateY(0) rotate(0deg)}50%{opacity:.58;transform:translateX(-50%) translateY(4px) rotate(2deg)}}
+@media(max-width:760px){.site-header:before,.site-header:after{width:20px;height:27px;top:7px;opacity:.58}.site-header:before{left:2%;box-shadow:45px 34px 0 -9px #7655e8,82px 10px 0 -11px #f2ad32}.site-header:after{right:2%;box-shadow:-48px 31px 0 -9px #13a987,-78px 5px 0 -11px #f2ad32}.site-header .header-inner:before{font-size:8px;letter-spacing:7px;top:5px}}
+@media(prefers-reduced-motion:reduce){.site-header:before,.site-header:after,.site-header .header-inner:before{animation:none}}

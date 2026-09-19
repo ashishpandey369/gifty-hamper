@@ -1,15 +1,15 @@
-import {
-  db
-} from "./firebase-auth.js";
+import { db } from "./firebase-auth.js";
 
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
-  query,
+  runTransaction,
   setDoc,
-  where
+  where,
+  query
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 export const DEFAULT_CATALOG = [
@@ -23,11 +23,48 @@ export const DEFAULT_CATALOG = [
   { id:"grand-celebration", name:"Grand Celebration Hamper", description:"A premium gift for big moments", price:4999, occasion:"Festive", categories:["Celebration Gifts","Premium Gifts","Gift Sets"], label:"Premium", imageClass:"image-night", stock:10 }
 ];
 
+const SKU_PATTERN = /^[A-Z]{2}[0-9]{4}$/;
+const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+export function generateSku() {
+  const first = LETTERS[Math.floor(Math.random() * LETTERS.length)];
+  const second = LETTERS[Math.floor(Math.random() * LETTERS.length)];
+  const digits = String(Math.floor(Math.random() * 10000)).padStart(4, "0");
+  return first + second + digits;
+}
+
+export function getEffectivePrice(product) {
+  const price = Math.max(0, Number(product?.price) || 0);
+  const sale = product?.salePrice === "" || product?.salePrice == null
+    ? null
+    : Math.max(0, Number(product.salePrice) || 0);
+
+  return sale !== null && sale < price ? sale : price;
+}
+
+export function getDiscountPercent(product) {
+  const price = Math.max(0, Number(product?.price) || 0);
+  const sale = getEffectivePrice(product);
+  if (!price || sale >= price) return 0;
+  return Math.round(((price - sale) / price) * 100);
+}
+
 export function normaliseProduct(product) {
+  const price = Math.max(0, Number(product.price) || 0);
+  const rawSale = product.salePrice === "" || product.salePrice == null
+    ? ""
+    : Math.max(0, Number(product.salePrice) || 0);
+
+  const salePrice = rawSale !== "" && rawSale < price ? rawSale : "";
+
   return {
     ...product,
+    sku: typeof product.sku === "string" && SKU_PATTERN.test(product.sku.toUpperCase())
+      ? product.sku.toUpperCase()
+      : "",
+    price,
+    salePrice,
     stock: Number.isFinite(Number(product.stock)) ? Math.max(0, Number(product.stock)) : 0,
-    salePrice: product.salePrice ?? "",
     lowStock: Number.isFinite(Number(product.lowStock)) ? Math.max(0, Number(product.lowStock)) : 5,
     featured: product.featured ?? false,
     active: product.active ?? true,
@@ -36,6 +73,89 @@ export function normaliseProduct(product) {
       ? product.images
       : (product.image ? [product.image] : [])
   };
+}
+
+async function saveWithSku(product, sku) {
+  const normalised = {
+    ...normaliseProduct(product),
+    id: String(product.id),
+    sku
+  };
+
+  const productRef = doc(db, "products", normalised.id);
+  const skuRef = doc(db, "skus", sku);
+
+  await runTransaction(db, async (transaction) => {
+    const productSnapshot = await transaction.get(productRef);
+    const skuSnapshot = await transaction.get(skuRef);
+
+    const existing = productSnapshot.exists()
+      ? normaliseProduct({ id: productSnapshot.id, ...productSnapshot.data() })
+      : null;
+
+    if (existing?.sku && existing.sku !== sku) {
+      throw new Error("SKU cannot be changed after a product is created.");
+    }
+
+    if (skuSnapshot.exists() && skuSnapshot.data().productId !== normalised.id) {
+      throw new Error("SKU_COLLISION");
+    }
+
+    transaction.set(productRef, normalised);
+
+    if (!skuSnapshot.exists()) {
+      transaction.set(skuRef, {
+        productId: normalised.id,
+        sku,
+        createdAt: new Date()
+      });
+    }
+  });
+
+  return normalised;
+}
+
+export async function saveCatalogProduct(product) {
+  const existingSku = normaliseProduct(product).sku;
+
+  if (existingSku) {
+    return saveWithSku(product, existingSku);
+  }
+
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    const sku = generateSku();
+    try {
+      return await saveWithSku(product, sku);
+    } catch (error) {
+      if (error?.message !== "SKU_COLLISION") throw error;
+    }
+  }
+
+  throw new Error("Unable to generate a unique SKU. Please try again.");
+}
+
+export async function deleteCatalogProduct(id) {
+  const productRef = doc(db, "products", id);
+
+  await runTransaction(db, async (transaction) => {
+    const productSnapshot = await transaction.get(productRef);
+
+    if (!productSnapshot.exists()) return;
+
+    const product = productSnapshot.data();
+    const sku = typeof product.sku === "string" ? product.sku.toUpperCase() : "";
+
+    let skuSnapshot = null;
+    if (SKU_PATTERN.test(sku)) {
+      skuSnapshot = await transaction.get(doc(db, "skus", sku));
+    }
+
+    transaction.delete(productRef);
+
+    if (skuSnapshot?.exists() && skuSnapshot.data().productId === id) {
+      transaction.delete(doc(db, "skus", sku));
+    }
+  });
 }
 
 export async function loadPublicCatalog() {
@@ -50,6 +170,21 @@ export async function loadAdminCatalog() {
   return snapshot.docs.map(item => normaliseProduct({ id:item.id, ...item.data() }));
 }
 
+export async function ensureCatalogSkus(products) {
+  const migrated = [];
+
+  for (const product of products) {
+    if (product.sku && SKU_PATTERN.test(product.sku)) {
+      migrated.push(product);
+      continue;
+    }
+
+    migrated.push(await saveCatalogProduct(product));
+  }
+
+  return migrated;
+}
+
 export async function getCatalogProduct(id) {
   const snapshot = await getDoc(doc(db, "products", id));
   return snapshot.exists()
@@ -57,15 +192,10 @@ export async function getCatalogProduct(id) {
     : null;
 }
 
-export async function saveCatalogProduct(product) {
-  const normalised = normaliseProduct(product);
-  await setDoc(doc(db, "products", normalised.id), normalised);
-  return normalised;
-}
-
 export async function seedDefaultCatalog() {
+  const seeded = [];
   for (const product of DEFAULT_CATALOG) {
-    await saveCatalogProduct(product);
+    seeded.push(await saveCatalogProduct(product));
   }
-  return DEFAULT_CATALOG.map(normaliseProduct);
+  return seeded;
 }

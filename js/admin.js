@@ -1,5 +1,4 @@
 import { auth, db, doc, getDoc, onAuthStateChanged } from "./firebase-auth.js";
-import { } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 import {
   DEFAULT_CATALOG,
   deleteCatalogProduct,

@@ -1,3 +1,7 @@
+import { DEFAULT_CATALOG, loadPublicCatalog } from "./catalog-store.js";
+
+let GIFTS = DEFAULT_CATALOG.map(product => ({ ...product }));
+
 function getProductFromUrl() {
   const id = new URLSearchParams(window.location.search).get('id');
   return GIFTS.find(product => product.id === id) || GIFTS[0];
@@ -63,7 +67,13 @@ function renderRelated(product) {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const sharedCatalog = await loadPublicCatalog();
+    if (sharedCatalog.length) GIFTS = sharedCatalog;
+  } catch (error) {
+    console.error('Shared catalog load error:', error);
+  }
   const product = getProductFromUrl();
   renderProduct(product);
   renderRelated(product);

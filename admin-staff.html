@@ -43,7 +43,11 @@
           <p class="eyebrow">Team</p>
           <h2>Application users</h2>
         </div>
-        <button id="staff-refresh" type="button" class="admin-secondary">Refresh</button>
+        <div class="staff-head-actions">
+          <button id="add-owner" type="button" class="admin-primary" hidden>+ Add Owner</button>
+          <button id="add-admin" type="button" class="admin-primary" hidden>+ Add Admin</button>
+          <button id="staff-refresh" type="button" class="admin-secondary">Refresh</button>
+        </div>
       </div>
 
       <div class="staff-role-guide">
@@ -67,8 +71,29 @@
         </table>
       </div>
     </section>
+    <div id="staff-modal" class="staff-modal" hidden>
+      <div class="staff-modal-backdrop" data-close-staff-modal></div>
+      <section class="staff-modal-card" role="dialog" aria-modal="true" aria-labelledby="staff-modal-title">
+        <button class="staff-modal-close" type="button" data-close-staff-modal aria-label="Close">×</button>
+        <p class="eyebrow">Create staff account</p>
+        <h2 id="staff-modal-title">Add staff</h2>
+        <p id="staff-modal-description" class="admin-help">Enter the staff member's email. Firebase will create the account and send a password-reset email so they can set their own password.</p>
+        <label class="staff-modal-label">Email address
+          <input id="new-staff-email" type="email" autocomplete="email" placeholder="staff@example.com">
+        </label>
+        <div class="staff-modal-role">
+          <span>Role</span>
+          <strong id="new-staff-role">Admin</strong>
+        </div>
+        <div class="staff-modal-actions">
+          <button type="button" class="admin-secondary" data-close-staff-modal>Cancel</button>
+          <button id="create-staff-account" type="button" class="admin-primary">Create account</button>
+        </div>
+        <p id="staff-modal-status" class="admin-help staff-modal-status"></p>
+      </section>
+    </div>
   </main>
 
-  <script type="module" src="js/admin-staff.js?v=2"></script>
+  <script type="module" src="js/admin-staff.js?v=3"></script>
 </body>
 </html>

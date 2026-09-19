@@ -1,6 +1,8 @@
 import {
   auth,
   db,
+  doc,
+  getDoc,
   onAuthStateChanged,
   signOut
 } from "./firebase-auth.js";
@@ -243,8 +245,7 @@ onAuthStateChanged(auth, async (user) => {
     const tokenResult = await user.getIdTokenResult(true);
     const claimRole = tokenResult.claims.role || "";
 
-    const profileSnapshot = await import("https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js")
-      .then(({ getDoc, doc }) => getDoc(doc(db, "users", user.uid)));
+    const profileSnapshot = await getDoc(doc(db, "users", user.uid));
     const profile = profileSnapshot.exists() ? profileSnapshot.data() : null;
     const profileRole = profile?.role || "";
     const role = claimRole === "super_admin" ? "super_admin" : profileRole;

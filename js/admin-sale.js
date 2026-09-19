@@ -241,12 +241,26 @@ onAuthStateChanged(auth, async (user) => {
 
   try {
     const tokenResult = await user.getIdTokenResult(true);
-    const role = tokenResult.claims.role || "admin";
+    const claimRole = tokenResult.claims.role || "";
 
-    $("#admin-user-email").textContent = (user.email || "Signed-in admin") + " • " + role;
+    const profileSnapshot = await import("https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js")
+      .then(({ getDoc, doc }) => getDoc(doc(db, "users", user.uid)));
+    const profile = profileSnapshot.exists() ? profileSnapshot.data() : null;
+    const profileRole = profile?.role || "";
+    const role = claimRole === "super_admin" ? "super_admin" : profileRole;
+
+    $("#admin-user-email").textContent = (user.email || "Signed-in admin") + " • " + (role || "unknown");
 
     if (!["admin", "owner", "super_admin"].includes(role)) {
       showAccess("Access restricted", "Your account does not have permission to use sales.");
+      return;
+    }
+
+    const expiry = profile?.expiresAt?.toDate ? profile.expiresAt.toDate() : null;
+    const expired = expiry ? expiry.getTime() <= Date.now() : false;
+
+    if (role !== "super_admin" && (profile?.active === false || expired)) {
+      showAccess("Access restricted", "Your sales access is inactive or expired.");
       return;
     }
 
@@ -255,11 +269,25 @@ onAuthStateChanged(auth, async (user) => {
     $("#sale-access").hidden = true;
     $("#sale-content").hidden = false;
 
+    const validity = $("#admin-account-validity");
+    if (validity) {
+      if (role === "super_admin") {
+        validity.textContent = "Unlimited access";
+      } else if (expiry) {
+        const updateValidity = () => {
+          const diff = expiry.getTime() - Date.now();
+          validity.textContent = diff <= 0 ? "Expired" : Math.ceil(diff / 86400000) + " days left";
+        };
+        updateValidity();
+        setInterval(updateValidity, 60000);
+      }
+    }
+
     renderProducts();
     renderCart();
   } catch (error) {
     console.error("Sale page error:", error);
-    showAccess("Unable to load sales", "Please refresh the page and try again.");
+    showAccess("Unable to load sales", error?.message || "Please refresh the page and try again.");
   }
 
   const logout = $("#admin-logout");

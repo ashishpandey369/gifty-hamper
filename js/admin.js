@@ -51,10 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderCategoryChecks(selected = []) {
-    $('#product-categories').innerHTML = categories.map(category => {
-      const checked = selected.includes(category) ? ' checked' : '';
-      return '<label class="category-check"><input type="checkbox" name="product-category" value="' + category.replace(/"/g, '&quot;') + '"' + checked + '><span>' + category + '</span></label>';
-    }).join('') || '<p class="admin-help">Create a category below to assign one.</p>';
+    const current = selected[0] || categories[0] || '';
+    $('#product-category').innerHTML = categories.map(category =>
+      '<option value="' + category.replace(/"/g, '&quot;') + '"' + (category === current ? ' selected' : '') + '>' + category + '</option>'
+    ).join('') || '<option value="">Create a category first</option>';
   }
 
   function renderCategoryManager() {
@@ -65,7 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function getSelectedCategories() {
-    return [...document.querySelectorAll('input[name="product-category"]:checked')].map(input => input.value);
+    const selected = $('#product-category')?.value;
+    return selected ? [selected] : [];
   }
 
   function stats() {
@@ -193,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
       stock: Number($('#product-stock').value) || 0,
       lowStock: Number($('#product-low-stock').value) || 5,
       occasion: $('#product-occasion').value,
-      categories: selectedCategories,
+      categories: editingId ? [selectedCategories[0], ...(catalog.find(item => item.id === editingId)?.categories || []).filter(category => category !== selectedCategories[0])] : selectedCategories,
       label: $('#product-label').value.trim() || 'Gift',
       images: [...(window.adminProductImages || [])],
       featured: $('#product-featured').checked,

@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const CAT_KEY = 'gifty-hamper-categories';
   const MAJOR_CAT_KEY = 'gifty-hamper-major-categories';
   const DEFAULT_CATS = ['Appreciation Gifts','Celebration Gifts','Eco Friendly Gifts','Employee Gifts','Festive Gifts','Gadgets and Electronic Gifts','Gift Sets','MR Gifts','Office Accessories','Premium Gifts'];
-  const DEFAULT_MAJOR_CATS = ['Gifts'];
+  const DEFAULT_MAJOR_CATS = ['Gifts for Everyone'];
   const OCC = ['Birthday','Anniversary','Rakhi','Corporate','Festive','Thank You','Personalized','Wedding','Other'];
   const DEFAULT_ADMIN_PRODUCTS = [
     {id:'little-joy',name:'The Little Joy Hamper',description:'Thoughtful everyday gifting',price:1499,occasion:'Birthday',categories:['Gift Sets','Appreciation Gifts'],label:'Everyday',imageClass:'image-sage'},
@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
     {id:'grand-celebration',name:'Grand Celebration Hamper',description:'A premium gift for big moments',price:4999,occasion:'Festive',categories:['Celebration Gifts','Premium Gifts','Gift Sets'],label:'Premium',imageClass:'image-night'}
   ];
 
+  const getPriceRange = (price) => { const value = Number(price) || 0; if (value < 999) return 'Under ₹999'; if (value <= 1999) return '₹999 – ₹1,999'; if (value <= 2999) return '₹2,000 – ₹2,999'; if (value <= 4999) return '₹3,000 – ₹4,999'; return '₹5,000+'; };
+
   const $ = (selector) => document.querySelector(selector);
   const money = (value) => new Intl.NumberFormat('en-IN', { style:'currency', currency:'INR', maximumFractionDigits:0 }).format(Number(value) || 0);
 
@@ -26,7 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
     lowStock: product.lowStock ?? 5,
     featured: product.featured ?? false,
     active: product.active ?? true,
-    majorCategory: product.majorCategory || 'Gifts',
+    majorCategory: product.majorCategory === 'Gifts' ? 'Gifts for Everyone' : (product.majorCategory || 'Gifts for Everyone'),
+    priceRange: getPriceRange(product.salePrice || product.price),
     images: Array.isArray(product.images) && product.images.length
       ? product.images
       : (product.image ? [product.image] : [])
@@ -61,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let majorCategories = (() => {
     try {
       const saved = JSON.parse(localStorage.getItem(MAJOR_CAT_KEY) || 'null');
-      return Array.isArray(saved) && saved.length ? saved : [...DEFAULT_MAJOR_CATS];
+      return Array.isArray(saved) && saved.length ? saved.map(item => item === 'Gifts' ? 'Gifts for Everyone' : item) : [...DEFAULT_MAJOR_CATS];
     } catch (_) { return [...DEFAULT_MAJOR_CATS]; }
   })();
   let editingId = '';
@@ -125,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
         '<td><div class="admin-product-cell">' + (image ? '<img src="' + image + '" alt="">' : '<span class="admin-thumb-placeholder">🎁</span>') +
         '<div><div class="admin-product-name">' + product.name + '</div><div class="admin-product-id">' + product.id + '</div></div></div></td>' +
         '<td><strong>' + (product.majorCategory || 'Gifts') + '</strong><br><small>' + ((product.categories || []).join(', ') || '—') + '</small></td>' +
-        '<td>' + money(product.salePrice || product.price) + '</td>' +
+        '<td><strong>' + money(product.salePrice || product.price) + '</strong><br><small class="price-range-tag">' + getPriceRange(product.salePrice || product.price) + '</small></td>' +
         '<td class="' + stockClass + '">' + stock + '</td>' +
         '<td><span class="status-pill ' + (product.active === false ? 'draft' : '') + '">' + (product.active === false ? 'Draft' : 'Active') + '</span></td>' +
         '<td><div class="table-actions"><button type="button" data-edit="' + product.id + '">Edit</button><button type="button" data-delete="' + product.id + '">Delete</button></div></td>' +
@@ -238,7 +241,8 @@ document.addEventListener('DOMContentLoaded', () => {
       images: [...(window.adminProductImages || [])],
       featured: $('#product-featured').checked,
       active: $('#product-active').checked,
-      imageClass: 'image-sage'
+      imageClass: 'image-sage',
+      priceRange: getPriceRange($('#product-sale-price').value ? Number($('#product-sale-price').value) : Number($('#product-price').value))
     };
 
     if (editingId) {
@@ -378,7 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
     categories = readCategories();
     try {
       const savedMajor = JSON.parse(localStorage.getItem(MAJOR_CAT_KEY) || 'null');
-      majorCategories = Array.isArray(savedMajor) && savedMajor.length ? savedMajor : [...DEFAULT_MAJOR_CATS];
+      majorCategories = Array.isArray(savedMajor) && savedMajor.length ? savedMajor.map(item => item === 'Gifts' ? 'Gifts for Everyone' : item) : [...DEFAULT_MAJOR_CATS];
     } catch (_) { majorCategories = [...DEFAULT_MAJOR_CATS]; }
     renderCategoryManager();
     render();

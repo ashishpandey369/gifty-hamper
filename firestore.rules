@@ -38,36 +38,47 @@ service cloud.firestore {
         );
     }
 
+    function isStaff() {
+      return isSuperAdmin() || isOwner() || isAdmin();
+    }
+
+    function validSku(sku) {
+      return sku is string
+        && sku.matches('^[A-Z]{2}[0-9]{4}$');
+    }
+
+    function validSalePrice(data) {
+      return data.get('salePrice', '') == ''
+        || (
+          data.get('salePrice', 0) is number
+          && data.get('salePrice', 0) >= 0
+          && data.get('salePrice', 0) <= data.get('price', 0)
+        );
+    }
+
     match /users/{userId} {
-      // Users may read only their own profile.
-      // Super Admin can read all staff profiles.
       allow get: if
         isSuperAdmin()
         || (signedIn() && request.auth.uid == userId);
 
-      // Only Super Admin may list the root users collection.
       allow list: if isSuperAdmin();
 
-      // Super Admin can create Owner/Admin profiles.
       allow create: if
         isSuperAdmin()
         && request.resource.data.role in ['owner', 'admin']
         && request.resource.data.active == true;
 
-      // Owner can create only Admin profiles assigned to themselves.
       allow create: if
         isOwner()
         && request.resource.data.role == 'admin'
         && request.resource.data.active == true
         && request.resource.data.ownerUid == request.auth.uid;
 
-      // Super Admin can update Owner/Admin profiles.
       allow update: if
         isSuperAdmin()
         && resource.data.role in ['owner', 'admin']
         && request.resource.data.role in ['owner', 'admin'];
 
-      // Owner can update only their own Admin profiles.
       allow update: if
         isOwner()
         && resource.data.role == 'admin'
@@ -75,27 +86,21 @@ service cloud.firestore {
         && resource.data.ownerUid == request.auth.uid
         && request.resource.data.ownerUid == request.auth.uid;
 
-      // Super Admin can delete Owner/Admin profiles.
       allow delete: if
         isSuperAdmin()
         && resource.data.role in ['owner', 'admin'];
 
-      // Owner can delete only their own Admin profiles.
       allow delete: if
         isOwner()
         && resource.data.role == 'admin'
         && resource.data.ownerUid == request.auth.uid;
     }
 
-    // Private Owner -> Admin directory.
     match /ownerStaff/{ownerUid}/admins/{adminUid} {
-      // Super Admin can inspect any Owner directory.
-      // Owner can inspect only their own directory.
       allow read: if
         isSuperAdmin()
         || (isOwner() && request.auth.uid == ownerUid);
 
-      // Owner can create only an Admin inside their own directory.
       allow create: if
         isOwner()
         && request.auth.uid == ownerUid
@@ -103,36 +108,128 @@ service cloud.firestore {
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.active == true;
 
-      // Super Admin can update/delete directory entries.
       allow update, delete: if
         isSuperAdmin();
 
-      // Owner can update/delete only their own Admin entries.
       allow update, delete: if
         isOwner()
         && request.auth.uid == ownerUid
         && resource.data.ownerUid == request.auth.uid;
     }
 
+    // ------------------------------------------------------------
+    // SKU RESERVATIONS
+    // ------------------------------------------------------------
+    //
+    // Every SKU is represented by one reservation document.
+    // Product creation/update and SKU reservation are required to
+    // happen in the same transaction, which prevents two products
+    // from claiming the same SKU.
+    //
+    match /skus/{sku} {
+      allow get, list: if isStaff();
+
+      allow create: if
+        isStaff()
+        && validSku(sku)
+        && request.resource.data.productId is string
+        && request.resource.data.productId != ''
+        && getAfter(
+          /databases/$(database)/documents/products/$(request.resource.data.productId)
+        ).data.get('sku', '') == sku;
+
+      allow update: if false;
+
+      allow delete: if
+        isStaff()
+        && validSku(sku)
+        && resource.data.productId is string
+        && getAfter(
+          /databases/$(database)/documents/products/$(resource.data.productId)
+        ).data.get('sku', '') == ''
+        || (
+          isStaff()
+          && validSku(sku)
+          && resource.data.productId is string
+          && !exists(
+            /databases/$(database)/documents/products/$(resource.data.productId)
+          )
+        );
+    }
+
+    // ------------------------------------------------------------
+    // PRODUCTS / CATALOG / INVENTORY
+    // ------------------------------------------------------------
+
     match /products/{productId} {
-      // Customers can read only products currently visible in the store.
+
       allow get: if
-        resource.data.active == true
-        || isSuperAdmin()
-        || isOwner()
-        || isAdmin();
+        resource.data.get('active', false) == true
+        || isStaff();
 
       allow list: if
-        isSuperAdmin()
-        || isOwner()
-        || isAdmin()
-        || (resource.data.active == true);
+        isStaff()
+        || resource.data.get('active', false) == true;
 
-      // Only authenticated staff can create/update/delete catalog products.
-      allow create, update, delete: if
-        isSuperAdmin()
-        || isOwner()
-        || isAdmin();
+      // Create must atomically create the matching SKU reservation.
+      allow create: if
+        isStaff()
+        && validSku(request.resource.data.get('sku', ''))
+        && request.resource.data.get('name', '') is string
+        && request.resource.data.get('name', '') != ''
+        && request.resource.data.get('price', 0) is number
+        && request.resource.data.get('price', 0) >= 0
+        && request.resource.data.get('stock', 0) is number
+        && request.resource.data.get('stock', 0) >= 0
+        && validSalePrice(request.resource.data)
+        && getAfter(
+          /databases/$(database)/documents/skus/$(request.resource.data.sku)
+        ).data.productId == productId;
+
+      // Existing SKU cannot be changed. A legacy product without a
+      // SKU may receive one only when its matching reservation is
+      // created in the same transaction.
+      allow update: if
+        isStaff()
+        && validSku(request.resource.data.get('sku', ''))
+        && request.resource.data.get('name', '') is string
+        && request.resource.data.get('name', '') != ''
+        && request.resource.data.get('price', 0) is number
+        && request.resource.data.get('price', 0) >= 0
+        && request.resource.data.get('stock', 0) is number
+        && request.resource.data.get('stock', 0) >= 0
+        && validSalePrice(request.resource.data)
+        && (
+          (
+            resource.data.get('sku', '') == ''
+            && getAfter(
+              /databases/$(database)/documents/skus/$(request.resource.data.sku)
+            ).data.productId == productId
+          )
+          ||
+          (
+            validSku(resource.data.get('sku', ''))
+            && request.resource.data.sku == resource.data.sku
+            && get(
+              /databases/$(database)/documents/skus/$(resource.data.sku)
+            ).data.productId == productId
+          )
+        );
+
+      // If a product has a SKU, its reservation must be removed in
+      // the same transaction. Legacy products without a SKU can be
+      // deleted normally.
+      allow delete: if
+        isStaff()
+        && (
+          resource.data.get('sku', '') == ''
+          || !exists(
+            /databases/$(database)/documents/skus/$(resource.data.sku)
+          )
+          || !getAfter(
+            /databases/$(database)/documents/skus/$(resource.data.sku)
+          ).exists()
+        );
     }
 
     match /sales/{saleId} {
@@ -155,9 +252,22 @@ service cloud.firestore {
         && request.resource.data.sellerEmail == request.auth.token.email
         && request.resource.data.total is number
         && request.resource.data.total >= 0
-        && request.resource.data.items is list;
+        && request.resource.data.items is list
+        && request.resource.data.items.size() > 0;
 
       allow update, delete: if false;
+    }
+
+    match /orders/{orderId} {
+      allow read: if isStaff();
+      allow create: if isStaff();
+      allow update: if isStaff();
+      allow delete: if false;
+    }
+
+    match /inventoryMovements/{movementId} {
+      allow read: if isStaff();
+      allow create, update, delete: if false;
     }
 
     match /{document=**} {

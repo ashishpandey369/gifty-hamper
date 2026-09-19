@@ -30,13 +30,21 @@ onAuthStateChanged(auth, async (user) => {
     const profile = profileSnapshot.exists() ? profileSnapshot.data() : null;
     const profileRole = profile?.role || "";
     const role = claimRole === "super_admin" ? "super_admin" : (profileRole || "admin");
-    const active = profile?.active !== false;
+    const expiresAt = profile?.expiresAt?.toDate ? profile.expiresAt.toDate() : null;
+    const expired = expiresAt ? expiresAt.getTime() <= Date.now() : false;
+    const active = profile?.active !== false && !expired;
 
     document.documentElement.classList.remove("admin-auth-checking");
 
     const email = document.querySelector("#admin-user-email");
     if (email) {
       email.textContent = `${user.email || "Signed-in admin"} • ${claimRole}`;
+    }
+
+    if (claimRole !== "super_admin" && (!profile || !profileRole || !active)) {
+      await signOut(auth);
+      window.location.replace("admin-login.html?expired=1");
+      return;
     }
 
     // Make the authenticated user and both Firebase role sources
@@ -59,6 +67,8 @@ onAuthStateChanged(auth, async (user) => {
       firestoreRole: profileRole,
       effectiveRole: role,
       active,
+      expiresAt,
+      expired,
       firestoreProfileFound: !!profile
     });
   } catch (error) {

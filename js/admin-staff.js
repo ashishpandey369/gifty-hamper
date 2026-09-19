@@ -61,24 +61,55 @@ function escapeHtml(value) {
 }
 
 async function loadStaff(currentRole, currentUid) {
-  // Owners must only receive lower-level Admin profiles.
-  // Super Admin and Owner profiles are intentionally excluded from the Owner view.
-  const staffQuery = currentRole === "owner"
-    ? query(collection(db, "users"), where("role", "==", "admin"))
-    : collection(db, "users");
+  let users = [];
 
-  const snapshot = await Promise.race([getDocs(staffQuery), new Promise((_, reject) => setTimeout(() => reject(new Error("Firestore request timed out after 10 seconds.")), 10000))]);
-  const users = snapshot.docs.map(item => ({
-    id: item.id,
-    ...item.data()
-  }));
+  if (currentRole === "owner") {
+    // Owner sees their own Owner profile so they can always see
+    // their account status and expiry, plus the Admin profiles.
+    const [ownerSnapshot, adminSnapshot] = await Promise.all([
+      getDoc(doc(db, "users", currentUid)),
+      getDocs(query(collection(db, "users"), where("role", "==", "admin")))
+    ]);
+
+    if (ownerSnapshot.exists()) {
+      users.push({
+        id: ownerSnapshot.id,
+        ...ownerSnapshot.data(),
+        isCurrentOwner: true
+      });
+    }
+
+    users.push(
+      ...adminSnapshot.docs.map(item => ({
+        id: item.id,
+        ...item.data()
+      }))
+    );
+  } else {
+    const snapshot = await Promise.race([
+      getDocs(collection(db, "users")),
+      new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error("Firestore request timed out after 10 seconds.")),
+          10000
+        )
+      )
+    ]);
+
+    users = snapshot.docs.map(item => ({
+      id: item.id,
+      ...item.data()
+    }));
+  }
 
   const list = $("#staff-list");
 
   if (!users.length) {
-    list.innerHTML = '<tr><td colspan="6">' + (currentRole === "owner"
-      ? "No Admin profiles found."
-      : "No staff profiles found.") + '</td></tr>';
+    list.innerHTML = "<tr><td colspan="6">" +
+      (currentRole === "owner"
+        ? "No Owner or Admin profiles found."
+        : "No staff profiles found.") +
+      "</td></tr>";
     return;
   }
 
@@ -88,11 +119,16 @@ async function loadStaff(currentRole, currentUid) {
     const expiresAt = user.expiresAt?.toDate ? user.expiresAt.toDate() : null;
     const expired = expiresAt ? expiresAt.getTime() <= Date.now() : false;
     const effectiveActive = active && !expired;
+
     const canManage = currentRole === "super_admin"
       ? role === "owner" || role === "admin"
-      : role === "admin";
+      : role === "admin" && user.id !== currentUid;
+
     const canDelete = canManage && user.id !== currentUid;
-    const canExtend = currentRole === "super_admin" && (role === "owner" || role === "admin") && expired;
+    const canExtend =
+      currentRole === "super_admin" &&
+      (role === "owner" || role === "admin") &&
+      expired;
 
     const saleButton = role === "admin"
       ? '<a class="admin-secondary staff-sale-button" href="admin-sale.html">Sale</a>'
@@ -103,27 +139,41 @@ async function loadStaff(currentRole, currentUid) {
         '<option value="admin"' + (role === "admin" ? " selected" : "") + '>Admin</option>'
       : '<option value="admin" selected>Admin</option>';
 
-    return '<tr>' +
-      '<td><strong>' + escapeHtml(user.email || "No email") + '</strong></td>' +
-      '<td><span class="staff-role">' + escapeHtml(roleLabel(role)) + '</span></td>' +
-      '<td><span class="status-pill ' + (effectiveActive ? "" : "draft") + '">' + (expired ? "Expired" : (active ? "Active" : "Inactive")) + '</span></td>' +
-      '<td><span class="staff-validity ' + (expired ? "expired" : "") + '" data-expiry="' + (expiresAt ? expiresAt.toISOString() : "") + '">' + (expiresAt ? formatRemaining(expiresAt) : "No expiry") + '</span></td>' +
-      '<td><code>' + escapeHtml(user.id) + '</code></td>' +
-      '<td>' +
+    const ownerMarker = user.isCurrentOwner
+      ? ' <small style="display:block;margin-top:4px;opacity:.7;">Your account</small>'
+      : "";
+
+    return "<tr>" +
+      "<td><strong>" + escapeHtml(user.email || "No email") + "</strong>" + ownerMarker + "</td>" +
+      "<td><span class="staff-role">" + escapeHtml(roleLabel(role)) + "</span></td>" +
+      "<td><span class="status-pill " + (effectiveActive ? "" : "draft") + "">" +
+        (expired ? "Expired" : (active ? "Active" : "Inactive")) +
+      "</span></td>" +
+      "<td><span class="staff-validity " + (expired ? "expired" : "") +
+        "" data-expiry="" + (expiresAt ? expiresAt.toISOString() : "") + "">" +
+        (expiresAt ? formatRemaining(expiresAt) : "No expiry") +
+      "</span></td>" +
+      "<td><code>" + escapeHtml(user.id) + "</code></td>" +
+      "<td>" +
         (canManage
           ? '<div class="staff-actions">' +
-              '<select data-role-for="' + escapeHtml(user.id) + '">' + roleOptions + '</select>' +
+              '<select data-role-for="' + escapeHtml(user.id) + '">' + roleOptions + "</select>" +
               '<button type="button" class="admin-secondary" data-save-user="' + escapeHtml(user.id) + '">Save</button>' +
               (expired
-  ? (canExtend ? '<button type="button" class="admin-secondary" data-extend-user="' + escapeHtml(user.id) + '">Extend</button>' : '')
-  : '<button type="button" class="admin-secondary" data-toggle-user="' + escapeHtml(user.id) + '">' + (effectiveActive ? "Deactivate" : "Activate") + '</button>') +
-              '' +
-              (canDelete ? '<button type="button" class="admin-secondary danger" data-delete-user="' + escapeHtml(user.id) + '">Delete</button>' : '') +
+                ? (canExtend
+                    ? '<button type="button" class="admin-secondary" data-extend-user="' + escapeHtml(user.id) + '">Extend</button>'
+                    : "")
+                : '<button type="button" class="admin-secondary" data-toggle-user="' + escapeHtml(user.id) + '">' +
+                    (effectiveActive ? "Deactivate" : "Activate") +
+                  "</button>") +
+              (canDelete
+                ? '<button type="button" class="admin-secondary danger" data-delete-user="' + escapeHtml(user.id) + '">Delete</button>'
+                : "") +
               saleButton +
-            '</div>'
+            "</div>"
           : saleButton) +
-      '</td>' +
-    '</tr>';
+      "</td>" +
+    "</tr>";
   }).join("");
 
   list.querySelectorAll("[data-save-user]").forEach(button => {
@@ -199,7 +249,6 @@ async function loadStaff(currentRole, currentUid) {
   });
 }
 
-
 function formatRemaining(expiresAt) {
   const diff = expiresAt.getTime() - Date.now();
   if (diff <= 0) return "Expired";
@@ -213,11 +262,13 @@ function refreshValidityLabels() {
     if (!raw) return;
     const expiresAt = new Date(raw);
     const diff = expiresAt.getTime() - Date.now();
+
     if (diff <= 0) {
       element.textContent = "Expired";
       element.classList.add("expired");
       return;
     }
+
     const days = Math.ceil(diff / 86400000);
     element.textContent = days === 1 ? "1 day left" : days + " days left";
   });
@@ -334,6 +385,7 @@ async function createStaffAccount() {
 $("#add-owner")?.addEventListener("click", () => openStaffModal("owner"));
 $("#add-admin")?.addEventListener("click", () => openStaffModal("admin"));
 $("#create-staff-account")?.addEventListener("click", createStaffAccount);
+
 document.querySelectorAll("[data-close-staff-modal]").forEach(element => {
   element.addEventListener("click", closeStaffModal);
 });
@@ -350,8 +402,10 @@ onAuthStateChanged(auth, async (user) => {
     const profileSnapshot = await getDoc(doc(db, "users", user.uid));
     const profile = profileSnapshot.exists() ? profileSnapshot.data() : null;
     const profileRole = profile?.role || "";
+
     currentManagerUid = user.uid;
     currentManagerRole = claimRole === "super_admin" ? "super_admin" : profileRole;
+
     const effectiveRole = claimRole === "super_admin" ? "super_admin" : profileRole;
 
     $("#admin-user-email").textContent =
@@ -360,7 +414,11 @@ onAuthStateChanged(auth, async (user) => {
     const managerExpiry = profile?.expiresAt?.toDate ? profile.expiresAt.toDate() : null;
     const managerExpired = managerExpiry ? managerExpiry.getTime() <= Date.now() : false;
 
-    if (!["super_admin", "owner"].includes(effectiveRole) || profile?.active === false || managerExpired) {
+    if (
+      !["super_admin", "owner"].includes(effectiveRole) ||
+      profile?.active === false ||
+      managerExpired
+    ) {
       showAccess("Access restricted", "Only the Super Admin and active Owner can manage staff.");
       return;
     }
@@ -369,14 +427,19 @@ onAuthStateChanged(auth, async (user) => {
     $("#staff-content").hidden = false;
 
     const validity = $("#admin-account-validity");
+
     if (validity) {
       if (effectiveRole === "super_admin") {
         validity.textContent = "Unlimited access";
       } else if (managerExpiry) {
         const updateManagerValidity = () => {
           const diff = managerExpiry.getTime() - Date.now();
-          validity.textContent = diff <= 0 ? "Expired" : (Math.ceil(diff / 86400000) + " days left");
+          validity.textContent =
+            diff <= 0
+              ? "Expired"
+              : (Math.ceil(diff / 86400000) + " days left");
         };
+
         updateManagerValidity();
         setInterval(updateManagerValidity, 60000);
       }
@@ -388,10 +451,14 @@ onAuthStateChanged(auth, async (user) => {
     await loadStaff(effectiveRole, user.uid);
   } catch (error) {
     console.error("Staff page error:", error);
-    showAccess("Unable to load staff management", error?.message || "Please refresh the page and check your Firebase connection.");
+    showAccess(
+      "Unable to load staff management",
+      error?.message || "Please refresh the page and check your Firebase connection."
+    );
   }
 
   const logout = $("#admin-logout");
+
   if (logout) {
     logout.addEventListener("click", async () => {
       logout.disabled = true;
@@ -405,8 +472,12 @@ onAuthStateChanged(auth, async (user) => {
 $("#staff-refresh")?.addEventListener("click", async () => {
   const user = auth.currentUser;
   if (!user) return;
+
   const tokenResult = await user.getIdTokenResult(true);
   const profile = await getDoc(doc(db, "users", user.uid));
-  const role = tokenResult.claims.role === "super_admin" ? "super_admin" : (profile.exists() ? profile.data().role : "admin");
+  const role = tokenResult.claims.role === "super_admin"
+    ? "super_admin"
+    : (profile.exists() ? profile.data().role : "admin");
+
   await loadStaff(role, user.uid);
 });

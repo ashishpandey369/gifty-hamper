@@ -48,13 +48,36 @@ function formatDate(date) {
   }).format(date);
 }
 
-async function loadSales(role, uid) {
+function periodStart(period) {
+  const now = new Date();
+  if (period === "week") {
+    const start = new Date(now);
+    const day = start.getDay();
+    const diff = day === 0 ? 6 : day - 1;
+    start.setDate(start.getDate() - diff);
+    start.setHours(0, 0, 0, 0);
+    return start;
+  }
+  if (period === "month") return new Date(now.getFullYear(), now.getMonth(), 1);
+  if (period === "year") return new Date(now.getFullYear(), 0, 1);
+  return null;
+}
+
+async function loadSales(role, uid, period = "week") {
   const snapshot = await getDocs(collection(db, "sales"));
 
   let sales = snapshot.docs.map(item => ({
     id: item.id,
     ...item.data()
   }));
+
+  const start = periodStart(period);
+  if (start) {
+    sales = sales.filter(sale => {
+      const date = saleDate(sale);
+      return date && date >= start;
+    });
+  }
 
   // Firestore rules already restrict Admin reads to their own sales.
   // This extra client-side filter keeps the UI aligned with that role.
@@ -143,17 +166,35 @@ async function startSales(user) {
     setInterval(updateValidity, 60000);
   }
 
-  await loadSales(role, user.uid);
+  let currentPeriod = "week";
+
+  await loadSales(role, user.uid, currentPeriod);
 
   $("#sales-access").hidden = true;
   $("#sales-content").hidden = false;
+
+  document.querySelectorAll(".sales-period").forEach(button => {
+    button.addEventListener("click", async () => {
+      currentPeriod = button.dataset.period;
+      document.querySelectorAll(".sales-period").forEach(item => item.classList.toggle("active", item === button));
+      button.disabled = true;
+      try {
+        await loadSales(role, user.uid, currentPeriod);
+      } catch (error) {
+        console.error("Sales period error:", error);
+        alert("Unable to load this sales period.");
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
 
   $("#sales-refresh").addEventListener("click", async () => {
     const button = $("#sales-refresh");
     button.disabled = true;
     button.textContent = "Refreshing…";
     try {
-      await loadSales(role, user.uid);
+      await loadSales(role, user.uid, currentPeriod);
     } catch (error) {
       console.error("Sales refresh error:", error);
       alert("Unable to refresh sales.");

@@ -22,13 +22,14 @@ onAuthStateChanged(auth, async (user) => {
   try {
     // Refresh the ID token so newly assigned Firebase custom claims are available.
     const tokenResult = await user.getIdTokenResult(true);
-    const claimRole = tokenResult.claims.role || "admin";
+    const claimRole = tokenResult.claims.role || "";
 
-    // Read this user's application profile from Firestore.
-    // The custom claim remains the authorization source for Super Admin access.
+    // Super Admin is identified by the secure custom claim.
+    // Owner/Admin roles are stored in the user's Firestore profile.
     const profileSnapshot = await getDoc(doc(db, "users", user.uid));
     const profile = profileSnapshot.exists() ? profileSnapshot.data() : null;
-    const profileRole = profile?.role || claimRole;
+    const profileRole = profile?.role || "";
+    const role = claimRole === "super_admin" ? "super_admin" : (profileRole || "admin");
     const active = profile?.active !== false;
 
     document.documentElement.classList.remove("admin-auth-checking");
@@ -43,19 +44,20 @@ onAuthStateChanged(auth, async (user) => {
     window.giftyAdminUser = {
       uid: user.uid,
       email: user.email || "",
-      role: claimRole,
+      role,
       profileRole,
       active,
       firestoreProfile: profile
     };
 
-    document.documentElement.dataset.adminRole = claimRole;
+    document.documentElement.dataset.adminRole = role;
 
     console.log("Gifty Hamper admin:", {
       uid: user.uid,
       email: user.email,
-      customClaimRole: claimRole,
+      customClaimRole: claimRole || "none",
       firestoreRole: profileRole,
+      effectiveRole: role,
       active,
       firestoreProfileFound: !!profile
     });

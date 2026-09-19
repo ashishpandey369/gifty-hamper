@@ -9,8 +9,12 @@ import {
 
 import {
   collection,
-  getDocs
+  getDocs,
+  query,
+  where
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+import { showBillPdf } from "./bill.js";
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -64,7 +68,10 @@ function periodStart(period) {
 }
 
 async function loadSales(role, uid, period = "week") {
-  const snapshot = await getDocs(collection(db, "sales"));
+  const salesCollection = collection(db, "sales");
+  const snapshot = role === "admin"
+    ? await getDocs(query(salesCollection, where("sellerUid", "==", uid)))
+    : await getDocs(salesCollection);
 
   let sales = snapshot.docs.map(item => ({
     id: item.id,
@@ -79,11 +86,7 @@ async function loadSales(role, uid, period = "week") {
     });
   }
 
-  // Firestore rules already restrict Admin reads to their own sales.
-  // This extra client-side filter keeps the UI aligned with that role.
-  if (role === "admin") {
-    sales = sales.filter(sale => sale.sellerUid === uid);
-  }
+  window.__giftySales = sales;
 
   sales.sort((a, b) => {
     const dateA = saleDate(a)?.getTime() || 0;
@@ -112,7 +115,7 @@ async function loadSales(role, uid, period = "week") {
   const list = $("#sales-list");
 
   if (!sales.length) {
-    list.innerHTML = '<tr><td colspan="5" class="sales-empty-cell">No completed sales yet.</td></tr>';
+    list.innerHTML = '<tr><td colspan="6" class="sales-empty-cell">No completed sales yet.</td></tr>';
     return;
   }
 
@@ -137,8 +140,34 @@ async function loadSales(role, uid, period = "week") {
       <td>${itemNames}</td>
       <td><strong>${money(sale.total)}</strong></td>
       <td>${escapeHtml(formatDate(saleDate(sale)))}</td>
+      <td><button class="bill-regenerate" type="button" data-regenerate-bill="${escapeHtml(sale.id)}">Regenerate bill</button></td>
     </tr>`;
   }).join("");
+}
+
+function setupBillButtons() {
+  const list = $("#sales-list");
+  list.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-regenerate-bill]");
+    if (!button) return;
+    const saleId = button.dataset.regenerateBill;
+    const sale = window.__giftySales?.find(item => item.id === saleId);
+    if (!sale) {
+      alert("This sale could not be found. Please refresh the page.");
+      return;
+    }
+    button.disabled = true;
+    button.textContent = "Generating…";
+    try {
+      await showBillPdf(sale);
+    } catch (error) {
+      console.error("Regenerate bill error:", error);
+      alert("Unable to regenerate the bill. Please try again.");
+    } finally {
+      button.disabled = false;
+      button.textContent = "Regenerate bill";
+    }
+  });
 }
 
 async function startSales(user) {
@@ -174,6 +203,7 @@ async function startSales(user) {
   }
 
   let currentPeriod = "week";
+  setupBillButtons();
 
   // Show the dashboard immediately after Firebase role verification.
   // Loading the sales records happens separately so the page never remains

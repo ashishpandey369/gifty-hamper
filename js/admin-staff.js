@@ -16,6 +16,8 @@ import {
 
 import {
   collection,
+  query,
+  where,
   getDocs,
   updateDoc,
   setDoc,
@@ -59,7 +61,13 @@ function escapeHtml(value) {
 }
 
 async function loadStaff(currentRole, currentUid) {
-  const snapshot = await Promise.race([getDocs(collection(db, "users")), new Promise((_, reject) => setTimeout(() => reject(new Error("Firestore request timed out after 10 seconds.")), 10000))]);
+  // Owners must only receive lower-level Admin profiles.
+  // Super Admin and Owner profiles are intentionally excluded from the Owner view.
+  const staffQuery = currentRole === "owner"
+    ? query(collection(db, "users"), where("role", "==", "admin"))
+    : collection(db, "users");
+
+  const snapshot = await Promise.race([getDocs(staffQuery), new Promise((_, reject) => setTimeout(() => reject(new Error("Firestore request timed out after 10 seconds.")), 10000))]);
   const users = snapshot.docs.map(item => ({
     id: item.id,
     ...item.data()
@@ -68,7 +76,9 @@ async function loadStaff(currentRole, currentUid) {
   const list = $("#staff-list");
 
   if (!users.length) {
-    list.innerHTML = '<tr><td colspan="6">No staff profiles found.</td></tr>';
+    list.innerHTML = '<tr><td colspan="6">' + (currentRole === "owner"
+      ? "No Admin profiles found."
+      : "No staff profiles found.") + '</td></tr>';
     return;
   }
 

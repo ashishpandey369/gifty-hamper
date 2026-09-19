@@ -25,7 +25,7 @@ function formatPrice(value) {
 
 function productCard(product) {
   const slug = product.id;
-  return `<article class="product-card" data-product-id="${slug}"><a href="product.html?id=${encodeURIComponent(slug)}"><div class="product-image ${product.imageClass}"><span>${product.label}</span><b>${product.name.split(' ').slice(0, 2).join('<br>')}</b></div><div class="product-info"><div><h3>${product.name}</h3><p>${product.description}</p></div><strong>${formatPrice(product.price)}</strong></div></a></article>`;
+  const images = Array.isArray(product.images) ? product.images : (product.image ? [product.image] : []); const visual = images[0] ? `<img class="product-photo" src="${images[0]}" alt="${product.name.replace(/\"/g, '&quot;')}" loading="lazy"><span>${product.label}</span>` : `<span>${product.label}</span><b>${product.name.split(' ').slice(0, 2).join('<br>')}</b>`; return `<article class="product-card" data-product-id="${slug}"><a href="product.html?id=${encodeURIComponent(slug)}"><div class="product-image ${product.imageClass}">${visual}</div><div class="product-info"><div><h3>${product.name}</h3><p>${product.description}</p></div><strong>${formatPrice(product.salePrice || product.price)}</strong></div></a></article>`;
 }
 
 function applyBudgetFromUrl() {

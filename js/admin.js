@@ -274,14 +274,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCategoryManager();
   });
 
-  $('#add-category-inline').addEventListener('click', () => $('#create-category').click());
-  $('#new-category-inline').addEventListener('keydown', event => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      $('#add-category-inline').click();
-    }
-  });
-
   $('#category-list').addEventListener('click', (event) => {
     const button = event.target.closest('[data-delete-category]');
     if (!button) return;

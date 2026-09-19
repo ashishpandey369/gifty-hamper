@@ -216,7 +216,7 @@
   background:linear-gradient(105deg,#e83f6f 0%,#e83f6f 36%,#fff 47%,#fff 52%,#9a55e8 63%,#f2a92f 100%);
   background-size:240% 100%;
   -webkit-background-clip:text;background-clip:text;color:transparent;
-  animation:heroWordShine 7s ease-in-out infinite;
+  animation:heroWordShine 4.2s ease-in-out infinite;
 }
 @keyframes heroWordShine{
   0%,62%{background-position:100% 50%}
@@ -229,7 +229,7 @@
   background-size:240% 100%;
   -webkit-background-clip:text;background-clip:text;color:transparent;
   text-shadow:0 0 8px rgba(242,173,22,.16);
-  animation:googleStarsShine 6s ease-in-out infinite;
+  animation:googleStarsShine 3.8s ease-in-out infinite;
 }
 @keyframes googleStarsShine{
   0%,58%{background-position:100% 50%}

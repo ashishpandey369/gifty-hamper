@@ -114,6 +114,27 @@ service cloud.firestore {
         && resource.data.ownerUid == request.auth.uid;
     }
 
+    match /products/{productId} {
+      // Customers can read only products currently visible in the store.
+      allow get: if
+        resource.data.active == true
+        || isSuperAdmin()
+        || isOwner()
+        || isAdmin();
+
+      allow list: if
+        isSuperAdmin()
+        || isOwner()
+        || isAdmin()
+        || (resource.data.active == true);
+
+      // Only authenticated staff can create/update/delete catalog products.
+      allow create, update, delete: if
+        isSuperAdmin()
+        || isOwner()
+        || isAdmin();
+    }
+
     match /sales/{saleId} {
       allow read: if
         isSuperAdmin()

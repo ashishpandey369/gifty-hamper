@@ -1,0 +1,146 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSuperAdmin() {
+      return signedIn()
+        && request.auth.token.role == 'super_admin';
+    }
+
+    function currentUser() {
+      return get(
+        /databases/$(database)/documents/users/$(request.auth.uid)
+      );
+    }
+
+    function isOwner() {
+      return signedIn()
+        && currentUser().data.get('role', '') == 'owner'
+        && currentUser().data.get('active', false) == true
+        && (
+          currentUser().data.get('expiresAt', null) == null
+          || currentUser().data.get('expiresAt', request.time) > request.time
+        );
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && currentUser().data.get('role', '') == 'admin'
+        && currentUser().data.get('active', false) == true
+        && (
+          currentUser().data.get('expiresAt', null) == null
+          || currentUser().data.get('expiresAt', request.time) > request.time
+        );
+    }
+
+    match /users/{userId} {
+      // Users may read only their own profile.
+      // Super Admin can read all staff profiles.
+      allow get: if
+        isSuperAdmin()
+        || (signedIn() && request.auth.uid == userId);
+
+      // Only Super Admin may list the root users collection.
+      allow list: if isSuperAdmin();
+
+      // Super Admin can create Owner/Admin profiles.
+      allow create: if
+        isSuperAdmin()
+        && request.resource.data.role in ['owner', 'admin']
+        && request.resource.data.active == true;
+
+      // Owner can create only Admin profiles assigned to themselves.
+      allow create: if
+        isOwner()
+        && request.resource.data.role == 'admin'
+        && request.resource.data.active == true
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      // Super Admin can update Owner/Admin profiles.
+      allow update: if
+        isSuperAdmin()
+        && resource.data.role in ['owner', 'admin']
+        && request.resource.data.role in ['owner', 'admin'];
+
+      // Owner can update only their own Admin profiles.
+      allow update: if
+        isOwner()
+        && resource.data.role == 'admin'
+        && request.resource.data.role == 'admin'
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      // Super Admin can delete Owner/Admin profiles.
+      allow delete: if
+        isSuperAdmin()
+        && resource.data.role in ['owner', 'admin'];
+
+      // Owner can delete only their own Admin profiles.
+      allow delete: if
+        isOwner()
+        && resource.data.role == 'admin'
+        && resource.data.ownerUid == request.auth.uid;
+    }
+
+    // Private Owner -> Admin directory.
+    match /ownerStaff/{ownerUid}/admins/{adminUid} {
+      // Super Admin can inspect any Owner directory.
+      // Owner can inspect only their own directory.
+      allow read: if
+        isSuperAdmin()
+        || (isOwner() && request.auth.uid == ownerUid);
+
+      // Owner can create only an Admin inside their own directory.
+      allow create: if
+        isOwner()
+        && request.auth.uid == ownerUid
+        && request.resource.data.role == 'admin'
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.active == true;
+
+      // Super Admin can update/delete directory entries.
+      allow update, delete: if
+        isSuperAdmin();
+
+      // Owner can update/delete only their own Admin entries.
+      allow update, delete: if
+        isOwner()
+        && request.auth.uid == ownerUid
+        && resource.data.ownerUid == request.auth.uid;
+    }
+
+    match /sales/{saleId} {
+      allow read: if
+        isSuperAdmin()
+        || isOwner()
+        || (
+          isAdmin()
+          && resource.data.sellerUid == request.auth.uid
+        );
+
+      allow create: if
+        signedIn()
+        && (
+          isSuperAdmin()
+          || isOwner()
+          || isAdmin()
+        )
+        && request.resource.data.sellerUid == request.auth.uid
+        && request.resource.data.sellerEmail == request.auth.token.email
+        && request.resource.data.total is number
+        && request.resource.data.total >= 0
+        && request.resource.data.items is list;
+
+      allow update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

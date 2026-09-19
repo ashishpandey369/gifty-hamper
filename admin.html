@@ -74,7 +74,7 @@
           <input type="hidden" id="edit-id">
           <div class="admin-form-grid">
             <label class="wide">Product name<input id="product-name" required placeholder="Example: Premium Diwali Hamper"></label>
-            <label>Product ID / SKU<input id="product-id" required placeholder="premium-diwali-hamper"></label>
+            <input type="hidden" id="product-id"><label>SKU<input id="product-sku" readonly placeholder="Auto generated"><small class="admin-help">Automatically generated: 2 letters + 4 digits. SKU is unique and cannot be changed.</small></label>
             <label>Price (₹)<input id="product-price" type="number" min="0" step="1" required><small id="product-price-range" class="admin-help">Automatic price category: —</small></label>
             <label>Sale price (₹)<input id="product-sale-price" type="number" min="0" step="1" placeholder="Optional"></label>
             <label>Stock quantity<input id="product-stock" type="number" min="0" step="1" required value="0"></label>
@@ -125,6 +125,6 @@
   </main>
 
   <script type="module" src="js/admin-guard.js?v=5"></script>
-  <script type="module" src="js/admin.js?v=8"></script>
+  <script type="module" src="js/admin.js?v=9"></script>
 </body>
 </html>

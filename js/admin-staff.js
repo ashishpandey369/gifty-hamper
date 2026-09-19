@@ -139,6 +139,32 @@ async function loadStaff(currentRole, currentUid) {
     });
   });
 
+  list.querySelectorAll("[data-delete-user]").forEach(button => {
+    button.addEventListener("click", async () => {
+      const userId = button.dataset.deleteUser;
+      const row = button.closest("tr");
+      const email = row?.querySelector("td strong")?.textContent || userId;
+
+      if (!confirm("Delete " + email + " from Gifty Hamper staff? This will remove their application access.")) {
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Deleting…";
+
+      try {
+        await deleteDoc(doc(db, "users", userId));
+        alert("Staff user deleted successfully.");
+        await loadStaff(currentRole, currentUid);
+      } catch (error) {
+        console.error("Delete staff error:", error);
+        alert("Unable to delete this staff user. Check the Firebase Firestore rules.");
+        button.disabled = false;
+        button.textContent = "Delete";
+      }
+    });
+  });
+
   list.querySelectorAll("[data-toggle-user]").forEach(button => {
     button.addEventListener("click", async () => {
       const userId = button.dataset.toggleUser;

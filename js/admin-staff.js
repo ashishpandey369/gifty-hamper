@@ -106,7 +106,7 @@ async function loadStaff(currentRole, currentUid) {
   const list = $("#staff-list");
 
   if (!users.length) {
-    list.innerHTML = "<tr><td colspan="6">" +
+    list.innerHTML = '<tr><td colspan="6">' +
       (currentRole === "owner"
         ? "No Owner or Admin profiles found."
         : "No staff profiles found.") +

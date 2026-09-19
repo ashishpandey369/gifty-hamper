@@ -38,6 +38,25 @@ const staffCreatorAuth = getAuth(staffCreatorApp);
 
 const $ = (selector) => document.querySelector(selector);
 
+function showDiagnostic(message) {
+  const box = $("#staff-access");
+  if (!box) return;
+  box.hidden = false;
+  box.innerHTML = "<strong>Staff page status</strong><span>" + message + "</span>";
+}
+
+window.addEventListener("error", (event) => {
+  console.error("Staff page error:", event.error || event.message);
+  showDiagnostic("JavaScript error: " + (event.message || "Unknown error"));
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  console.error("Staff page promise error:", event.reason);
+  showDiagnostic("Firebase error: " + (event.reason?.message || String(event.reason)));
+});
+
+showDiagnostic("JavaScript loaded. Waiting for Firebase Authentication…");
+
 async function loadLatestUpdate() {
   const target = $("#admin-last-update");
   if (!target) return;
@@ -419,13 +438,15 @@ document.querySelectorAll("[data-close-staff-modal]").forEach(element => {
 });
 
 onAuthStateChanged(auth, async (user) => {
+  showDiagnostic(user ? "Firebase Authentication detected your signed-in account. Loading permissions…" : "Firebase Authentication is ready, but no signed-in account was detected.");
   if (!user) {
     window.location.replace("admin-login.html");
     return;
   }
 
   try {
-    const tokenResult = await user.getIdTokenResult(true);
+    showDiagnostic("Signed in as " + (user.email || "your account") + ". Reading your Firebase permissions…");
+    const tokenResult = await withTimeout(user.getIdTokenResult(true), "Firebase token request timed out after 10 seconds.");
     const claimRole = tokenResult.claims.role || "";
     const profileSnapshot = await withTimeout(getDoc(doc(db, "users", user.uid)));
     const profile = profileSnapshot.exists() ? profileSnapshot.data() : null;

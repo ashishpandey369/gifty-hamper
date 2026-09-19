@@ -175,10 +175,13 @@ async function startSales(user) {
 
   let currentPeriod = "week";
 
-  await loadSales(role, user.uid, currentPeriod);
-
+  // Show the dashboard immediately after Firebase role verification.
+  // Loading the sales records happens separately so the page never remains
+  // misleadingly stuck on "Checking access".
   $("#sales-access").hidden = true;
   $("#sales-content").hidden = false;
+
+  await loadSales(role, user.uid, currentPeriod);
 
   document.querySelectorAll(".sales-period").forEach(button => {
     button.addEventListener("click", async () => {

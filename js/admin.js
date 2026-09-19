@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const readCatalog = () => {
     try {
       const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
-      return Array.isArray(saved) ? saved.map(normaliseProduct) : defaults();
+      return Array.isArray(saved) && saved.length ? saved.map(normaliseProduct) : defaults();
     } catch (_) {
       return defaults();
     }

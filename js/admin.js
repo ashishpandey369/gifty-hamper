@@ -2,7 +2,6 @@ import { auth, db, doc, getDoc, onAuthStateChanged } from "./firebase-auth.js";
 import {
   DEFAULT_CATALOG,
   deleteCatalogProduct,
-  ensureCatalogSkus,
   generateSku,
   loadAdminCatalog,
   saveCatalogProduct
@@ -87,10 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
       for (const product of source) {
         catalog.push(await saveCatalogProduct(product));
       }
-    } else {
-      // Existing products from the earlier catalog did not have SKUs.
-      // Assign each one a permanent unique SKU once.
-      catalog = await ensureCatalogSkus(catalog);
     }
 
     render();

@@ -16,8 +16,6 @@ import {
 
 import {
   collection,
-  query,
-  where,
   getDocs,
   updateDoc,
   setDoc,
@@ -191,37 +189,26 @@ async function loadStaff(currentRole, currentUid) {
       ? ' <small style="display:block;margin-top:4px;opacity:.7;">Your account</small>'
       : "";
 
-    return "<tr>" +
-      "<td><strong>" + escapeHtml(user.email || "No email") + "</strong>" + ownerMarker + "</td>" +
-      "<td><span class="staff-role">" + escapeHtml(roleLabel(role)) + "</span></td>" +
-      "<td><span class="status-pill " + (effectiveActive ? "" : "draft") + "">" +
-        (expired ? "Expired" : (active ? "Active" : "Inactive")) +
-      "</span></td>" +
-      "<td><span class="staff-validity " + (expired ? "expired" : "") +
-        "" data-expiry="" + (expiresAt ? expiresAt.toISOString() : "") + "">" +
-        (expiresAt ? formatRemaining(expiresAt) : "No expiry") +
-      "</span></td>" +
-      "<td><code>" + escapeHtml(user.id) + "</code></td>" +
-      "<td>" +
-        (canManage
-          ? '<div class="staff-actions">' +
-              '<select data-role-for="' + escapeHtml(user.id) + '">' + roleOptions + "</select>" +
-              '<button type="button" class="admin-secondary" data-save-user="' + escapeHtml(user.id) + '">Save</button>' +
-              (expired
-                ? (canExtend
-                    ? '<button type="button" class="admin-secondary" data-extend-user="' + escapeHtml(user.id) + '">Extend</button>'
-                    : "")
-                : '<button type="button" class="admin-secondary" data-toggle-user="' + escapeHtml(user.id) + '">' +
-                    (effectiveActive ? "Deactivate" : "Activate") +
-                  "</button>") +
-              (canDelete
-                ? '<button type="button" class="admin-secondary danger" data-delete-user="' + escapeHtml(user.id) + '">Delete</button>'
-                : "") +
-              saleButton +
-            "</div>"
-          : saleButton) +
-      "</td>" +
-    "</tr>";
+    return `<tr>
+      <td><strong>${escapeHtml(user.email || "No email")}</strong>${ownerMarker}</td>
+      <td><span class="staff-role">${escapeHtml(roleLabel(role))}</span></td>
+      <td><span class="status-pill ${effectiveActive ? "" : "draft"}">${expired ? "Expired" : (active ? "Active" : "Inactive")}</span></td>
+      <td><span class="staff-validity ${expired ? "expired" : ""}" data-expiry="${expiresAt ? expiresAt.toISOString() : ""}">${expiresAt ? formatRemaining(expiresAt) : "No expiry"}</span></td>
+      <td><code>${escapeHtml(user.id)}</code></td>
+      <td>${canManage
+        ? `<div class="staff-actions">
+            <select data-role-for="${escapeHtml(user.id)}">${roleOptions}</select>
+            <button type="button" class="admin-secondary" data-save-user="${escapeHtml(user.id)}">Save</button>
+            ${expired
+              ? (canExtend
+                  ? `<button type="button" class="admin-secondary" data-extend-user="${escapeHtml(user.id)}">Extend</button>`
+                  : "")
+              : `<button type="button" class="admin-secondary" data-toggle-user="${escapeHtml(user.id)}">${effectiveActive ? "Deactivate" : "Activate"}</button>`}
+            ${canDelete ? `<button type="button" class="admin-secondary danger" data-delete-user="${escapeHtml(user.id)}">Delete</button>` : ""}
+            ${saleButton}
+          </div>`
+        : saleButton}</td>
+    </tr>`;
   }).join("");
 
   list.querySelectorAll("[data-save-user]").forEach(button => {

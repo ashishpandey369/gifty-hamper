@@ -19,3 +19,5 @@
 .staff-modal-label small{font-weight:400}
 .staff-validity{font-size:.78rem;font-weight:800}
 .staff-validity.expired{color:#b42318}
+
+.admin-account-validity{font-size:.78rem;font-weight:800;color:#b42318;white-space:nowrap}.staff-actions .danger{color:#b42318}.staff-validity{white-space:nowrap}

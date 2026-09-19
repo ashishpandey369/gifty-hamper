@@ -19,6 +19,7 @@ import {
   getDocs,
   updateDoc,
   setDoc,
+  deleteDoc,
   Timestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
@@ -57,7 +58,7 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-async function loadStaff(currentRole) {
+async function loadStaff(currentRole, currentUid) {
   const snapshot = await Promise.race([getDocs(collection(db, "users")), new Promise((_, reject) => setTimeout(() => reject(new Error("Firestore request timed out after 10 seconds.")), 10000))]);
   const users = snapshot.docs.map(item => ({
     id: item.id,
@@ -80,6 +81,8 @@ async function loadStaff(currentRole) {
     const canManage = currentRole === "super_admin"
       ? role === "owner" || role === "admin"
       : role === "admin";
+    const canDelete = canManage && user.id !== currentUid;
+    const canExtend = currentRole === "super_admin" && role === "owner" && expired;
 
     const saleButton = role === "admin"
       ? '<a class="admin-secondary staff-sale-button" href="admin-sale.html">Sale</a>'
@@ -102,6 +105,8 @@ async function loadStaff(currentRole) {
               '<select data-role-for="' + escapeHtml(user.id) + '">' + roleOptions + '</select>' +
               '<button type="button" class="admin-secondary" data-save-user="' + escapeHtml(user.id) + '">Save</button>' +
               '<button type="button" class="admin-secondary" data-toggle-user="' + escapeHtml(user.id) + '">' + (effectiveActive ? "Deactivate" : "Activate") + '</button>' +
+              (canExtend ? '<button type="button" class="admin-secondary" data-extend-user="' + escapeHtml(user.id) + '">Extend</button>' : '') +
+              (canDelete ? '<button type="button" class="admin-secondary danger" data-delete-user="' + escapeHtml(user.id) + '">Delete</button>' : '') +
               saleButton +
             '</div>'
           : saleButton) +
@@ -122,7 +127,7 @@ async function loadStaff(currentRole) {
           role: select.value
         });
         alert("Staff role updated.");
-        await loadStaff(currentRole);
+        await loadStaff(currentRole, currentUid);
       } catch (error) {
         console.error(error);
         alert("Unable to update this staff role. Check the Firebase rules and account permissions.");
@@ -183,8 +188,12 @@ function refreshValidityLabels() {
 setInterval(refreshValidityLabels, 60000);
 
 let staffRoleToCreate = "admin";
+let staffCreateMode = "create";
+let currentManagerRole = "";
+let currentManagerUid = "";
 
 function openStaffModal(role) {
+  staffCreateMode = "create";
   staffRoleToCreate = role;
   $("#staff-modal-title").textContent = role === "owner" ? "Add Owner" : "Add Admin";
   $("#new-staff-role").textContent = role === "owner" ? "Owner" : "Admin";
@@ -251,7 +260,10 @@ async function createStaffAccount() {
         email,
         role: staffRoleToCreate,
         active: true,
-        expiresAt: Timestamp.fromDate(expiresAt)
+        expiresAt: Timestamp.fromDate(expiresAt),
+        ...(staffRoleToCreate === "admin" && currentManagerRole === "owner"
+          ? { ownerUid: currentManagerUid }
+          : {})
       });
     } catch (profileError) {
       await deleteUser(credential.user);
@@ -270,7 +282,7 @@ async function createStaffAccount() {
       const role = tokenResult.claims.role === "super_admin"
         ? "super_admin"
         : (profile.exists() ? profile.data().role : "admin");
-      await loadStaff(role);
+      await loadStaff(role, currentManagerUid);
     }, 700);
   } catch (error) {
     console.error("Create staff error:", error);
@@ -300,6 +312,8 @@ onAuthStateChanged(auth, async (user) => {
     const profileSnapshot = await getDoc(doc(db, "users", user.uid));
     const profile = profileSnapshot.exists() ? profileSnapshot.data() : null;
     const profileRole = profile?.role || "";
+    currentManagerUid = user.uid;
+    currentManagerRole = claimRole === "super_admin" ? "super_admin" : profileRole;
     const effectiveRole = claimRole === "super_admin" ? "super_admin" : profileRole;
 
     $("#admin-user-email").textContent =
@@ -316,7 +330,7 @@ onAuthStateChanged(auth, async (user) => {
     $("#add-owner").hidden = effectiveRole !== "super_admin";
     $("#add-admin").hidden = !["super_admin", "owner"].includes(effectiveRole);
 
-    await loadStaff(effectiveRole);
+    await loadStaff(effectiveRole, user.uid);
   } catch (error) {
     console.error("Staff page error:", error);
     showAccess("Unable to load staff management", error?.message || "Please refresh the page and check your Firebase connection.");
@@ -337,5 +351,7 @@ $("#staff-refresh")?.addEventListener("click", async () => {
   const user = auth.currentUser;
   if (!user) return;
   const tokenResult = await user.getIdTokenResult(true);
-  await loadStaff(tokenResult.claims.role || "admin");
+  const profile = await getDoc(doc(db, "users", user.uid));
+  const role = tokenResult.claims.role === "super_admin" ? "super_admin" : (profile.exists() ? profile.data().role : "admin");
+  await loadStaff(role, user.uid);
 });

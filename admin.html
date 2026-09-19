@@ -73,7 +73,7 @@
           <div class="admin-form-grid">
             <label class="wide">Product name<input id="product-name" required placeholder="Example: Premium Diwali Hamper"></label>
             <label>Product ID / SKU<input id="product-id" required placeholder="premium-diwali-hamper"></label>
-            <label>Price (₹)<input id="product-price" type="number" min="0" step="1" required></label>
+            <label>Price (₹)<input id="product-price" type="number" min="0" step="1" required><small id="product-price-range" class="admin-help">Automatic price category: —</small></label>
             <label>Sale price (₹)<input id="product-sale-price" type="number" min="0" step="1" placeholder="Optional"></label>
             <label>Stock quantity<input id="product-stock" type="number" min="0" step="1" required value="0"></label>
             <label>Low-stock alert<input id="product-low-stock" type="number" min="0" step="1" value="5"></label>
@@ -122,6 +122,6 @@
     </section>
   </main>
 
-  <script src="js/admin.js?v=6"></script>
+  <script src="js/admin.js?v=7"></script>
 </body>
 </html>

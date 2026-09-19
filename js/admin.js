@@ -102,6 +102,8 @@ document.addEventListener('DOMContentLoaded', () => {
     return [...document.querySelectorAll('#product-categories input[type="checkbox"]:checked')].map(input => input.value);
   }
 
+  function updatePriceRangeLabel() { const price = $('#product-sale-price').value ? Number($('#product-sale-price').value) : Number($('#product-price').value); $('#product-price-range').textContent = 'Automatic price category: ' + (price ? getPriceRange(price) : '—'); }
+
   function stats() {
     const active = catalog.filter(product => product.active !== false);
     $('#stat-products').textContent = catalog.length;
@@ -366,6 +368,8 @@ document.addEventListener('DOMContentLoaded', () => {
     render();
   });
 
+  $('#product-price').addEventListener('input', updatePriceRangeLabel);
+  $('#product-sale-price').addEventListener('input', updatePriceRangeLabel);
   $('#admin-search').addEventListener('input', render);
   $('#admin-status').addEventListener('change', render);
 
@@ -408,5 +412,6 @@ document.addEventListener('DOMContentLoaded', () => {
   fillOccasions();
   renderCategoryManager();
   resetForm();
+  updatePriceRangeLabel();
   render();
 });

@@ -3,6 +3,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const CAT_KEY = 'gifty-hamper-categories';
   const DEFAULT_CATS = ['Appreciation Gifts','Celebration Gifts','Eco Friendly Gifts','Employee Gifts','Festive Gifts','Gadgets and Electronic Gifts','Gift Sets','MR Gifts','Office Accessories','Premium Gifts'];
   const OCC = ['Birthday','Anniversary','Rakhi','Corporate','Festive','Thank You','Personalized','Wedding','Other'];
+  const DEFAULT_ADMIN_PRODUCTS = [
+    {id:'little-joy',name:'The Little Joy Hamper',description:'Thoughtful everyday gifting',price:1499,occasion:'Birthday',categories:['Gift Sets','Appreciation Gifts'],label:'Everyday',imageClass:'image-sage'},
+    {id:'good-things',name:'Good Things Gift Box',description:'A warm collection of favourites',price:1999,occasion:'Thank You',categories:['Gift Sets','Premium Gifts'],label:'Curated',imageClass:'image-sand'},
+    {id:'just-for-you',name:'Just For You Hamper',description:'Made for meaningful moments',price:2499,occasion:'Birthday',categories:['Gift Sets','Celebration Gifts'],label:'Special',imageClass:'image-rose'},
+    {id:'signature-luxe',name:'Signature Luxe Hamper',description:'Premium gifting, beautifully packed',price:3999,occasion:'Corporate',categories:['Premium Gifts','Employee Gifts','Gift Sets'],label:'Premium',imageClass:'image-night'},
+    {id:'festive-glow',name:'Festive Glow Box',description:'A bright celebration in a box',price:1799,occasion:'Festive',categories:['Festive Gifts','Gift Sets'],label:'Festive',imageClass:'image-sand'},
+    {id:'office-cheer',name:'Office Cheer Hamper',description:'A polished team appreciation gift',price:2299,occasion:'Corporate',categories:['Office Accessories','Employee Gifts','Appreciation Gifts'],label:'Teams',imageClass:'image-sage'},
+    {id:'warm-thanks',name:'Warm Thanks Box',description:'A simple way to say thank you',price:1299,occasion:'Thank You',categories:['Appreciation Gifts','Gift Sets'],label:'Thoughtful',imageClass:'image-rose'},
+    {id:'grand-celebration',name:'Grand Celebration Hamper',description:'A premium gift for big moments',price:4999,occasion:'Festive',categories:['Celebration Gifts','Premium Gifts','Gift Sets'],label:'Premium',imageClass:'image-night'}
+  ];
 
   const $ = (selector) => document.querySelector(selector);
   const money = (value) => new Intl.NumberFormat('en-IN', { style:'currency', currency:'INR', maximumFractionDigits:0 }).format(Number(value) || 0);
@@ -19,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
       : (product.image ? [product.image] : [])
   });
 
-  const defaults = () => DEFAULT_GIFTS.map(normaliseProduct);
+  const defaults = () => DEFAULT_ADMIN_PRODUCTS.map(normaliseProduct);
 
   const readCatalog = () => {
     try {

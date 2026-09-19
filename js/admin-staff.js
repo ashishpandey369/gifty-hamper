@@ -82,7 +82,7 @@ async function loadStaff(currentRole, currentUid) {
       ? role === "owner" || role === "admin"
       : role === "admin";
     const canDelete = canManage && user.id !== currentUid;
-    const canExtend = currentRole === "super_admin" && role === "owner" && expired;
+    const canExtend = currentRole === "super_admin" && (role === "owner" || role === "admin") && expired;
 
     const saleButton = role === "admin"
       ? '<a class="admin-secondary staff-sale-button" href="admin-sale.html">Sale</a>'

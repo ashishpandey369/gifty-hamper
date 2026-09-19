@@ -12,6 +12,42 @@
 .benefits-section{background:var(--paper)}.centered{text-align:center}.centered h2{margin-inline:auto}.benefits-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:45px;margin-top:65px}.benefit{text-align:center;padding:0 25px}.benefit>span{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;background:var(--cream);margin:0 auto 22px;font-size:1.35rem;color:var(--accent)}.benefit h3{font-family:'Playfair Display',Georgia,serif;font-size:1.35rem;margin:0 0 8px}.benefit p{color:var(--muted);font-size:.82rem;max-width:290px;margin:0 auto}
 .reviews-section{background:var(--paper)}.reviews-card{display:grid;grid-template-columns:1.05fr .95fr;min-height:330px;overflow:hidden;border-radius:28px;background:linear-gradient(135deg,#f5e7e1,#eee6f3);box-shadow:0 18px 45px rgba(38,32,25,.08)}.reviews-copy{padding:58px}.reviews-copy h2{max-width:560px;margin:0;font-family:'Playfair Display',Georgia,serif;font-size:clamp(2.3rem,4vw,4rem);line-height:.98;letter-spacing:-.045em}.reviews-copy>p:not(.eyebrow){max-width:500px;color:var(--muted);margin:17px 0 20px;font-size:.9rem}.reviews-rating{display:flex;align-items:center;gap:16px;margin-bottom:25px}.reviews-rating strong{font-size:.82rem}.reviews-rating span{letter-spacing:.15em;color:#e3a72f;font-size:.95rem}.reviews-visual{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:45px;background:radial-gradient(circle at 50% 35%,rgba(255,255,255,.75),rgba(255,255,255,.15) 58%,transparent 70%)}.reviews-quote{font-family:Georgia,serif;font-size:7rem;line-height:.45;color:var(--accent);opacity:.35}.reviews-visual strong{font-family:'Playfair Display',Georgia,serif;font-size:1.8rem;line-height:1.05}.reviews-visual>span:last-child{margin-top:12px;color:#77716a;font-size:.72rem}@media(max-width:760px){.reviews-card{grid-template-columns:1fr;border-radius:22px}.reviews-copy{padding:34px 25px}.reviews-copy h2{font-size:2.45rem}.reviews-visual{min-height:180px;padding:25px}.reviews-quote{font-size:5rem}.reviews-visual strong{font-size:1.45rem}}
 
+
+.google-reviews-hero{padding:28px 0 18px;background:var(--cream)}
+.google-reviews-card{display:grid;grid-template-columns:1.15fr 1fr .85fr;align-items:center;min-height:205px;padding:30px 36px;border-radius:26px;background:linear-gradient(105deg,#fff0f3 0%,#f9e9ef 48%,#f0eafa 100%);box-shadow:0 15px 38px rgba(38,32,25,.08);overflow:hidden;position:relative}
+.google-reviews-card:before,.google-reviews-card:after{content:'♡';position:absolute;color:#e889a0;font-size:2rem;opacity:.38;transform:rotate(-18deg)}
+.google-reviews-card:before{left:22px;bottom:16px}.google-reviews-card:after{right:28%;top:18px}
+.google-reviews-brand{display:flex;align-items:center;gap:22px;min-width:0}
+.google-g-mark{width:72px;height:72px;flex:0 0 72px;display:grid;place-items:center;border-radius:50%;background:#fff;font-size:3.15rem;font-weight:700;font-family:Arial,sans-serif;color:#4285f4;box-shadow:0 8px 22px rgba(38,32,25,.08)}
+.google-reviews-brand .eyebrow{margin-bottom:4px;color:#a56d72}
+.google-reviews-brand h2{margin:0;font-family:'Playfair Display',Georgia,serif;font-size:clamp(2rem,3.2vw,3rem);line-height:1;letter-spacing:-.04em}
+.google-stars{margin-top:10px;letter-spacing:.18em;color:#e3a72f;font-size:1.05rem}
+.google-review-note{margin:5px 0 0;color:#77716a;font-size:.72rem}
+.google-review-message{border-left:1px solid rgba(166,93,71,.2);padding:8px 30px;display:flex;flex-direction:column;align-items:flex-start}
+.google-quote{font-family:Georgia,serif;font-size:3.5rem;line-height:.45;color:var(--accent);opacity:.45}
+.google-review-message strong{font-family:'Playfair Display',Georgia,serif;font-size:1.45rem;line-height:1.05}
+.google-review-message span:last-child{margin-top:9px;color:#77716a;font-size:.7rem}
+.google-review-action{border-left:1px solid rgba(166,93,71,.2);padding-left:30px;display:flex;flex-direction:column;align-items:flex-start;gap:9px}
+.google-review-action .button{background:#df4961;padding-inline:27px;box-shadow:0 10px 22px rgba(223,73,97,.2)}
+.google-review-action .button:hover{background:#c83e55}
+.google-review-action small{color:#77716a;font-size:.65rem}
+@media(max-width:1000px){.google-reviews-card{grid-template-columns:1fr 1fr;padding:26px}.google-review-action{grid-column:1/-1;border-left:0;border-top:1px solid rgba(166,93,71,.2);padding:20px 0 0;margin-top:8px;flex-direction:row;align-items:center}}
+@media(max-width:760px){
+  .google-reviews-hero{padding:16px 0 8px}
+  .google-reviews-card{grid-template-columns:1fr;border-radius:22px;padding:24px 20px;min-height:0;gap:20px}
+  .google-reviews-card:before{left:10px;bottom:10px}.google-reviews-card:after{right:20px;top:10px}
+  .google-reviews-brand{gap:14px}
+  .google-g-mark{width:54px;height:54px;flex-basis:54px;font-size:2.35rem}
+  .google-reviews-brand h2{font-size:2rem}
+  .google-stars{font-size:.9rem;margin-top:7px}
+  .google-review-note{font-size:.66rem}
+  .google-review-message{border-left:0;border-top:1px solid rgba(166,93,71,.2);padding:18px 0 0}
+  .google-review-message strong{font-size:1.3rem}
+  .google-review-action{border-left:0;border-top:1px solid rgba(166,93,71,.2);padding:18px 0 0;margin:0;display:flex;flex-direction:column;align-items:stretch}
+  .google-review-action .button{width:100%}
+  .google-review-action small{text-align:center}
+}
+
 .newsletter-section{background:#e8dfd2;padding:70px 0}.newsletter-inner{display:flex;align-items:center;justify-content:space-between;gap:50px}.newsletter-inner h2{font-family:'Playfair Display',Georgia,serif;font-size:2.4rem;line-height:1;margin:0}.newsletter-inner p:not(.eyebrow){color:#6e685f;font-size:.8rem;margin:10px 0 0}.newsletter-form{display:flex;gap:9px;min-width:min(100%,450px)}.newsletter-form input{min-width:0;flex:1;border:1px solid #cfc5b6;background:rgba(255,255,255,.5);border-radius:99px;padding:0 20px;outline:none}.newsletter-form input:focus{border-color:var(--ink)}
 .site-footer{background:#f2eee7;padding:72px 0 25px}.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1.2fr;gap:40px;padding-bottom:55px}.footer-brand p,.footer-grid>div:last-child p{color:#79736a;font-size:.76rem;max-width:230px}.footer-grid h3{font-size:.72rem;text-transform:uppercase;letter-spacing:.13em;margin:3px 0 16px}.footer-grid>div:not(:first-child)>a{display:block;font-size:.77rem;margin:8px 0;color:#666057}.footer-contact{font-weight:700!important;color:var(--ink)!important}.footer-bottom{border-top:1px solid #ddd6cb;padding-top:18px;display:flex;justify-content:space-between;color:#898278;font-size:.67rem}
 @media(max-width:1000px){.header-inner{gap:20px}.primary-nav{gap:17px}.hero-grid{grid-template-columns:1fr 1fr}.hero-content h1{font-size:clamp(3.3rem,6vw,5.2rem)}.hero-art{transform:scale(.9)}.occasion-grid{grid-template-columns:repeat(2,1fr)}.product-grid{grid-template-columns:repeat(2,1fr)}.story-grid{gap:45px}}

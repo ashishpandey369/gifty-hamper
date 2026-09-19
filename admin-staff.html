@@ -63,6 +63,7 @@
               <th>Email</th>
               <th>Role</th>
               <th>Status</th>
+              <th>Validity</th>
               <th>User ID</th>
               <th>Action</th>
             </tr>
@@ -77,9 +78,19 @@
         <button class="staff-modal-close" type="button" data-close-staff-modal aria-label="Close">×</button>
         <p class="eyebrow">Create staff account</p>
         <h2 id="staff-modal-title">Add staff</h2>
-        <p id="staff-modal-description" class="admin-help">Enter the staff member's email. Firebase will create the account and send a password-reset email so they can set their own password.</p>
+        <p id="staff-modal-description" class="admin-help">Set the email, initial password and how many days this account should remain active.</p>
         <label class="staff-modal-label">Email address
           <input id="new-staff-email" type="email" autocomplete="email" placeholder="staff@example.com">
+        </label>
+        <label class="staff-modal-label">Password
+          <input id="new-staff-password" type="password" autocomplete="new-password" placeholder="Minimum 6 characters">
+        </label>
+        <label class="staff-modal-label">Confirm password
+          <input id="new-staff-password-confirm" type="password" autocomplete="new-password" placeholder="Re-enter password">
+        </label>
+        <label class="staff-modal-label">Account validity (days)
+          <input id="new-staff-validity" type="number" min="1" max="3650" step="1" value="30">
+          <small class="admin-help">After this period, the account will be treated as expired and access will be blocked.</small>
         </label>
         <div class="staff-modal-role">
           <span>Role</span>
@@ -94,6 +105,6 @@
     </div>
   </main>
 
-  <script type="module" src="js/admin-staff.js?v=3"></script>
+  <script type="module" src="js/admin-staff.js?v=4"></script>
 </body>
 </html>

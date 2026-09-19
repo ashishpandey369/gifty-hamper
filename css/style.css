@@ -262,3 +262,23 @@
 @keyframes ghConfettiDrift{0%,100%{opacity:.22;transform:translateX(-50%) translateY(0) rotate(0deg)}50%{opacity:.58;transform:translateX(-50%) translateY(4px) rotate(2deg)}}
 @media(max-width:760px){.site-header:before,.site-header:after{width:20px;height:27px;top:7px;opacity:.58}.site-header:before{left:2%;box-shadow:45px 34px 0 -9px #7655e8,82px 10px 0 -11px #f2ad32}.site-header:after{right:2%;box-shadow:-48px 31px 0 -9px #13a987,-78px 5px 0 -11px #f2ad32}.site-header .header-inner:before{font-size:8px;letter-spacing:7px;top:5px}}
 @media(prefers-reduced-motion:reduce){.site-header:before,.site-header:after,.site-header .header-inner:before{animation:none}}
+
+
+/* Keep the search control visibly round and easy to notice */
+.header-actions .icon-button[data-action="search"]{
+  width:42px!important;height:42px!important;min-width:42px;border-radius:50%;
+  display:inline-grid;place-items:center;
+  background:linear-gradient(145deg,#fff0f6,#f3ecff)!important;
+  border:1px solid rgba(232,63,111,.22)!important;
+  color:#e83f6f!important;
+  box-shadow:0 5px 16px rgba(118,85,232,.14);
+  opacity:1!important;
+  font-size:1.18rem!important;
+  transition:transform .2s ease,box-shadow .2s ease,background .2s ease;
+}
+.header-actions .icon-button[data-action="search"]:hover{
+  transform:translateY(-2px) scale(1.04);
+  background:linear-gradient(145deg,#ffe0ec,#e9e0ff)!important;
+  box-shadow:0 9px 22px rgba(118,85,232,.22);
+}
+@media(max-width:760px){.header-actions .icon-button[data-action="search"]{width:36px!important;height:36px!important;min-width:36px;font-size:1rem!important}}

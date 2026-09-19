@@ -1,4 +1,8 @@
-import { DEFAULT_CATALOG, loadPublicCatalog } from "./catalog-store.js";
+import {
+  DEFAULT_CATALOG,
+  getDiscountPercent,
+  loadPublicCatalog
+} from "./catalog-store.js";
 
 let GIFTS = DEFAULT_CATALOG.map(product => ({ ...product }));
 
@@ -10,9 +14,23 @@ function getProductFromUrl() {
 function renderProduct(product) {
   document.title = `${product.name} | Gifty Hamper`;
   document.querySelector('#breadcrumb-name').textContent = product.name;
-  document.querySelector('#product-category').textContent = product.category;
+  document.querySelector('#product-category').textContent = product.occasion || product.majorCategory || 'Gifting';
   document.querySelector('#product-name').textContent = product.name;
-  document.querySelector('#product-price').textContent = formatPrice(product.price);
+
+  const priceElement = document.querySelector('#product-price');
+  const originalPrice = Number(product.price) || 0;
+  const currentPrice = Number(product.salePrice || product.price) || 0;
+  const discount = getDiscountPercent(product);
+
+  if (discount) {
+    priceElement.innerHTML =
+      '<span class="product-original-price">' + formatPrice(originalPrice) + '</span>' +
+      '<strong class="product-sale-price">' + formatPrice(currentPrice) + '</strong>' +
+      '<span class="product-discount">' + discount + '% OFF</span>';
+  } else {
+    priceElement.innerHTML = '<strong class="product-sale-price">' + formatPrice(currentPrice) + '</strong>';
+  }
+
   document.querySelector('#product-description').textContent = product.description;
 
   const visual = document.querySelector('#product-visual');
@@ -48,8 +66,20 @@ function addToCart(product, quantity) {
   try { cart = JSON.parse(localStorage.getItem(key) || '[]'); } catch (_) { cart = []; }
 
   const existing = cart.find(item => item.id === product.id);
-  if (existing) existing.quantity += quantity;
-  else cart.push({ id: product.id, name: product.name, price: product.price, quantity });
+  if (existing) {
+    existing.quantity += quantity;
+    existing.price = Number(product.salePrice || product.price) || 0;
+    existing.originalPrice = Number(product.price) || 0;
+  } else {
+    cart.push({
+      id: product.id,
+      sku: product.sku || '',
+      name: product.name,
+      price: Number(product.salePrice || product.price) || 0,
+      originalPrice: Number(product.price) || 0,
+      quantity
+    });
+  }
 
   localStorage.setItem(key, JSON.stringify(cart));
   const total = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -60,10 +90,17 @@ function addToCart(product, quantity) {
 function renderRelated(product) {
   const grid = document.querySelector('#related-products');
   if (!grid) return;
-  const related = GIFTS.filter(item => item.id !== product.id && item.category === product.category).slice(0, 3);
+  const related = GIFTS.filter(item => item.id !== product.id && item.occasion === product.occasion).slice(0, 3);
   const fallback = GIFTS.filter(item => item.id !== product.id && !related.includes(item)).slice(0, 3 - related.length);
   [...related, ...fallback].forEach(item => {
-    grid.insertAdjacentHTML('beforeend', `<article class="product-card"><a href="product.html?id=${encodeURIComponent(item.id)}"><div class="product-image ${item.imageClass}"><span>${item.label}</span><b>${item.name.split(' ').slice(0, 2).join('<br>')}</b></div><div class="product-info"><div><h3>${item.name}</h3><p>${item.description}</p></div><strong>${formatPrice(item.price)}</strong></div></a></article>`);
+    const originalPrice = Number(item.price) || 0;
+    const currentPrice = Number(item.salePrice || item.price) || 0;
+    const discount = getDiscountPercent(item);
+    const priceMarkup = discount
+      ? '<div class="product-card-price"><del>' + formatPrice(originalPrice) + '</del><strong>' + formatPrice(currentPrice) + '</strong><span>' + discount + '% OFF</span></div>'
+      : '<div class="product-card-price"><strong>' + formatPrice(currentPrice) + '</strong></div>';
+
+    grid.insertAdjacentHTML('beforeend', `<article class="product-card"><a href="product.html?id=${encodeURIComponent(item.id)}"><div class="product-image ${item.imageClass || ''}"><span>${item.label || ''}</span><b>${item.name.split(' ').slice(0, 2).join('<br>')}</b></div><div class="product-info"><div><h3>${item.name}</h3><p>${item.description}</p></div>${priceMarkup}</div></a></article>`);
   });
 }
 

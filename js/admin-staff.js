@@ -10,8 +10,20 @@ import {
 import {
   collection,
   getDocs,
-  updateDoc
+  updateDoc,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+const staffCreatorApp = initializeApp({
+  apiKey: "AIzaSyA_i3OuD8zEnmsTjobg1yUt9zSHZAYb4ug",
+  authDomain: "gifty-hamper.firebaseapp.com",
+  projectId: "gifty-hamper",
+  storageBucket: "gifty-hamper.firebasestorage.app",
+  messagingSenderId: "941922060172",
+  appId: "1:941922060172:web:23d85fd867bec63b7a78a9"
+}, "staffCreator");
+
+const staffCreatorAuth = getAuth(staffCreatorApp);
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -58,6 +70,10 @@ async function loadStaff(currentRole) {
       ? role === "owner" || role === "admin"
       : role === "admin";
 
+    const saleButton = role === "admin"
+      ? '<a class="admin-secondary staff-sale-button" href="admin-sale.html">Sale</a>'
+      : "";
+
     const roleOptions = currentRole === "super_admin"
       ? '<option value="owner"' + (role === "owner" ? " selected" : "") + '>Owner</option>' +
         '<option value="admin"' + (role === "admin" ? " selected" : "") + '>Admin</option>'
@@ -74,8 +90,9 @@ async function loadStaff(currentRole) {
               '<select data-role-for="' + escapeHtml(user.id) + '">' + roleOptions + '</select>' +
               '<button type="button" class="admin-secondary" data-save-user="' + escapeHtml(user.id) + '">Save</button>' +
               '<button type="button" class="admin-secondary" data-toggle-user="' + escapeHtml(user.id) + '">' + (active ? "Deactivate" : "Activate") + '</button>' +
+              saleButton +
             '</div>'
-          : '<span class="admin-help">Protected</span>') +
+          : saleButton) +
       '</td>' +
     '</tr>';
   }).join("");
@@ -127,6 +144,88 @@ async function loadStaff(currentRole) {
   });
 }
 
+
+let staffRoleToCreate = "admin";
+
+function openStaffModal(role) {
+  staffRoleToCreate = role;
+  $("#staff-modal-title").textContent = role === "owner" ? "Add Owner" : "Add Admin";
+  $("#new-staff-role").textContent = role === "owner" ? "Owner" : "Admin";
+  $("#new-staff-email").value = "";
+  $("#staff-modal-status").textContent = "";
+  $("#create-staff-account").disabled = false;
+  $("#staff-modal").hidden = false;
+  setTimeout(() => $("#new-staff-email")?.focus(), 0);
+}
+
+function closeStaffModal() {
+  $("#staff-modal").hidden = true;
+}
+
+function randomTemporaryPassword() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+  const bytes = new Uint32Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, value => chars[value % chars.length]).join("");
+}
+
+async function createStaffAccount() {
+  const email = $("#new-staff-email").value.trim().toLowerCase();
+  const status = $("#staff-modal-status");
+  const button = $("#create-staff-account");
+
+  if (!email || !email.includes("@")) {
+    status.textContent = "Enter a valid email address.";
+    return;
+  }
+
+  button.disabled = true;
+  status.textContent = "Creating Firebase account…";
+
+  try {
+    const temporaryPassword = randomTemporaryPassword();
+    const credential = await createUserWithEmailAndPassword(
+      staffCreatorAuth,
+      email,
+      temporaryPassword
+    );
+
+    // Create the application profile using the still-authenticated
+    // Super Admin/Owner session on the primary Firebase Auth instance.
+    await setDoc(doc(db, "users", credential.user.uid), {
+      email,
+      role: staffRoleToCreate,
+      active: true
+    });
+
+    // The generated password is not shown or stored. The new staff member
+    // receives a password-reset email and chooses their own password.
+    await sendPasswordResetEmail(staffCreatorAuth, email);
+
+    status.textContent = "Account created and password-reset email sent.";
+    $("#new-staff-email").value = "";
+
+    setTimeout(async () => {
+      closeStaffModal();
+      const tokenResult = await auth.currentUser.getIdTokenResult(true);
+      await loadStaff(tokenResult.claims.role || "admin");
+    }, 900);
+  } catch (error) {
+    console.error("Create staff error:", error);
+    status.textContent = error?.code === "auth/email-already-in-use"
+      ? "That email already has a Firebase account."
+      : (error?.message || "Unable to create the staff account.");
+    button.disabled = false;
+  }
+}
+
+$("#add-owner")?.addEventListener("click", () => openStaffModal("owner"));
+$("#add-admin")?.addEventListener("click", () => openStaffModal("admin"));
+$("#create-staff-account")?.addEventListener("click", createStaffAccount);
+document.querySelectorAll("[data-close-staff-modal]").forEach(element => {
+  element.addEventListener("click", closeStaffModal);
+});
+
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.replace("admin-login.html");
@@ -151,6 +250,9 @@ onAuthStateChanged(auth, async (user) => {
 
     $("#staff-access").hidden = true;
     $("#staff-content").hidden = false;
+
+    $("#add-owner").hidden = claimRole !== "super_admin";
+    $("#add-admin").hidden = !["super_admin", "owner"].includes(claimRole);
 
     await loadStaff(claimRole);
   } catch (error) {

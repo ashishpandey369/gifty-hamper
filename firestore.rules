@@ -52,67 +52,55 @@ service cloud.firestore {
         || (
           data.get('salePrice', 0) is number
           && data.get('salePrice', 0) >= 0
-          && data.get('salePrice', 0) <= data.get('price', 0)
+          && data.get('salePrice', 0) < data.get('price', 0)
         );
     }
 
     match /users/{userId} {
-      allow get: if
-        isSuperAdmin()
+      allow get: if isSuperAdmin()
         || (signedIn() && request.auth.uid == userId);
-
       allow list: if isSuperAdmin();
 
-      allow create: if
-        isSuperAdmin()
+      allow create: if isSuperAdmin()
         && request.resource.data.role in ['owner', 'admin']
         && request.resource.data.active == true;
 
-      allow create: if
-        isOwner()
+      allow create: if isOwner()
         && request.resource.data.role == 'admin'
         && request.resource.data.active == true
         && request.resource.data.ownerUid == request.auth.uid;
 
-      allow update: if
-        isSuperAdmin()
+      allow update: if isSuperAdmin()
         && resource.data.role in ['owner', 'admin']
         && request.resource.data.role in ['owner', 'admin'];
 
-      allow update: if
-        isOwner()
+      allow update: if isOwner()
         && resource.data.role == 'admin'
         && request.resource.data.role == 'admin'
         && resource.data.ownerUid == request.auth.uid
         && request.resource.data.ownerUid == request.auth.uid;
 
-      allow delete: if
-        isSuperAdmin()
+      allow delete: if isSuperAdmin()
         && resource.data.role in ['owner', 'admin'];
 
-      allow delete: if
-        isOwner()
+      allow delete: if isOwner()
         && resource.data.role == 'admin'
         && resource.data.ownerUid == request.auth.uid;
     }
 
     match /ownerStaff/{ownerUid}/admins/{adminUid} {
-      allow read: if
-        isSuperAdmin()
+      allow read: if isSuperAdmin()
         || (isOwner() && request.auth.uid == ownerUid);
 
-      allow create: if
-        isOwner()
+      allow create: if isOwner()
         && request.auth.uid == ownerUid
         && request.resource.data.role == 'admin'
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.active == true;
 
-      allow update, delete: if
-        isSuperAdmin();
+      allow update, delete: if isSuperAdmin();
 
-      allow update, delete: if
-        isOwner()
+      allow update, delete: if isOwner()
         && request.auth.uid == ownerUid
         && resource.data.ownerUid == request.auth.uid;
     }
@@ -120,17 +108,11 @@ service cloud.firestore {
     // ------------------------------------------------------------
     // SKU RESERVATIONS
     // ------------------------------------------------------------
-    //
-    // Every SKU is represented by one reservation document.
-    // Product creation/update and SKU reservation are required to
-    // happen in the same transaction, which prevents two products
-    // from claiming the same SKU.
-    //
+
     match /skus/{sku} {
       allow get, list: if isStaff();
 
-      allow create: if
-        isStaff()
+      allow create: if isStaff()
         && validSku(sku)
         && request.resource.data.productId is string
         && request.resource.data.productId != ''
@@ -140,20 +122,15 @@ service cloud.firestore {
 
       allow update: if false;
 
-      allow delete: if
-        isStaff()
+      allow delete: if isStaff()
         && validSku(sku)
-        && resource.data.productId is string
-        && getAfter(
-          /databases/$(database)/documents/products/$(resource.data.productId)
-        ).data.get('sku', '') == ''
-        || (
-          isStaff()
-          && validSku(sku)
-          && resource.data.productId is string
-          && !exists(
+        && (
+          !exists(
             /databases/$(database)/documents/products/$(resource.data.productId)
           )
+          || getAfter(
+            /databases/$(database)/documents/products/$(resource.data.productId)
+          ).data.get('sku', '') == ''
         );
     }
 
@@ -163,17 +140,17 @@ service cloud.firestore {
 
     match /products/{productId} {
 
-      allow get: if
-        resource.data.get('active', false) == true
-        || isStaff();
-
-      allow list: if
-        isStaff()
+      // Public store: active products only.
+      // Staff: complete catalog.
+      allow get: if isStaff()
         || resource.data.get('active', false) == true;
 
-      // Create must atomically create the matching SKU reservation.
-      allow create: if
-        isStaff()
+      allow list: if isStaff()
+        || resource.data.get('active', false) == true;
+
+      // Product creation requires a matching SKU reservation
+      // in the same transaction.
+      allow create: if isStaff()
         && validSku(request.resource.data.get('sku', ''))
         && request.resource.data.get('name', '') is string
         && request.resource.data.get('name', '') != ''
@@ -186,11 +163,8 @@ service cloud.firestore {
           /databases/$(database)/documents/skus/$(request.resource.data.sku)
         ).data.productId == productId;
 
-      // Existing SKU cannot be changed. A legacy product without a
-      // SKU may receive one only when its matching reservation is
-      // created in the same transaction.
-      allow update: if
-        isStaff()
+      // SKU remains permanent after creation.
+      allow update: if isStaff()
         && validSku(request.resource.data.get('sku', ''))
         && request.resource.data.get('name', '') is string
         && request.resource.data.get('name', '') != ''
@@ -199,28 +173,15 @@ service cloud.firestore {
         && request.resource.data.get('stock', 0) is number
         && request.resource.data.get('stock', 0) >= 0
         && validSalePrice(request.resource.data)
-        && (
-          (
-            resource.data.get('sku', '') == ''
-            && getAfter(
-              /databases/$(database)/documents/skus/$(request.resource.data.sku)
-            ).data.productId == productId
-          )
-          ||
-          (
-            validSku(resource.data.get('sku', ''))
-            && request.resource.data.sku == resource.data.sku
-            && get(
-              /databases/$(database)/documents/skus/$(resource.data.sku)
-            ).data.productId == productId
-          )
-        );
+        && validSku(resource.data.get('sku', ''))
+        && request.resource.data.sku == resource.data.sku
+        && get(
+          /databases/$(database)/documents/skus/$(resource.data.sku)
+        ).data.productId == productId;
 
-      // If a product has a SKU, its reservation must be removed in
-      // the same transaction. Legacy products without a SKU can be
-      // deleted normally.
-      allow delete: if
-        isStaff()
+      // Product deletion must remove its SKU reservation in the
+      // same transaction.
+      allow delete: if isStaff()
         && (
           resource.data.get('sku', '') == ''
           || !exists(
@@ -232,22 +193,17 @@ service cloud.firestore {
         );
     }
 
-    match /sales/{saleId} {
-      allow read: if
-        isSuperAdmin()
-        || isOwner()
-        || (
-          isAdmin()
-          && resource.data.sellerUid == request.auth.uid
-        );
+    // ------------------------------------------------------------
+    // SALES
+    // ------------------------------------------------------------
 
-      allow create: if
-        signedIn()
-        && (
-          isSuperAdmin()
-          || isOwner()
-          || isAdmin()
-        )
+    match /sales/{saleId} {
+      allow read: if isSuperAdmin()
+        || isOwner()
+        || (isAdmin() && resource.data.sellerUid == request.auth.uid);
+
+      allow create: if signedIn()
+        && isStaff()
         && request.resource.data.sellerUid == request.auth.uid
         && request.resource.data.sellerEmail == request.auth.token.email
         && request.resource.data.total is number
@@ -258,18 +214,25 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ------------------------------------------------------------
+    // CUSTOMER / WHATSAPP ORDERS
+    // ------------------------------------------------------------
+
     match /orders/{orderId} {
-      allow read: if isStaff();
-      allow create: if isStaff();
-      allow update: if isStaff();
+      allow read, create, update: if isStaff();
       allow delete: if false;
     }
+
+    // ------------------------------------------------------------
+    // INVENTORY HISTORY
+    // ------------------------------------------------------------
 
     match /inventoryMovements/{movementId} {
       allow read: if isStaff();
       allow create, update, delete: if false;
     }
 
+    // Deny everything else.
     match /{document=**} {
       allow read, write: if false;
     }

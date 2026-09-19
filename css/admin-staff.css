@@ -14,3 +14,8 @@
 .staff-modal-role span{color:#6f6877;font-size:.8rem}
 .staff-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
 .staff-modal-status{margin-top:12px;min-height:20px}
+
+.staff-modal-card{max-height:90vh;overflow:auto}
+.staff-modal-label small{font-weight:400}
+.staff-validity{font-size:.78rem;font-weight:800}
+.staff-validity.expired{color:#b42318}

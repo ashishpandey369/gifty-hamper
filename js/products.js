@@ -1,5 +1,5 @@
 /* Temporary catalog data. This module is deliberately isolated so it can later be replaced by WooCommerce API data. */
-const GIFTS = [
+const DEFAULT_GIFTS = [
   { id: 'little-joy', name: 'The Little Joy Hamper', description: 'Thoughtful everyday gifting', price: 1499, occasion: 'Birthday', categories: ['Gift Sets', 'Appreciation Gifts'], label: 'Everyday', imageClass: 'image-sage' },
   { id: 'good-things', name: 'Good Things Gift Box', description: 'A warm collection of favourites', price: 1999, occasion: 'Thank You', categories: ['Gift Sets', 'Premium Gifts'], label: 'Curated', imageClass: 'image-sand' },
   { id: 'just-for-you', name: 'Just For You Hamper', description: 'Made for meaningful moments', price: 2499, occasion: 'Birthday', categories: ['Gift Sets', 'Celebration Gifts'], label: 'Special', imageClass: 'image-rose' },
@@ -9,6 +9,15 @@ const GIFTS = [
   { id: 'warm-thanks', name: 'Warm Thanks Box', description: 'A simple way to say thank you', price: 1299, occasion: 'Thank You', categories: ['Appreciation Gifts', 'Gift Sets'], label: 'Thoughtful', imageClass: 'image-rose' },
   { id: 'grand-celebration', name: 'Grand Celebration Hamper', description: 'A premium gift for big moments', price: 4999, occasion: 'Festive', categories: ['Celebration Gifts', 'Premium Gifts', 'Gift Sets'], label: 'Premium', imageClass: 'image-night' }
 ];
+
+const GIFTS = (() => {
+  try {
+    const saved = JSON.parse(localStorage.getItem('gifty-hamper-catalog') || 'null');
+    return Array.isArray(saved) && saved.length ? saved : DEFAULT_GIFTS;
+  } catch (_) {
+    return DEFAULT_GIFTS;
+  }
+})();
 
 function formatPrice(value) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value);

@@ -38,6 +38,22 @@ const staffCreatorAuth = getAuth(staffCreatorApp);
 
 const $ = (selector) => document.querySelector(selector);
 
+async function loadLatestUpdate() {
+  const target = $("#admin-last-update");
+  if (!target) return;
+  try {
+    const response = await fetch("latest-update.txt?t=" + Date.now(), { cache: "no-store" });
+    if (!response.ok) throw new Error("Unable to read update timestamp.");
+    const value = (await response.text()).trim();
+    target.textContent = value ? "Latest update: " + value : "Latest update: unavailable";
+  } catch (error) {
+    console.warn("Latest update timestamp error:", error);
+    target.textContent = "Latest update: unavailable";
+  }
+}
+
+loadLatestUpdate();
+
 function withTimeout(promise, message = "Firebase request timed out after 10 seconds.") {
   return Promise.race([
     promise,

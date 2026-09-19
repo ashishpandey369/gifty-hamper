@@ -41,7 +41,16 @@ onAuthStateChanged(auth, async (user) => {
       email.textContent = `${user.email || "Signed-in admin"} • ${claimRole}`;
     }
 
-    if (claimRole !== "super_admin" && (!profile || !profileRole || !active)) {
+    let ownerProfile = null;
+    let ownerExpired = false;
+    if (profileRole === "admin" && profile?.ownerUid) {
+      const ownerSnapshot = await getDoc(doc(db, "users", profile.ownerUid));
+      ownerProfile = ownerSnapshot.exists() ? ownerSnapshot.data() : null;
+      const ownerExpiry = ownerProfile?.expiresAt?.toDate ? ownerProfile.expiresAt.toDate() : null;
+      ownerExpired = !ownerProfile || ownerProfile.role !== "owner" || ownerProfile.active === false || (ownerExpiry && ownerExpiry.getTime() <= Date.now());
+    }
+
+    if (claimRole !== "super_admin" && (!profile || !profileRole || !active || ownerExpired)) {
       await signOut(auth);
       window.location.replace("admin-login.html?expired=1");
       return;
@@ -59,6 +68,27 @@ onAuthStateChanged(auth, async (user) => {
     };
 
     document.documentElement.dataset.adminRole = role;
+
+    const validity = document.querySelector("#admin-account-validity");
+    if (validity && role === "owner" && expiresAt) {
+      validity.dataset.expiry = expiresAt.toISOString();
+      const updateValidity = () => {
+        const diff = expiresAt.getTime() - Date.now();
+        validity.textContent = diff <= 0 ? "Expired" : (Math.ceil(diff / 86400000) + " days left");
+      };
+      updateValidity();
+      setInterval(updateValidity, 60000);
+    } else if (validity && role === "super_admin") {
+      validity.textContent = "Unlimited access";
+    } else if (validity && role === "admin" && ownerProfile?.expiresAt?.toDate) {
+      const ownerExpiry = ownerProfile.expiresAt.toDate();
+      const updateOwnerValidity = () => {
+        const diff = ownerExpiry.getTime() - Date.now();
+        validity.textContent = diff <= 0 ? "Owner expired" : ("Owner: " + Math.ceil(diff / 86400000) + " days left");
+      };
+      updateOwnerValidity();
+      setInterval(updateOwnerValidity, 60000);
+    }
 
     console.log("Gifty Hamper admin:", {
       uid: user.uid,

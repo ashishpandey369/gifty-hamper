@@ -14,6 +14,17 @@ import {
 
 const KEY = "gifty-hamper-catalog";
 
+const DEFAULT_SALE_PRODUCTS = [
+  { id: "little-joy", name: "The Little Joy Hamper", description: "Thoughtful everyday gifting", price: 1499, stock: 10, active: true },
+  { id: "good-things", name: "Good Things Gift Box", description: "A warm collection of favourites", price: 1999, stock: 10, active: true },
+  { id: "just-for-you", name: "Just For You Hamper", description: "Made for meaningful moments", price: 2499, stock: 10, active: true },
+  { id: "signature-luxe", name: "Signature Luxe Hamper", description: "Premium gifting, beautifully packed", price: 3999, stock: 10, active: true },
+  { id: "festive-glow", name: "Festive Glow Box", description: "A bright celebration in a box", price: 1799, stock: 10, active: true },
+  { id: "office-cheer", name: "Office Cheer Hamper", description: "A polished team appreciation gift", price: 2299, stock: 10, active: true },
+  { id: "warm-thanks", name: "Warm Thanks Box", description: "A simple way to say thank you", price: 1299, stock: 10, active: true },
+  { id: "grand-celebration", name: "Grand Celebration Hamper", description: "A premium gift for big moments", price: 4999, stock: 10, active: true }
+];
+
 const $ = (selector) => document.querySelector(selector);
 
 const money = (value) => new Intl.NumberFormat("en-IN", {
@@ -35,7 +46,9 @@ const normaliseProduct = (product) => ({
 function readCatalog() {
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) || "null");
-    return Array.isArray(saved) ? saved.map(normaliseProduct) : [];
+    return Array.isArray(saved) && saved.length
+      ? saved.map(normaliseProduct)
+      : DEFAULT_SALE_PRODUCTS.map(normaliseProduct);
   } catch (_) {
     return [];
   }
@@ -58,6 +71,7 @@ function renderProducts() {
     return !query || [
       product.name,
       product.id,
+      product.sku,
       product.description,
       ...(product.categories || [])
     ].join(" ").toLowerCase().includes(query);
@@ -267,8 +281,16 @@ onAuthStateChanged(auth, async (user) => {
 
     catalog = readCatalog();
 
-    $("#sale-access").hidden = true;
-    $("#sale-content").hidden = false;
+    // Explicitly hide the loading notice after role verification.
+    // The cache-busted script version below also prevents an older page script
+    // from leaving the previous "Checking access" notice on screen.
+    const accessBox = $("#sale-access");
+    accessBox.hidden = true;
+    accessBox.style.display = "none";
+
+    const contentBox = $("#sale-content");
+    contentBox.hidden = false;
+    contentBox.style.display = "grid";
 
     const validity = $("#admin-account-validity");
     if (validity) {

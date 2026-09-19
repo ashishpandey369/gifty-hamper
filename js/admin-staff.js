@@ -7,6 +7,13 @@ import {
   signOut
 } from "./firebase-auth.js";
 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+
 import {
   collection,
   getDocs,
@@ -234,27 +241,27 @@ onAuthStateChanged(auth, async (user) => {
 
   try {
     const tokenResult = await user.getIdTokenResult(true);
-    const claimRole = tokenResult.claims.role || "admin";
+    const claimRole = tokenResult.claims.role || "";
+    const profileSnapshot = await getDoc(doc(db, "users", user.uid));
+    const profile = profileSnapshot.exists() ? profileSnapshot.data() : null;
+    const profileRole = profile?.role || "";
+    const effectiveRole = claimRole === "super_admin" ? "super_admin" : profileRole;
 
-    $("#admin-user-email").textContent = (user.email || "Signed-in admin") + " • " + claimRole;
+    $("#admin-user-email").textContent =
+      (user.email || "Signed-in admin") + " • " + (effectiveRole || "unknown");
 
-    if (claimRole !== "super_admin") {
-      const profile = await getDoc(doc(db, "users", user.uid));
-      const data = profile.exists() ? profile.data() : null;
-
-      if (!data || data.role !== "owner" || data.active !== true) {
-        showAccess("Access restricted", "Only the Super Admin and active Owner can manage staff.");
-        return;
-      }
+    if (!["super_admin", "owner"].includes(effectiveRole) || profile?.active === false) {
+      showAccess("Access restricted", "Only the Super Admin and active Owner can manage staff.");
+      return;
     }
 
     $("#staff-access").hidden = true;
     $("#staff-content").hidden = false;
 
-    $("#add-owner").hidden = claimRole !== "super_admin";
-    $("#add-admin").hidden = !["super_admin", "owner"].includes(claimRole);
+    $("#add-owner").hidden = effectiveRole !== "super_admin";
+    $("#add-admin").hidden = !["super_admin", "owner"].includes(effectiveRole);
 
-    await loadStaff(claimRole);
+    await loadStaff(effectiveRole);
   } catch (error) {
     console.error("Staff page error:", error);
     showAccess("Unable to load staff management", error?.message || "Please refresh the page and check your Firebase connection.");

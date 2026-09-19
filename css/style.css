@@ -59,24 +59,52 @@
 @media(max-width:760px){.container{width:min(100% - 30px,var(--max))}.announcement-inner{justify-content:center}.announcement-inner span{display:none}.header-inner{grid-template-columns:auto auto;justify-content:space-between;min-height:70px}.menu-toggle{display:block;grid-column:2;grid-row:1}.primary-nav{display:none;grid-column:1/-1;grid-row:2;flex-direction:column;align-items:flex-start;gap:0;border-top:1px solid var(--line);padding:8px 0}.primary-nav.open{display:flex}.primary-nav a{width:100%;padding:11px 0}.primary-nav a.active:after{display:none}.header-actions{grid-column:1;grid-row:1;position:absolute;right:58px}.hero-grid{grid-template-columns:1fr;min-height:0}.hero-content{padding:82px 0 35px}.hero-content h1{font-size:clamp(3.2rem,15vw,5rem)}.hero-copy{font-size:.94rem}.hero-trust{margin-top:38px;gap:10px 16px}.hero-art{height:420px;transform:none}.orbit-one{width:330px;height:330px}.orbit-two{width:250px;height:250px}.gift-box-large{transform:rotate(-5deg) scale(.78);margin-top:35px}.card-one{right:0;top:9%}.card-two{left:0;bottom:8%}.section{padding:76px 0}.split-heading{align-items:flex-start;flex-direction:column;gap:18px}.section-heading{margin-bottom:30px}.occasion-grid{grid-template-columns:1fr}.occasion-card{min-height:220px}.product-grid{grid-template-columns:1fr 1fr;gap:13px}.product-image{height:245px}.product-image b{font-size:1.9rem}.story-banner{padding:76px 0}.story-grid{grid-template-columns:1fr;gap:50px}.benefits-grid{grid-template-columns:1fr;gap:38px;margin-top:45px}.newsletter-inner{flex-direction:column;align-items:flex-start}.newsletter-form{width:100%;min-width:0}.site-footer{padding-top:55px}.footer-grid{grid-template-columns:1fr;gap:34px;padding-bottom:40px}.footer-bottom{flex-direction:column;gap:14px}.payment-badges{justify-content:flex-start}}
 @media(prefers-reduced-motion:reduce){body:before,body:after{animation:none;transform:translateY(15%);opacity:.3}}
 
-/* Premium photographic homepage treatment */
+
+/* Homepage reference-style Google reviews banner */
 .google-reviews-hero{padding:18px 0 12px;background:var(--paper)}
-.google-reviews-image-link{display:block;border-radius:28px;overflow:hidden;box-shadow:0 14px 38px rgba(38,32,25,.09);transition:transform .25s ease,box-shadow .25s ease}
-.google-reviews-image-link:hover{transform:translateY(-2px);box-shadow:0 20px 46px rgba(38,32,25,.12)}
-.google-reviews-image-link img{display:block;width:100%;height:auto;aspect-ratio:2132/258;object-fit:cover}
-.occasion-photo-grid{grid-template-columns:repeat(4,1fr);gap:18px}
-.occasion-photo-card{display:block;min-height:205px;border-radius:22px;overflow:hidden;background-image:url('../assets/occasion-cards.webp');background-repeat:no-repeat;background-size:400% 100%;background-position-y:center;box-shadow:0 10px 26px rgba(38,32,25,.08);transition:transform .25s ease,box-shadow .25s ease}
-.occasion-photo-card:hover{transform:translateY(-5px);box-shadow:0 18px 38px rgba(38,32,25,.13)}
-.occasion-photo-birthday{background-position-x:0}
-.occasion-photo-anniversary{background-position-x:33.3333%}
-.occasion-photo-rakhi{background-position-x:66.6667%}
-.occasion-photo-corporate{background-position-x:100%}
-@media(max-width:1000px){.occasion-photo-grid{grid-template-columns:repeat(2,1fr)}}
+.google-reviews-card{position:relative;display:grid;grid-template-columns:1.15fr 1fr .9fr;align-items:center;min-height:205px;padding:28px 34px;border-radius:26px;background:linear-gradient(105deg,#fff0f3,#f8eaf0 52%,#f0eafa);box-shadow:0 14px 38px rgba(38,32,25,.09);overflow:hidden}
+.google-reviews-card:before,.google-reviews-card:after{content:'♥';position:absolute;color:#ef7d98;opacity:.55;font-size:1.5rem}
+.google-reviews-card:before{left:22px;bottom:14px}.google-reviews-card:after{right:35%;top:18px}
+.google-reviews-brand{display:flex;align-items:center;gap:20px;position:relative;z-index:1}
+.google-g-mark{width:72px;height:72px;flex:0 0 72px;display:grid;place-items:center;background:#fff;border-radius:50%;font:700 3.2rem Arial,sans-serif;color:#4285f4;box-shadow:0 8px 20px rgba(38,32,25,.08)}
+.google-reviews-brand .eyebrow{margin:0 0 3px;color:#c27f86}
+.google-reviews-brand h2{margin:0;font-family:'Playfair Display',Georgia,serif;font-size:clamp(2rem,3.1vw,3rem);line-height:1;letter-spacing:-.04em}
+.google-stars{margin-top:9px;color:#f2ad16;font-size:1.05rem;letter-spacing:.16em}
+.google-review-note{margin:3px 0 0;color:#77716a;font-size:.7rem}
+.google-review-message{position:relative;z-index:1;border-left:1px solid rgba(166,93,71,.2);padding:8px 28px;display:flex;flex-direction:column}
+.google-quote{font:3.5rem Georgia,serif;line-height:.4;color:var(--accent);opacity:.45}
+.google-review-message strong{font:600 1.35rem 'Playfair Display',Georgia,serif;line-height:1.08}
+.google-review-message span:last-child{margin-top:8px;color:#77716a;font-size:.68rem}
+.google-review-action{position:relative;z-index:1;border-left:1px solid rgba(166,93,71,.2);padding-left:28px;display:flex;flex-direction:column;align-items:flex-start;gap:9px}
+.google-review-action .button{background:#df4961;box-shadow:0 9px 20px rgba(223,73,97,.2)}
+.google-review-action .button:hover{background:#c83e55}
+.google-review-action small{color:#77716a;font-size:.62rem}
+
+/* Homepage reference-style occasion cards */
+.occasion-reference-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.occasion-reference-card{position:relative;display:flex;flex-direction:column;justify-content:flex-end;min-height:205px;padding:24px;border:1px solid rgba(255,255,255,.8);border-radius:22px;overflow:hidden;box-shadow:0 10px 26px rgba(38,32,25,.07);transition:transform .25s ease,box-shadow .25s ease}
+.occasion-reference-card:after{content:'';position:absolute;width:145px;height:145px;right:-30px;bottom:-62px;border-radius:50%;background:rgba(255,255,255,.35)}
+.occasion-reference-card:hover{transform:translateY(-5px);box-shadow:0 18px 38px rgba(38,32,25,.12)}
+.occasion-reference-card strong{position:relative;z-index:2;font:600 1.55rem 'Playfair Display',Georgia,serif}
+.occasion-reference-card small{position:relative;z-index:2;color:#625e57;font-size:.72rem;margin-top:3px}
+.occasion-reference-card>b{position:absolute;z-index:2;right:23px;top:24px;font-size:1.15rem;font-weight:400}
+.occasion-art-symbol{position:absolute;z-index:1;left:20px;top:22px;width:155px;height:105px;display:grid;place-items:center;font-size:4.2rem;background:rgba(255,255,255,.28);border-radius:15px}
+.occasion-reference-card strong{margin-top:108px}
+.occasion-birthday{background:#f3d9df}.occasion-anniversary{background:#e2ecd9}.occasion-rakhi{background:#f4e5bc}.occasion-corporate{background:#ead8de}
+@media(max-width:1000px){.google-reviews-card{grid-template-columns:1fr 1fr}.google-review-action{grid-column:1/-1;border-left:0;border-top:1px solid rgba(166,93,71,.2);padding:18px 0 0;margin-top:6px}.occasion-reference-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:760px){
-  .google-reviews-hero{padding:12px 0 6px}
-  .google-reviews-image-link{border-radius:20px}
-  .google-reviews-image-link img{aspect-ratio:2132/258;object-fit:cover}
-  .occasion-photo-grid{grid-template-columns:1fr 1fr;gap:12px}
-  .occasion-photo-card{min-height:150px;border-radius:16px}
+ .google-reviews-hero{padding:12px 0 6px}
+ .google-reviews-card{grid-template-columns:1fr;padding:22px 18px;border-radius:20px;gap:18px}
+ .google-g-mark{width:54px;height:54px;flex-basis:54px;font-size:2.35rem}
+ .google-reviews-brand{gap:13px}.google-reviews-brand h2{font-size:2rem}
+ .google-review-message{border-left:0;border-top:1px solid rgba(166,93,71,.2);padding:16px 0 0}
+ .google-review-action{border-left:0;border-top:1px solid rgba(166,93,71,.2);padding:16px 0 0;margin:0}
+ .google-review-action .button{width:100%}
+ .google-review-action small{text-align:center;width:100%}
+ .occasion-reference-grid{grid-template-columns:1fr 1fr;gap:12px}
+ .occasion-reference-card{min-height:160px;padding:17px;border-radius:17px}
+ .occasion-art-symbol{width:105px;height:72px;left:12px;top:12px;font-size:2.8rem}
+ .occasion-reference-card strong{margin-top:72px;font-size:1.15rem}
+ .occasion-reference-card small{font-size:.62rem}
+ .occasion-reference-card>b{right:15px;top:15px}
 }
-@media(max-width:430px){.occasion-photo-card{min-height:132px}}

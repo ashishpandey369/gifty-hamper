@@ -53,9 +53,15 @@
         <div class="admin-panel-head">
           <div>
             <p class="eyebrow">Completed orders</p>
-            <h2 id="sales-heading">All sales</h2>
+            <h2 id="sales-heading">This week — all sales</h2>
           </div>
-          <button class="admin-secondary" id="sales-refresh" type="button">Refresh</button>
+          <div class="sales-periods" role="group" aria-label="Sales period">
+            <button class="admin-secondary sales-period active" data-period="week" type="button">Week</button>
+            <button class="admin-secondary sales-period" data-period="month" type="button">Month</button>
+            <button class="admin-secondary sales-period" data-period="year" type="button">Year</button>
+            <button class="admin-secondary sales-period" data-period="all" type="button">All time</button>
+            <button class="admin-secondary" id="sales-refresh" type="button">Refresh</button>
+          </div>
         </div>
 
         <div class="admin-table-wrap">

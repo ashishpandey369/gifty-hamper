@@ -10,7 +10,17 @@ const DEFAULT_GIFTS = [
   { id: 'grand-celebration', name: 'Grand Celebration Hamper', description: 'A premium gift for big moments', price: 4999, occasion: 'Festive', categories: ['Celebration Gifts', 'Premium Gifts', 'Gift Sets'], label: 'Premium', imageClass: 'image-night' }
 ];
 
-const GIFTS = (() => {
+const PRICE_RANGES = [
+  {id:'under-999', label:'Under ₹999', matches: price => price < 999},
+  {id:'999-1999', label:'₹999 – ₹1,999', matches: price => price >= 999 && price <= 1999},
+  {id:'1999-2999', label:'₹2,000 – ₹2,999', matches: price => price >= 2000 && price <= 2999},
+  {id:'3000-4999', label:'₹3,000 – ₹4,999', matches: price => price >= 3000 && price <= 4999},
+  {id:'over-5000', label:'₹5,000+', matches: price => price >= 5000}
+];
+
+function getPriceRange(price) { return PRICE_RANGES.find(range => range.matches(Number(price) || 0)) || PRICE_RANGES[0]; }
+
+const GIFTS = (() => { 
   try {
     const saved = JSON.parse(localStorage.getItem('gifty-hamper-catalog') || 'null');
     return Array.isArray(saved) && saved.length ? saved : DEFAULT_GIFTS;
@@ -52,15 +62,17 @@ function renderCatalog() {
   if (!grid) return;
 
   const search = (document.querySelector('#catalog-search')?.value || '').trim().toLowerCase();
+  const majorCategories = [...document.querySelectorAll('input[name="major-category"]:checked')].map(input => input.value);
   const categories = [...document.querySelectorAll('input[name="category"]:checked')].map(input => input.value);
   const occasions = [...document.querySelectorAll('input[name="occasion"]:checked')].map(input => input.value);
   const prices = [...document.querySelectorAll('input[name="price"]:checked')].map(input => input.value);
   const sort = document.querySelector('#sort-products')?.value || 'featured';
 
   let products = GIFTS.filter(product => {
-    const searchable = `${product.name} ${product.description} ${product.occasion} ${product.categories.join(' ')}`.toLowerCase();
+    const searchable = `${product.name} ${product.description} ${product.occasion} ${(product.categories || []).join(' ')} ${product.majorCategory || 'Gifts for Everyone'}`.toLowerCase();
     const matchesSearch = !search || searchable.includes(search);
-    const matchesCategory = !categories.length || categories.some(category => product.categories.includes(category));
+    const matchesMajorCategory = !majorCategories.length || majorCategories.includes(product.majorCategory || 'Gifts for Everyone');
+    const matchesCategory = !categories.length || categories.some(category => (product.categories || []).includes(category));
     const matchesOccasion = !occasions.length || occasions.includes(product.occasion);
     const matchesPrice = !prices.length || prices.some(range => {
       if (range === 'under-999') return product.price < 999;
@@ -70,7 +82,7 @@ function renderCatalog() {
       if (range === 'over-5000') return product.price >= 5000;
       return false;
     });
-    return matchesSearch && matchesCategory && matchesOccasion && matchesPrice;
+    return matchesSearch && matchesMajorCategory && matchesCategory && matchesOccasion && matchesPrice;
   });
 
   if (sort === 'price-low') products.sort((a, b) => a.price - b.price);
@@ -85,31 +97,33 @@ function renderCatalog() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  const readList = (key, fallback) => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(key) || 'null');
+      return Array.isArray(saved) && saved.length ? saved : fallback;
+    } catch (_) { return fallback; }
+  };
+
+  const majorCategories = readList('gifty-hamper-major-categories', ['Gifts for Everyone']).map(item => item === 'Gifts' ? 'Gifts for Everyone' : item);
+  const minorCategories = readList('gifty-hamper-categories', [...new Set(DEFAULT_GIFTS.flatMap(product => product.categories || []))]);
+
+  const majorBox = document.querySelector('#major-category-filters');
+  const minorBox = document.querySelector('#minor-category-filters');
+  if (majorBox) {
+    majorBox.innerHTML = majorCategories.map(value => '<label><input type="checkbox" name="major-category" value="' + value.replace(/"/g, '&quot;') + '"> ' + value + '</label>').join('');
+  }
+  if (minorBox) {
+    minorBox.innerHTML = minorCategories.map(value => '<label><input type="checkbox" name="category" value="' + value.replace(/"/g, '&quot;') + '"> ' + value + '</label>').join('');
+  }
+
   const priceGroup = document.querySelector('#filters input[name="price"]')?.closest('.filter-group');
   if (priceGroup) {
-    const ranges = [
-      ['under-999', 'Under ₹999'],
-      ['999-1999', '₹999 – ₹1,999'],
-      ['1999-2999', '₹1,999 – ₹2,999'],
-      ['3000-4999', '₹3,000 – ₹4,999'],
-      ['over-5000', '₹5,000+']
-    ];
-    priceGroup.querySelectorAll('label').forEach((label, index) => {
-      const range = ranges[index];
-      if (!range) return;
-      const input = label.querySelector('input');
-      input.value = range[0];
-      label.innerHTML = '';
-      label.append(input, document.createTextNode(` ${range[1]}`));
+    priceGroup.querySelectorAll('label').forEach(label => label.remove());
+    PRICE_RANGES.forEach(range => {
+      const label = document.createElement('label');
+      label.innerHTML = '<input type="checkbox" name="price" value="' + range.id + '"> ' + range.label;
+      priceGroup.appendChild(label);
     });
-    if (priceGroup.querySelectorAll('label').length < ranges.length) {
-      ranges.slice(priceGroup.querySelectorAll('label').length).forEach(([value, text]) => {
-        const label = document.createElement('label');
-        label.innerHTML = `<input type="checkbox" name="price" value="${value}"> ${text}`;
-        priceGroup.insertBefore(label, priceGroup.querySelector('.clear-filters') || null);
-        label.querySelector('input').addEventListener('change', renderCatalog);
-      });
-    }
   }
 
   applyBudgetFromUrl();

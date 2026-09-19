@@ -1,12 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
   const button = document.querySelector('.location-button');
-  if (!button) return;
+  const header = document.querySelector('.site-header');
+  const headerInner = header?.querySelector('.header-inner');
+  if (!button || !header || !headerInner) return;
 
   const style = document.createElement('style');
   style.textContent = `
     .location-button{display:inline-flex;align-items:center;gap:7px;min-height:42px;padding:0 13px;border:1px solid rgba(32,32,30,.08);border-radius:999px;background:#f0eee9;color:#20201e;font:600 .86rem/1 'DM Sans',Arial,sans-serif;cursor:pointer;white-space:nowrap;transition:background .2s ease,transform .2s ease}
     .location-button:hover{background:#e8e5df;transform:translateY(-1px)}
     .location-button small{font:500 .68rem/1 'DM Sans',Arial,sans-serif;color:#77716a}
+    .gh-mobile-location{display:none}
     .gh-location-backdrop{position:fixed;inset:0;z-index:100001;display:grid;place-items:center;padding:20px;background:rgba(32,32,30,.34);backdrop-filter:blur(7px);opacity:0;animation:ghLocationIn .22s ease forwards}
     .gh-location-modal{width:min(440px,100%);padding:30px;border-radius:24px;background:#fffdf9;box-shadow:0 28px 80px rgba(32,32,30,.22);position:relative}
     .gh-location-close{position:absolute;right:14px;top:12px;width:34px;height:34px;border:0;border-radius:50%;background:#f0eee9;color:#20201e;font-size:1.25rem;cursor:pointer}
@@ -15,10 +18,27 @@ document.addEventListener('DOMContentLoaded', () => {
     .gh-location-form button{height:48px;padding:0 18px;border:0;border-radius:12px;background:#20201e;color:#fff;font:700 .82rem 'DM Sans',Arial,sans-serif;cursor:pointer}.gh-location-form button:disabled{opacity:.6;cursor:wait}.gh-location-note{margin:12px 0 0;color:#8a857d;font-size:.72rem}
     .gh-location-result{margin:13px 0 0;padding:12px 13px;border-radius:12px;background:#f6f2eb;color:#514b44;font-size:.78rem;line-height:1.45}.gh-location-result strong{display:block;color:#20201e;font-size:.86rem}.gh-location-result.error{background:#fff1f1;color:#9b3f3f}
     @keyframes ghLocationIn{to{opacity:1}}
-    @media(max-width:760px){.location-button{width:36px;height:36px;min-height:36px;padding:0;justify-content:center;font-size:1rem}.location-button span,.location-button small{display:none}.gh-location-modal{padding:26px 20px}.gh-location-modal h2{font-size:1.7rem}.gh-location-form{flex-direction:column}.gh-location-form button{width:100%}}
+    @media(max-width:760px){
+      .header-actions .location-button{display:none}
+      .gh-mobile-location{display:flex;width:100%;min-height:50px;padding:0 18px;align-items:center;justify-content:space-between;gap:12px;border:0;border-top:1px solid rgba(32,32,30,.07);border-bottom:1px solid rgba(32,32,30,.08);background:#f6f1ff;color:#20201e;font:600 .92rem/1 'DM Sans',Arial,sans-serif;text-align:left;cursor:pointer}
+      .gh-mobile-location .gh-location-label{display:flex;align-items:center;gap:10px;min-width:0}
+      .gh-mobile-location .gh-location-icon{font-size:1.2rem;color:#7053a6}
+      .gh-mobile-location .gh-location-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+      .gh-mobile-location .gh-location-copy strong{font-weight:700}
+      .gh-mobile-location .gh-location-copy small{font:500 .72rem/1.1 'DM Sans',Arial,sans-serif;color:#77716a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px}
+      .gh-mobile-location .gh-location-arrow{font-size:1.35rem;color:#20201e}
+      .gh-location-modal{padding:26px 20px}.gh-location-modal h2{font-size:1.7rem}.gh-location-form{flex-direction:column}.gh-location-form button{width:100%}
+    }
     @media(prefers-reduced-motion:reduce){.location-button{transition:none}.gh-location-backdrop{animation:none;opacity:1}}
   `;
   document.head.appendChild(style);
+
+  const mobileBar = document.createElement('button');
+  mobileBar.className = 'gh-mobile-location';
+  mobileBar.type = 'button';
+  mobileBar.setAttribute('aria-label', 'Set delivery location');
+  mobileBar.innerHTML = '<span class="gh-location-label"><span class="gh-location-icon">⌖</span><span class="gh-location-copy"><strong>Where to deliver?</strong><small data-mobile-location-label>Set location</small></span></span><span class="gh-location-arrow">›</span>';
+  header.appendChild(mobileBar);
 
   const readSavedLocation = () => {
     try {
@@ -34,9 +54,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const updateLabel = () => {
     const saved = readSavedLocation();
-    const label = button.querySelector('[data-location-label]');
-    if (!label) return;
-    label.textContent = saved?.area || saved?.pincode || 'Set location';
+    const desktopLabel = button.querySelector('[data-location-label]');
+    const mobileLabel = mobileBar.querySelector('[data-mobile-location-label]');
+    const place = saved?.area || saved?.pincode || 'Set location';
+    if (desktopLabel) desktopLabel.textContent = place;
+    if (mobileLabel) mobileLabel.textContent = saved?.pincode ? `${place} • ${saved.pincode}` : place;
   };
   updateLabel();
 
@@ -112,4 +134,5 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   button.addEventListener('click', open);
+  mobileBar.addEventListener('click', open);
 });

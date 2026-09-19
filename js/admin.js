@@ -299,6 +299,20 @@ document.addEventListener('DOMContentLoaded', () => {
     event.target.value = '';
   });
 
+  $('#create-major-category').addEventListener('click', () => {
+    const input = $('#new-major-category');
+    const name = input.value.trim();
+    if (!name) return;
+    if (majorCategories.some(category => category.toLowerCase() === name.toLowerCase())) {
+      alert('That major category already exists.');
+      return;
+    }
+    majorCategories.push(name);
+    saveMajorCategories(majorCategories);
+    input.value = '';
+    renderCategoryManager();
+  });
+
   $('#create-category').addEventListener('click', () => {
     const input = $('#new-category');
     const name = input.value.trim();

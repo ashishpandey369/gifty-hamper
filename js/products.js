@@ -20,14 +20,10 @@ const PRICE_RANGES = [
 
 function getPriceRange(price) { return PRICE_RANGES.find(range => range.matches(Number(price) || 0)) || PRICE_RANGES[0]; }
 
-const GIFTS = (() => { 
-  try {
-    const saved = JSON.parse(localStorage.getItem('gifty-hamper-catalog') || 'null');
-    return Array.isArray(saved) && saved.length ? saved : DEFAULT_GIFTS;
-  } catch (_) {
-    return DEFAULT_GIFTS;
-  }
-})();
+import { DEFAULT_CATALOG, loadPublicCatalog } from "./catalog-store.js";
+
+let GIFTS = DEFAULT_CATALOG.map(product => ({ ...product }));
+
 
 function formatPrice(value) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value);
@@ -89,7 +85,13 @@ function renderCatalog() {
   if (empty) empty.hidden = products.length !== 0;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const sharedCatalog = await loadPublicCatalog();
+    if (sharedCatalog.length) GIFTS = sharedCatalog;
+  } catch (error) {
+    console.error('Shared catalog load error:', error);
+  }
   const readList = (key, fallback) => {
     try {
       const saved = JSON.parse(localStorage.getItem(key) || 'null');

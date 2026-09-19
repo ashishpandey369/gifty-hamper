@@ -7,12 +7,13 @@ import {
   signOut
 } from "./firebase-auth.js";
 import {
-  addDoc,
   collection,
+  runTransaction,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 import { showBillPdf } from "./bill.js";
+import { loadAdminCatalog } from "./catalog-store.js";
 
 const KEY = "gifty-hamper-catalog";
 
@@ -199,15 +200,46 @@ async function completeSale() {
   button.textContent = "Saving sale…";
 
   try {
-    await addDoc(collection(db, "sales"), {
-      orderId,
-      sellerUid: signedInUser.uid,
-      sellerEmail: signedInUser.email || "",
-      items,
-      itemCount: items.length,
-      totalQuantity: items.reduce((sum, item) => sum + item.quantity, 0),
-      total,
-      createdAt: serverTimestamp()
+    const saleRef = doc(collection(db, "sales"));
+
+    await runTransaction(db, async (transaction) => {
+      const productRefs = entries.map(({ product }) => doc(db, "products", product.id));
+      const productSnapshots = [];
+
+      for (const productRef of productRefs) {
+        productSnapshots.push(await transaction.get(productRef));
+      }
+
+      productSnapshots.forEach((snapshot, index) => {
+        if (!snapshot.exists()) {
+          throw new Error("Product no longer exists in the shared catalog.");
+        }
+
+        const requested = entries[index].quantity;
+        const currentStock = Number(snapshot.data().stock) || 0;
+
+        if (currentStock < requested) {
+          throw new Error(
+            entries[index].product.name + " has only " + currentStock +
+            " item" + (currentStock === 1 ? "" : "s") + " left in stock."
+          );
+        }
+
+        transaction.update(productRefs[index], {
+          stock: currentStock - requested
+        });
+      });
+
+      transaction.set(saleRef, {
+        orderId,
+        sellerUid: signedInUser.uid,
+        sellerEmail: signedInUser.email || "",
+        items,
+        itemCount: items.length,
+        totalQuantity: items.reduce((sum, item) => sum + item.quantity, 0),
+        total,
+        createdAt: serverTimestamp()
+      });
     });
 
     cart.clear();
@@ -294,7 +326,7 @@ onAuthStateChanged(auth, async (user) => {
       return;
     }
 
-    catalog = readCatalog();
+    catalog = await loadAdminCatalog();
 
     // Explicitly hide the loading notice after role verification.
     // The cache-busted script version below also prevents an older page script

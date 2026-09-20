@@ -337,17 +337,24 @@ $("#sale-search").addEventListener("input", () => {
   renderProducts();
 });
 
-$("#sale-search").addEventListener("keydown", event => {
-  if (event.key !== "Enter") return;
-
-  event.preventDefault();
-
+function commitSkuSearchToSale() {
   const added = applySkuQuantitySearch();
 
   if (added) {
     renderProducts();
     renderCart();
   }
+  return added;
+}
+
+$("#sale-search").addEventListener("keydown", event => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  commitSkuSearchToSale();
+});
+
+$("#sale-search").addEventListener("search", () => {
+  commitSkuSearchToSale();
 });
 
 $("#sale-product-list").addEventListener("click", (event) => {

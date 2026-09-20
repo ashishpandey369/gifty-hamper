@@ -111,6 +111,43 @@
       </div>
     </section>
 
+
+    <div class="category-editor-modal" id="category-editor-modal" hidden aria-hidden="true">
+      <div class="category-editor-backdrop" data-close-category-editor></div>
+      <section class="category-editor-dialog" role="dialog" aria-modal="true" aria-labelledby="category-editor-title">
+        <div class="admin-panel-head">
+          <div><p class="eyebrow">Category editor</p><h2 id="category-editor-title">Edit category</h2></div>
+          <button class="admin-close" id="close-category-editor" type="button" aria-label="Close category editor">×</button>
+        </div>
+        <form id="category-editor-form">
+          <input type="hidden" id="category-editor-id">
+          <input type="hidden" id="category-editor-type">
+          <div class="category-editor-body">
+            <label>Category name<input id="category-editor-name" required></label>
+            <div class="admin-field">
+              <span class="admin-field-label">Category image</span>
+              <p class="admin-help">Upload a PNG/JPG/WebP image or paste a direct image URL. A square image works best.</p>
+              <div class="image-input-row">
+                <input id="category-editor-image-url" type="url" placeholder="https://example.com/category.jpg">
+                <button id="category-editor-add-url" type="button" class="admin-secondary">Use image URL</button>
+              </div>
+              <label class="upload-box">
+                <input id="category-editor-image-file" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+                <span>Choose category image</span>
+                <small>One image per category</small>
+              </label>
+              <div id="category-editor-preview" class="category-editor-preview"></div>
+              <button id="category-editor-remove-image" type="button" class="admin-secondary danger category-editor-remove">Remove image</button>
+            </div>
+          </div>
+          <div class="admin-form-actions">
+            <button class="admin-secondary" id="cancel-category-editor" type="button">Cancel</button>
+            <button class="admin-primary" id="save-category-editor" type="submit">Save category</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
     <section class="admin-panel admin-catalog-tools">
       <div>
         <p class="eyebrow">Catalog data</p>
@@ -126,6 +163,6 @@
 
   <script type="module" src="js/admin-feature-guard.js?v=2"></script>
   <script type="module" src="js/admin-guard.js?v=5"></script>
-  <script type="module" src="js/admin.js?v=10"></script>
+  <script type="module" src="js/admin.js?v=11"></script>
 </body>
 </html>

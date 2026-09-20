@@ -24,21 +24,40 @@ function categoryIcon(name){
 function renderCategories(){
   const target = document.querySelector('#home-categories');
   if (!target) return;
-  const names = [];
-  const add = value => {
+
+  let savedMajor = [];
+  let savedMinor = [];
+  try {
+    const major = JSON.parse(localStorage.getItem('gifty-hamper-major-categories') || '[]');
+    const minor = JSON.parse(localStorage.getItem('gifty-hamper-categories') || '[]');
+    if (Array.isArray(major)) savedMajor = major.filter(Boolean).map(value => value === 'Gifts' ? 'Gifts for Everyone' : value);
+    if (Array.isArray(minor)) savedMinor = minor.filter(Boolean);
+  } catch (_) {}
+
+  const major = [];
+  const minor = [];
+  const addUnique = (list, value) => {
     const clean = String(value || '').trim();
-    if (clean && !names.some(item => item.toLowerCase() === clean.toLowerCase())) names.push(clean);
+    if (clean && !list.some(item => item.toLowerCase() === clean.toLowerCase())) list.push(clean);
   };
-  catalog.forEach(product => {
-    add(product.majorCategory || 'Gifts for Everyone');
-    (product.categories || []).forEach(add);
-  });
-  const categories = names.slice(0, 12);
+
+  savedMajor.forEach(value => addUnique(major, value));
+  catalog.forEach(product => addUnique(major, product.majorCategory || 'Gifts for Everyone'));
+
+  savedMinor.forEach(value => addUnique(minor, value));
+  catalog.forEach(product => (product.categories || []).forEach(value => addUnique(minor, value)));
+
+  const categories = [...major, ...minor.filter(value => !major.some(item => item.toLowerCase() === value.toLowerCase()))].slice(0, 14);
+
   target.innerHTML = categories.map(name => {
-    const count = catalog.filter(product => (product.categories || []).includes(name) || product.majorCategory === name).length;
+    const count = catalog.filter(product =>
+      String(product.majorCategory || 'Gifts for Everyone').toLowerCase() === name.toLowerCase() ||
+      (product.categories || []).some(category => String(category).toLowerCase() === name.toLowerCase())
+    ).length;
+
     return '<a class="category-chip" href="shop.html?category=' + encodeURIComponent(name) + '">' +
       '<span class="category-chip-icon">' + categoryIcon(name) + '</span>' +
-      '<strong>' + escapeHtml(name) + '</strong>' +
+      '<strong title="' + escapeHtml(name) + '">' + escapeHtml(name) + '</strong>' +
       '<small>' + count + ' ' + (count === 1 ? 'gift' : 'gifts') + '</small>' +
       '</a>';
   }).join('');

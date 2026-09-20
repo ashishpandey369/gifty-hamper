@@ -103,7 +103,10 @@ export function normaliseProduct(product) {
     majorCategory: product.majorCategory === "Gifts" ? "Gifts for Everyone" : (product.majorCategory || "Gifts for Everyone"),
     images: Array.isArray(product.images) && product.images.length
       ? product.images
-      : (product.image ? [product.image] : [])
+      : (product.image ? [product.image] : []),
+    imageKitFileIds: Array.isArray(product.imageKitFileIds)
+      ? product.imageKitFileIds.map(item => String(item || ""))
+      : []
   };
 }
 

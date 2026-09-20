@@ -721,7 +721,6 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#admin-refresh').addEventListener('click', async () => {
     try {
       await loadSharedCategories();
-      await loadSharedCategories();
       await loadSharedCatalog();
     } catch (error) {
       console.error('Admin refresh error:', error);
@@ -771,6 +770,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      await loadSharedCategories();
       await loadSharedCatalog();
     } catch (error) {
       console.error('Shared catalog initialization error:', error);

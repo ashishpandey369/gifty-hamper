@@ -41,3 +41,53 @@
 @media(prefers-reduced-motion:reduce){
   .catalog-grid .product-image-carousel .product-photo,.catalog-grid .product-carousel-arrow{transition:none}
 }
+
+/* Match shop catalog cards to the clean marketplace product format */
+.catalog-grid .product-image-carousel{
+  aspect-ratio:1/1;
+  height:auto;
+  background:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+.catalog-grid .product-image-carousel .product-photo{
+  object-fit:contain;
+  object-position:center;
+  padding:8px;
+  background:#fff;
+}
+.catalog-grid .product-info{
+  min-width:0;
+}
+.catalog-grid .product-info h3{
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  overflow:hidden;
+  min-height:2.56em;
+}
+.catalog-grid .product-info p{
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:1;
+  overflow:hidden;
+  min-height:1.35em;
+}
+@media(min-width:761px){
+  .catalog-grid .product-image-carousel{min-height:260px}
+}
+@media(max-width:760px){
+  .catalog-grid{gap:10px}
+  .catalog-grid .product-image-carousel{height:auto;aspect-ratio:1/1}
+  .catalog-grid .product-image-carousel .product-photo{padding:5px}
+  .catalog-grid .product-info{padding:9px 1px 4px}
+  .catalog-grid .product-info h3{font-size:.78rem;line-height:1.28;min-height:2.56em}
+  .catalog-grid .product-info p{font-size:.58rem;line-height:1.35;min-height:1.35em}
+  .catalog-grid .product-card-price{margin-top:5px}
+  .catalog-grid .product-card-price strong{font-size:.78rem}
+  .catalog-grid .product-card-price del{font-size:.55rem}
+  .catalog-grid .product-card-price span{font-size:.5rem;padding:3px 5px}
+  .catalog-grid .product-sku-label{font-size:.52rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}

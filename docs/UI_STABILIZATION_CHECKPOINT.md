@@ -11,8 +11,8 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 5. Firebase public catalog loading is centralized in `js/catalog-store.js` through `loadPublicCatalog()`; no catalog data should be duplicated or rewritten by this UI work.
 
 ## Safe implementation sequence
-- Step 1: Document and isolate the existing behavior (this checkpoint).
-- Step 2: Normalize the homepage mobile header to the same shared menu positioning without changing `js/main.js`.
+- Step 1: Document and isolate the existing behavior (this checkpoint) — completed.
+- Step 2: Normalize the homepage mobile header to the same shared menu positioning without changing `js/main.js` — completed. Also removed a literal `\\n` text artifact from `index.html` that was visible above the header.
 - Step 3: Make Recently Viewed a clean temporary reference list, deduplicated by product id, refreshed on view, expired after 7 days, and always resolved against the live catalog.
 - Step 4: Keep For You independent from Recently Viewed and show exactly 10 active products before the View More CTA.
 - Step 5: Refresh cache versions only for files whose behavior changed.

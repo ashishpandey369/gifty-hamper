@@ -23,6 +23,7 @@ export function normaliseCategory(category = {}) {
     name,
     type: category.type === "major" ? "major" : "minor",
     image: cleanName(category.image),
+    imageFileId: cleanName(category.imageFileId),
     order: Number.isFinite(Number(category.order)) ? Number(category.order) : 0,
     active: category.active !== false
   };
@@ -44,6 +45,7 @@ export async function saveCategory(category) {
     name: normalised.name,
     type: normalised.type,
     image: normalised.image,
+    imageFileId: normalised.imageFileId,
     order: normalised.order,
     active: normalised.active
   }, { merge: true });

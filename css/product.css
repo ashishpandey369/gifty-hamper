@@ -4,3 +4,49 @@
 .product-price{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.product-original-price{text-decoration:line-through;color:var(--muted);font-size:.9rem;font-weight:500}.product-sale-price{font-size:1.25rem}.product-discount{font-size:.68rem;font-weight:800;color:#d62f61;background:#ffe4ed;border-radius:999px;padding:5px 8px}.product-visual.has-product-image:after{display:none}.product-visual.has-product-image #product-label{background:rgba(255,255,255,.82);padding:6px 9px;border-radius:999px}
 
 .product-sku{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:#8c8177;margin-top:-10px}
+
+
+/* More to love: same horizontal shelf behavior as Recently Viewed */
+.related-section-heading{align-items:end}
+.related-section-actions{display:flex;align-items:center;gap:16px}
+.related-section-actions .text-link{white-space:nowrap}
+.related-products-wrap{position:relative;min-width:0}
+.related-products-row{
+  display:flex;
+  gap:17px;
+  overflow-x:auto;
+  scroll-behavior:smooth;
+  scrollbar-width:none;
+  padding:2px 2px 10px;
+  scroll-snap-type:x proximity;
+}
+.related-products-row::-webkit-scrollbar{display:none}
+.related-products-row .product-card{
+  flex:0 0 250px;
+  scroll-snap-align:start;
+}
+.related-products-row .product-image{height:300px}
+.related-products-row .product-image img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.related-scroll-btn:disabled{opacity:.35;cursor:default;background:#faf9fb}
+
+@media(max-width:900px){
+  .related-products-row .product-card{flex-basis:230px}
+  .related-products-row .product-image{height:275px}
+}
+@media(max-width:600px){
+  .related-section-heading{align-items:flex-start}
+  .related-section-actions{flex-direction:column;align-items:flex-end;gap:9px}
+  .related-section-actions .text-link{font-size:.7rem}
+  .related-products-row{gap:10px;padding-left:0;padding-right:0}
+  .related-products-row .product-card{flex-basis:180px}
+  .related-products-row .product-image{height:220px}
+  .related-products-row .product-info{padding:10px 1px}
+  .related-products-row .product-info h3{font-size:.8rem}
+  .related-products-row .product-info p{font-size:.64rem}
+  .related-products-row .product-card-price{font-size:.72rem}
+}

@@ -7,6 +7,7 @@ import {
   saveCatalogProduct
 } from "./catalog-store.js";
 import { deleteCategory, loadCategories, saveCategory, categoryId } from "./category-store.js";
+import { deleteImageFile, uploadImageFile, uploadImageUrl } from "./imagekit-store.js";
 
 document.addEventListener('DOMContentLoaded', () => {
   const CAT_KEY = 'gifty-hamper-categories';
@@ -78,6 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let editingId = '';
   let categoryRecords = [];
   let categoryEditorImage = '';
+  let categoryEditorImageFileId = '';
 
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 
@@ -127,10 +129,10 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       const seeded = [];
       majorCategories.forEach((name, index) => seeded.push({
-        id: uniqueCategoryId(name, 'major'), name, type: 'major', image: '', order: index
+        id: uniqueCategoryId(name, 'major'), name, type: 'major', image: '', imageFileId: '', order: index
       }));
       categories.forEach((name, index) => seeded.push({
-        id: uniqueCategoryId(name, 'minor'), name, type: 'minor', image: '', order: 100 + index
+        id: uniqueCategoryId(name, 'minor'), name, type: 'minor', image: '', imageFileId: '', order: 100 + index
       }));
       for (const category of seeded) await saveCategory(category);
       categoryRecords = seeded;
@@ -180,6 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#category-editor-name').value = category.name;
     $('#category-editor-image-url').value = category.image?.startsWith('data:image/') ? '' : (category.image || '');
     categoryEditorImage = category.image || '';
+    categoryEditorImageFileId = category.imageFileId || '';
     $('#category-editor-title').textContent = 'Edit ' + (category.type === 'major' ? 'major' : 'minor') + ' category';
     renderCategoryEditorPreview();
     const modal = $('#category-editor-modal');
@@ -194,35 +197,54 @@ document.addEventListener('DOMContentLoaded', () => {
     modal.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('category-editor-open');
     categoryEditorImage = '';
+    categoryEditorImageFileId = '';
     $('#category-editor-form').reset();
     renderCategoryEditorPreview();
   }
 
-  function readCategoryImageFile(file) {
+  function prepareImageBlob(file, maxSize, quality = 0.82) {
     return new Promise((resolve, reject) => {
       if (!/^image\/(png|jpeg|webp)$/i.test(file.type)) {
         reject(new Error('Only PNG, JPG and WebP images are supported.'));
         return;
       }
+
       const reader = new FileReader();
       reader.onload = () => {
         const image = new Image();
         image.onload = () => {
-          const maxSize = 900;
-          const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+          const sourceWidth = image.naturalWidth || image.width;
+          const sourceHeight = image.naturalHeight || image.height;
+          const scale = Math.min(1, maxSize / Math.max(sourceWidth, sourceHeight));
           const canvas = document.createElement('canvas');
-          canvas.width = Math.max(1, Math.round(image.width * scale));
-          canvas.height = Math.max(1, Math.round(image.height * scale));
+          canvas.width = Math.max(1, Math.round(sourceWidth * scale));
+          canvas.height = Math.max(1, Math.round(sourceHeight * scale));
           const context = canvas.getContext('2d');
+
+          if (!context) {
+            reject(new Error('Unable to process the selected image.'));
+            return;
+          }
+
           context.drawImage(image, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL('image/webp', 0.82));
+          canvas.toBlob(blob => {
+            if (!blob) {
+              reject(new Error('Unable to encode the selected image.'));
+              return;
+            }
+            resolve(blob);
+          }, 'image/webp', quality);
         };
-        image.onerror = () => reject(new Error('Unable to read that image.'));
+        image.onerror = () => reject(new Error('Unable to read the selected image.'));
         image.src = reader.result;
       };
-      reader.onerror = () => reject(new Error('Unable to read that image.'));
+      reader.onerror = () => reject(new Error('Unable to read the selected image.'));
       reader.readAsDataURL(file);
     });
+  }
+
+  async function readCategoryImageFile(file) {
+    return prepareImageBlob(file, 900, 0.82);
   }
 
   async function persistCategoryRename(type, oldName, newName) {
@@ -316,74 +338,52 @@ document.addEventListener('DOMContentLoaded', () => {
     ).join('');
   }
 
-  function addImage(src) {
-    if (!src || !/^((https?:)?\/\/|data:image\/)/i.test(src)) {
-      alert('Please use a valid direct image URL or a PNG/JPG/WebP image file.');
-      return;
+  function addImageRecord(result) {
+    if (!result?.url) throw new Error('ImageKit did not return an image URL.');
+    window.adminProductImages = [...(window.adminProductImages || []), result.url];
+    window.adminProductImageFileIds = [...(window.adminProductImageFileIds || []), result.fileId || ''];
+    if (result.fileId) {
+      window.adminProductNewImageFileIds = [...(window.adminProductNewImageFileIds || []), result.fileId];
     }
-    window.adminProductImages = [...(window.adminProductImages || []), src];
     renderImagePreview();
   }
 
-  function readImageFile(file) {
-    return new Promise((resolve, reject) => {
-      if (!/^image\/(png|jpeg|webp)$/i.test(file.type)) {
-        reject(new Error('Only PNG, JPG and WebP images are supported.'));
-        return;
-      }
-
-      const reader = new FileReader();
-
-      reader.onload = () => {
-        const source = new Image();
-
-        source.onload = () => {
-          // Firestore documents are limited to 1 MiB. Product images used to
-          // be stored at their original camera/file size, which could make a
-          // multi-image product exceed that limit and cause a generic save
-          // failure. Resize and encode uploaded images consistently before
-          // storing them in the product document.
-          const maxSize = 1000;
-          const scale = Math.min(
-            1,
-            maxSize / Math.max(source.naturalWidth || source.width, source.naturalHeight || source.height)
-          );
-
-          const width = Math.max(1, Math.round((source.naturalWidth || source.width) * scale));
-          const height = Math.max(1, Math.round((source.naturalHeight || source.height) * scale));
-
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-
-          const context = canvas.getContext('2d');
-          if (!context) {
-            reject(new Error('Unable to process the selected image.'));
-            return;
-          }
-
-          context.drawImage(source, 0, 0, width, height);
-
-          try {
-            resolve(canvas.toDataURL('image/webp', 0.78));
-          } catch (error) {
-            reject(error);
-          }
-        };
-
-        source.onerror = () => reject(new Error('Unable to read the selected image.'));
-        source.src = reader.result;
-      };
-
-      reader.onerror = () => reject(new Error('Unable to read the selected image.'));
-      reader.readAsDataURL(file);
+  async function uploadProductImageFile(file) {
+    const blob = await prepareImageBlob(file, 1600, 0.82);
+    const result = await uploadImageFile(blob, {
+      folder: '/gifty-hamper/products',
+      fileName: (file.name || 'product-image').replace(/\.[^.]+$/, '') + '.webp'
     });
+    addImageRecord(result);
   }
 
-  function resetForm() {
+  async function importProductImageUrl(url) {
+    if (!/^https?:\/\//i.test(url)) {
+      throw new Error('Please use a public HTTP/HTTPS direct image URL.');
+    }
+    const result = await uploadImageUrl(url, {
+      folder: '/gifty-hamper/products',
+      fileName: 'imported-' + Date.now().toString(36) + '.webp'
+    });
+    addImageRecord(result);
+  }
+
+  async function cleanupPendingProductUploads() {
+    const pending = [...new Set(window.adminProductNewImageFileIds || [])];
+    window.adminProductNewImageFileIds = [];
+    await Promise.allSettled(pending.map(fileId => deleteImageFile(fileId)));
+  }
+
+  function resetForm(options = {}) {
+    const cleanup = options.cleanup !== false;
+    if (cleanup) void cleanupPendingProductUploads();
+
     $('#product-form').reset();
     editingId = '';
     window.adminProductImages = [];
+    window.adminProductImageFileIds = [];
+    window.adminProductNewImageFileIds = [];
+    window.adminProductRemovedImageFileIds = [];
     $('#product-active').checked = true;
     $('#product-low-stock').value = 5;
     $('#product-sku').value = generateSku();
@@ -412,6 +412,9 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#product-featured').checked = !!product.featured;
     $('#product-active').checked = product.active !== false;
     window.adminProductImages = [...(product.images || [])];
+    window.adminProductImageFileIds = [...(product.imageKitFileIds || [])];
+    window.adminProductNewImageFileIds = [];
+    window.adminProductRemovedImageFileIds = [];
     renderMajorCategorySelect(product.majorCategory || '');
     renderMinorCategoryChecks(product.categories || []);
     renderImagePreview();
@@ -478,6 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
       categories: selectedCategories,
       label: $('#product-label').value.trim() || 'Gift',
       images: [...(window.adminProductImages || [])],
+      imageKitFileIds: [...(window.adminProductImageFileIds || [])],
       featured: $('#product-featured').checked,
       active: $('#product-active').checked,
       imageClass: 'image-sage',
@@ -490,6 +494,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       const savedProduct = await saveCatalogProduct(product);
+      const removedImageFileIds = [...new Set(window.adminProductRemovedImageFileIds || [])];
+      await Promise.allSettled(removedImageFileIds.map(fileId => deleteImageFile(fileId)));
+      window.adminProductNewImageFileIds = [];
+      window.adminProductRemovedImageFileIds = [];
       const index = catalog.findIndex(item => item.id === savedProduct.id);
 
       if (index >= 0) catalog[index] = savedProduct;
@@ -537,7 +545,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const id = deleteButton.dataset.delete;
       if (confirm('Delete this product from the shared catalog?')) {
         try {
+          const productToDelete = catalog.find(product => product.id === id);
           await deleteCatalogProduct(id);
+          await Promise.allSettled((productToDelete?.imageKitFileIds || []).filter(Boolean).map(fileId => deleteImageFile(fileId)));
           catalog = catalog.filter(product => product.id !== id);
           render();
         } catch (error) {
@@ -548,29 +558,67 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  $('#product-images-preview').addEventListener('click', (event) => {
+  $('#product-images-preview').addEventListener('click', async (event) => {
     const button = event.target.closest('[data-remove-image]');
     if (!button) return;
-    window.adminProductImages.splice(Number(button.dataset.removeImage), 1);
+
+    const index = Number(button.dataset.removeImage);
+    const fileId = window.adminProductImageFileIds?.[index] || '';
+
+    window.adminProductImages.splice(index, 1);
+    window.adminProductImageFileIds.splice(index, 1);
+
+    if (fileId) {
+      if ((window.adminProductNewImageFileIds || []).includes(fileId)) {
+        window.adminProductNewImageFileIds = (window.adminProductNewImageFileIds || []).filter(id => id !== fileId);
+        try {
+          await deleteImageFile(fileId);
+        } catch (error) {
+          console.error('Delete newly uploaded ImageKit file error:', error);
+        }
+      } else {
+        window.adminProductRemovedImageFileIds = [...(window.adminProductRemovedImageFileIds || []), fileId];
+      }
+    }
+
     renderImagePreview();
   });
 
-  $('#add-image-url').addEventListener('click', () => {
+  $('#add-image-url').addEventListener('click', async () => {
     const input = $('#product-image-url');
     const url = input.value.trim();
-    addImage(url);
-    input.value = '';
+    if (!url) return;
+
+    const button = $('#add-image-url');
+    button.disabled = true;
+    button.textContent = 'Uploading…';
+
+    try {
+      await importProductImageUrl(url);
+      input.value = '';
+    } catch (error) {
+      console.error('ImageKit URL import error:', error);
+      alert('Unable to import the image to ImageKit. ' + (error?.message || 'Please check the URL.'));
+    } finally {
+      button.disabled = false;
+      button.textContent = '+ Add image URL';
+    }
   });
 
   $('#product-image-files').addEventListener('change', async (event) => {
-    for (const file of [...event.target.files]) {
+    const files = [...event.target.files];
+    const input = event.target;
+
+    for (const file of files) {
       try {
-        addImage(await readImageFile(file));
+        await uploadProductImageFile(file);
       } catch (error) {
-        alert(error.message);
+        console.error('ImageKit product upload error:', error);
+        alert('Unable to upload the image to ImageKit. ' + (error?.message || 'Please try again.'));
       }
     }
-    event.target.value = '';
+
+    input.value = '';
   });
 
   $('#create-major-category').addEventListener('click', async () => {
@@ -587,6 +635,7 @@ document.addEventListener('DOMContentLoaded', () => {
         name,
         type: 'major',
         image: '',
+        imageFileId: '',
         order: categoryRecords.filter(item => item.type === 'major').length
       });
       categoryRecords.push(saved);
@@ -614,6 +663,7 @@ document.addEventListener('DOMContentLoaded', () => {
         name,
         type: 'minor',
         image: '',
+        imageFileId: '',
         order: 100 + categoryRecords.filter(item => item.type === 'minor').length
       });
       categoryRecords.push(saved);
@@ -663,6 +713,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       await deleteCategory(id);
+      if (category.imageFileId) {
+        await Promise.allSettled([deleteImageFile(category.imageFileId)]);
+      }
       categoryRecords = categoryRecords.filter(item => item.id !== id);
       majorCategories = categoryRecords.filter(item => item.type === 'major').map(item => item.name);
       categories = categoryRecords.filter(item => item.type === 'minor').map(item => item.name);
@@ -692,31 +745,60 @@ document.addEventListener('DOMContentLoaded', () => {
     deleteManagedCategory(deleteButton.dataset.categoryId, deleteButton.dataset.deleteCategory, deleteButton.dataset.categoryType);
   });
 
-  $('#category-editor-add-url').addEventListener('click', () => {
+  $('#category-editor-add-url').addEventListener('click', async () => {
     const url = $('#category-editor-image-url').value.trim();
-    if (!/^((https?:)?\/\/|data:image\/)/i.test(url)) {
-      alert('Please use a valid direct image URL.');
+    if (!/^https?:\/\//i.test(url)) {
+      alert('Please use a public HTTP/HTTPS direct image URL.');
       return;
     }
-    categoryEditorImage = url;
-    renderCategoryEditorPreview();
+
+    const button = $('#category-editor-add-url');
+    button.disabled = true;
+    button.textContent = 'Uploading…';
+
+    try {
+      const result = await uploadImageUrl(url, {
+        folder: '/gifty-hamper/categories',
+        fileName: 'category-' + Date.now().toString(36) + '.webp'
+      });
+      categoryEditorImage = result.url;
+      categoryEditorImageFileId = result.fileId || '';
+      $('#category-editor-image-url').value = '';
+      renderCategoryEditorPreview();
+    } catch (error) {
+      console.error('ImageKit category URL import error:', error);
+      alert('Unable to import the category image to ImageKit. ' + (error?.message || 'Please check the URL.'));
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Use image URL';
+    }
   });
 
   $('#category-editor-image-file').addEventListener('change', async event => {
     const file = event.target.files?.[0];
     if (!file) return;
+
     try {
-      categoryEditorImage = await readCategoryImageFile(file);
+      const blob = await readCategoryImageFile(file);
+      const result = await uploadImageFile(blob, {
+        folder: '/gifty-hamper/categories',
+        fileName: (file.name || 'category-image').replace(/\.[^.]+$/, '') + '.webp'
+      });
+      categoryEditorImage = result.url;
+      categoryEditorImageFileId = result.fileId || '';
       $('#category-editor-image-url').value = '';
       renderCategoryEditorPreview();
     } catch (error) {
-      alert(error.message);
+      console.error('ImageKit category upload error:', error);
+      alert('Unable to upload the category image to ImageKit. ' + (error?.message || 'Please try again.'));
     }
+
     event.target.value = '';
   });
 
   $('#category-editor-remove-image').addEventListener('click', () => {
     categoryEditorImage = '';
+    categoryEditorImageFileId = '';
     $('#category-editor-image-url').value = '';
     renderCategoryEditorPreview();
   });
@@ -740,7 +822,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       await persistCategoryRename(type, oldCategory.name, name);
-      const saved = await saveCategory({ ...oldCategory, name, image: categoryEditorImage });
+      const previousImageFileId = oldCategory.imageFileId || '';
+      const saved = await saveCategory({
+        ...oldCategory,
+        name,
+        image: categoryEditorImage,
+        imageFileId: categoryEditorImageFileId
+      });
+      if (previousImageFileId && previousImageFileId !== categoryEditorImageFileId) {
+        await Promise.allSettled([deleteImageFile(previousImageFileId)]);
+      }
       categoryRecords = categoryRecords.map(item => item.id === id ? saved : item);
       majorCategories = categoryRecords.filter(item => item.type === 'major').map(item => item.name);
       categories = categoryRecords.filter(item => item.type === 'minor').map(item => item.name);

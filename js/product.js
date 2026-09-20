@@ -1,7 +1,8 @@
 import {
   DEFAULT_CATALOG,
   getDiscountPercent,
-  loadPublicCatalog
+  loadPublicCatalog,
+  recordRecentlyViewed
 } from "./catalog-store.js";
 
 let GIFTS = DEFAULT_CATALOG.map(product => ({ ...product }));
@@ -153,16 +154,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   const product = getProductFromUrl();
   renderProduct(product);
-  try {
-    const key = 'gifty-hamper-recently-viewed';
-    const now = Date.now();
-    const recent = JSON.parse(localStorage.getItem(key) || '[]');
-    const entries = (Array.isArray(recent) ? recent : [])
-      .map(entry => typeof entry === 'string' ? { id: entry, viewedAt: now } : entry)
-      .filter(entry => entry && entry.id && now - Number(entry.viewedAt || 0) < 7 * 24 * 60 * 60 * 1000 && entry.id !== product.id);
-    entries.unshift({ id: product.id, viewedAt: now });
-    localStorage.setItem(key, JSON.stringify(entries.slice(0, 8)));
-  } catch (_) {}
+  recordRecentlyViewed(product.id);
   renderRelated(product);
 
   const input = document.querySelector('#quantity');

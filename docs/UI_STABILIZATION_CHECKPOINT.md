@@ -30,4 +30,4 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - Requested behavior: make the product-page More to love section use the same horizontal shelf interaction as Recently Viewed.
 - Target: show up to 10 related/active products instead of 3, keep the existing View all gifts CTA, and add left/right scroll controls with disabled-state handling and touch/trackpad horizontal scrolling.
 - Guardrails: keep the current product-page catalog source, do not alter Firebase data, and do not change the existing Recently Viewed behavior.
-- Status: in progress.
+- Status: completed. The product page now renders up to 10 active related products, keeps the existing View all gifts link, and uses the same left/right horizontal shelf interaction with disabled arrow states and touch/trackpad scrolling.

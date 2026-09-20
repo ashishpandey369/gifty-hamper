@@ -16,7 +16,7 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - Step 3: Make Recently Viewed a clean temporary reference list, deduplicated by product id, refreshed on view, expired after 7 days, and always resolved against the live catalog — completed by centralizing the storage/read logic in `js/catalog-store.js`.
 - Step 4: Keep For You independent from Recently Viewed and show exactly 10 active products before the View More CTA — verified in `js/home-marketplace.js`.
 - Step 5: Refresh cache versions only for files whose behavior changed — homepage cache bumped to `v=3`.
-- Step 6: Verify no duplicate menu functions/selectors or catalog mutation were introduced — pending final repository check.
+- Step 6: Verify no duplicate menu functions/selectors or catalog mutation were introduced — completed. Final checks found no `setupMarketplaceMenu` or `marketplace-menu-toggle` references; public catalog remains Firebase-backed; Recently Viewed is localStorage-only and separate from the catalog.
 
 ## Guardrails
 - Do not change Firebase schema/rules for this UI task.

@@ -155,9 +155,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderProduct(product);
   try {
     const key = 'gifty-hamper-recently-viewed';
-    const recent = JSON.parse(localStorage.getItem(key) || '[]').filter(id => id !== product.id);
-    recent.unshift(product.id);
-    localStorage.setItem(key, JSON.stringify(recent.slice(0, 8)));
+    const now = Date.now();
+    const recent = JSON.parse(localStorage.getItem(key) || '[]');
+    const entries = (Array.isArray(recent) ? recent : [])
+      .map(entry => typeof entry === 'string' ? { id: entry, viewedAt: now } : entry)
+      .filter(entry => entry && entry.id && now - Number(entry.viewedAt || 0) < 7 * 24 * 60 * 60 * 1000 && entry.id !== product.id);
+    entries.unshift({ id: product.id, viewedAt: now });
+    localStorage.setItem(key, JSON.stringify(entries.slice(0, 8)));
   } catch (_) {}
   renderRelated(product);
 

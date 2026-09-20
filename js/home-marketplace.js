@@ -118,6 +118,22 @@ function runSearch(form){
   });
 }
 
+function setupMarketplaceMenu(){
+  const button = document.querySelector('.marketplace-menu-toggle');
+  const nav = document.querySelector('#marketplace-primary-nav');
+  if (!button || !nav) return;
+  const close = () => { nav.classList.remove('open'); button.setAttribute('aria-expanded','false'); button.setAttribute('aria-label','Open navigation'); };
+  button.addEventListener('click', event => {
+    event.stopPropagation();
+    const open = nav.classList.toggle('open');
+    button.setAttribute('aria-expanded', String(open));
+    button.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+  });
+  nav.addEventListener('click', event => { if (event.target.closest('a')) close(); });
+  document.addEventListener('click', event => {
+    if (!nav.contains(event.target) && event.target !== button && !button.contains(event.target)) close();
+  });
+}
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     const shared = await loadPublicCatalog();
@@ -127,6 +143,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   renderCategories();
   renderProducts();
+  setupMarketplaceMenu();
   runSearch(document.querySelector('#home-search'));
   runSearch(document.querySelector('#header-search'));
 });

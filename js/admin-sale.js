@@ -424,9 +424,13 @@ function sendQuickOrderToWhatsApp() {
   const skuCommand = quickOrder.map(item => item.sku + "-" + item.quantity).join(", ");
 
   const message = [
-    "Hello Gifty Hamper 👋",
+    "Hello from Gifty Hamper 👋",
     "",
-    "I would like to place the following order:",
+    "Thank you for your order enquiry.",
+    "",
+    "✅ AVAILABILITY CONFIRMATION",
+    "",
+    "Yes, the requested items are available.",
     "",
     "🛍️ ORDER DETAILS",
     "",
@@ -438,12 +442,13 @@ function sendQuickOrderToWhatsApp() {
       "   Amount: " + money(item.lineTotal),
       ""
     ].join("\n")),
-    "💰 SUBTOTAL: " + money(subtotal),
+    "💰 TOTAL AMOUNT: " + money(subtotal),
     "(SKU: " + skuCommand + ")",
     "",
-    "Please confirm product availability, delivery details, and the final order amount.",
+    "The above amount is based on the current listed sale prices.",
+    "Please stay in contact with us for delivery details and any available discounts or special offers.",
     "",
-    "Thank you!"
+    "Thank you for choosing Gifty Hamper! 🎁"
   ].join("\n");
 
   window.open(

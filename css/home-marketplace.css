@@ -175,3 +175,18 @@
   .marketplace-view-more{margin-top:18px}
   .marketplace-view-more-button{width:100%;max-width:260px;padding:10px 18px;font-size:.68rem}
 }
+
+/* Homepage product cards: no promotional labels and tighter information */
+.market-product-label{display:none!important}
+.market-product-card{border-radius:7px}
+.market-product-image{border-radius:7px 7px 0 0}
+.market-product-body{padding:8px 8px 9px}
+.market-product-body h3{line-height:1.18;min-height:2.36em;max-height:2.36em}
+.market-product-body p{margin:2px 0 4px;line-height:1.15;min-height:1.15em;max-height:1.15em}
+@media(max-width:760px){
+ .market-product-card{border-radius:6px}
+ .market-product-image{border-radius:6px 6px 0 0}
+ .market-product-body{padding:7px 7px 8px}
+ .market-product-body h3{font-size:.67rem;line-height:1.16;min-height:2.32em;max-height:2.32em}
+ .market-product-body p{display:block;font-size:.53rem;line-height:1.1;min-height:1.1em;max-height:1.1em;margin:2px 0 3px}
+}

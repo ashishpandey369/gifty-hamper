@@ -42,4 +42,4 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - The new all-categories page uses large circular category images, six categories per desktop row, responsive scrolling down the page, and links each category directly to the existing shop category filter.
 - Existing product-category assignments are preserved when a category is renamed; deleting a category now also persists the corresponding product assignment cleanup/move before removing the category record.
 - Firebase product schema and existing Recently Viewed/More to love logic remain unchanged.
-- Status: in progress pending repository verification.
+- Status: completed after repository verification.

@@ -25,6 +25,7 @@ import {
   getDiscountPercent,
   loadPublicCatalog
 } from "./catalog-store.js?v=2";
+import { loadCategories } from "./category-store.js";
 
 let GIFTS = DEFAULT_CATALOG.map(product => ({ ...product }));
 
@@ -202,6 +203,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   } catch (error) {
     console.error('Shared catalog load error:', error);
   }
+  let sharedCategories = [];
+  try {
+    sharedCategories = await loadCategories();
+  } catch (error) {
+    console.error('Shared category load error:', error);
+  }
+
   const readList = (key, fallback) => {
     try {
       const saved = JSON.parse(localStorage.getItem(key) || 'null');
@@ -209,9 +217,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (_) { return fallback; }
   };
 
-  const majorCategories = readList('gifty-hamper-major-categories', ['Gifts for Everyone']).map(item => item === 'Gifts' ? 'Gifts for Everyone' : item);
-  const recipientCategories = ['For Him','For Her','For Husband','For Wife','For Boyfriend','For Girlfriend','For Parents','For Friends','For Employees','For Clients'];
-  const minorCategories = [...new Set([...recipientCategories, ...readList('gifty-hamper-categories', [...new Set(DEFAULT_GIFTS.flatMap(product => product.categories || []))])])];
+  const majorCategories = sharedCategories.length
+    ? sharedCategories.filter(item => item.type === 'major').map(item => item.name)
+    : readList('gifty-hamper-major-categories', ['Gifts for Everyone']).map(item => item === 'Gifts' ? 'Gifts for Everyone' : item);
+  const minorCategories = sharedCategories.length
+    ? sharedCategories.filter(item => item.type === 'minor').map(item => item.name)
+    : [...new Set(readList('gifty-hamper-categories', [...new Set(DEFAULT_GIFTS.flatMap(product => product.categories || []))]))];
 
   const majorBox = document.querySelector('#major-category-filters');
   const minorBox = document.querySelector('#minor-category-filters');

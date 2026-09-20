@@ -135,3 +135,26 @@
   .market-product-price span{font-size:.5rem;padding:3px 5px;border-radius:999px;background:#fde8f0}
   .market-product-label{left:6px;top:6px;padding:4px 6px;font-size:.48rem;max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 }
+
+/* Recently viewed horizontal shelf */
+.marketplace-recent-section{padding:30px 0 8px;background:#fff}
+.marketplace-recent-head{margin-bottom:14px}
+.marketplace-scroll-actions{display:flex;gap:7px}
+.marketplace-scroll-btn{width:36px;height:36px;border:1px solid #e4dfe7;border-radius:50%;background:#fff;color:#403946;font-size:1.35rem;line-height:1;cursor:pointer;display:grid;place-items:center}
+.marketplace-scroll-btn:hover{background:#f7f1f8;border-color:#cdbbd1}
+.marketplace-recent-row{display:flex;gap:12px;overflow-x:auto;scroll-behavior:smooth;scrollbar-width:none;padding:2px 2px 10px}
+.marketplace-recent-row::-webkit-scrollbar{display:none}
+.marketplace-recent-row .market-product-card{flex:0 0 190px}
+.marketplace-recent-row .market-product-image{height:190px}
+.marketplace-products-section{padding-top:24px}
+@media(min-width:1001px){
+  .marketplace-product-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  .marketplace-recent-section{padding:22px 0 4px}
+  .marketplace-recent-row{gap:8px;padding-left:0;padding-right:0}
+  .marketplace-recent-row .market-product-card{flex-basis:145px;border-radius:10px}
+  .marketplace-recent-row .market-product-image{height:145px}
+  .marketplace-scroll-btn{width:32px;height:32px;font-size:1.15rem}
+  .marketplace-products-section{padding-top:22px}
+}

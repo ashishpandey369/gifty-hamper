@@ -153,6 +153,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   const product = getProductFromUrl();
   renderProduct(product);
+  try {
+    const key = 'gifty-hamper-recently-viewed';
+    const recent = JSON.parse(localStorage.getItem(key) || '[]').filter(id => id !== product.id);
+    recent.unshift(product.id);
+    localStorage.setItem(key, JSON.stringify(recent.slice(0, 8)));
+  } catch (_) {}
   renderRelated(product);
 
   const input = document.querySelector('#quantity');

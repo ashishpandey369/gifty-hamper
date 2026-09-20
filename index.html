@@ -12,6 +12,10 @@
   <header class="site-header marketplace-header">
     <div class="container header-inner marketplace-header-inner">
       <a class="brand marketplace-brand" href="index.html" aria-label="Gifty Hamper home"><img src="assets/gifty-hampers-landscape.png" alt="Gifty Hamper" class="brand-logo"></a>
+      <button class="menu-toggle marketplace-menu-toggle" type="button" aria-expanded="false" aria-controls="marketplace-primary-nav" aria-label="Open navigation"><span></span><span></span><span></span></button>
+      <nav id="marketplace-primary-nav" class="primary-nav marketplace-primary-nav" aria-label="Primary navigation">
+        <a href="index.html">Home</a><a href="shop.html">Shop</a><a href="index.html#occasions">Occasions</a><a href="index.html#corporate">Corporate</a><a href="about.html">Our story</a><a href="contact.html">Contact</a><a href="login.html">Account / Login</a>
+      </nav>
       <form class="marketplace-header-search" id="header-search" role="search">
         <span aria-hidden="true">⌕</span>
         <input id="header-search-input" type="search" placeholder="Search for gifts, hampers or SKU" aria-label="Search products">
@@ -94,6 +98,7 @@
           <a href="shop.html">View More <span>→</span></a>
         </div>
         <div class="marketplace-product-grid" id="home-products"></div>
+        <div class="marketplace-view-more"><a class="marketplace-view-more-button" href="shop.html">View More Gifts <span>→</span></a></div>
       </div>
     </section>
 

@@ -38,7 +38,8 @@ function productCard(product) {
   const images = (Array.isArray(product.images) ? product.images : (product.image ? [product.image] : [])).filter(Boolean);
   const safeName = String(product.name || 'Gift').replace(/"/g, '&quot;');
   const hasImages = images.length > 0;
-    const initialVisual = hasImages
+  const imageCount = images.length;
+  const initialVisual = hasImages
     ? `<img class="product-photo" src="${images[0].replace(/"/g, '&quot;')}" alt="${safeName}" loading="lazy" data-carousel-image>`
     : `<span class="product-placeholder-label">${product.label || ''}</span><b>${product.name.split(' ').slice(0, 2).join('<br>')}</b>`;
 

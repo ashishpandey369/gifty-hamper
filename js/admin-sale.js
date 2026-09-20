@@ -108,7 +108,7 @@ function applySkuQuantitySearch() {
 
 function renderProducts() {
   const rawQuery = ($("#sale-search").value || "").trim().toLowerCase();
-  const searchTerms = rawQuery.split(",").map(term => term.trim()).filter(Boolean).map(term => term.replace(/-\\d+$/, ""));
+  const searchTerms = rawQuery.split(",").map(term => term.trim()).filter(Boolean).map(term => term.replace(/-\d+$/, ""));
   const products = catalog.filter(product => {
     if (product.active === false) return false;
     const searchable = [product.name, product.id, product.sku, product.description, product.occasion, product.majorCategory, ...(product.categories || [])].join(" ").toLowerCase();

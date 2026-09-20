@@ -35,10 +35,22 @@ function formatPrice(value) {
 
 function productCard(product) {
   const slug = product.id;
-  const images = Array.isArray(product.images) ? product.images : (product.image ? [product.image] : []);
-  const visual = images[0]
-    ? `<img class="product-photo" src="${images[0]}" alt="${product.name.replace(/\\\"/g, '&quot;')}" loading="lazy"><span>${product.label || ''}</span>`
-    : `<span>${product.label || ''}</span><b>${product.name.split(' ').slice(0, 2).join('<br>')}</b>`;
+  const images = (Array.isArray(product.images) ? product.images : (product.image ? [product.image] : [])).filter(Boolean);
+  const safeName = String(product.name || 'Gift').replace(/"/g, '&quot;');
+  const hasImages = images.length > 0;
+  const imageCount = images.length;
+  const initialVisual = hasImages
+    ? `<img class="product-photo" src="${images[0].replace(/"/g, '&quot;')}" alt="${safeName}" loading="lazy" data-carousel-image>`
+    : `<span class="product-placeholder-label">${product.label || ''}</span><b>${product.name.split(' ').slice(0, 2).join('<br>')}</b>`;
+
+  const controls = imageCount > 1 ? `
+    <button type="button" class="product-carousel-arrow product-carousel-prev" data-carousel-prev aria-label="Previous image">‹</button>
+    <button type="button" class="product-carousel-arrow product-carousel-next" data-carousel-next aria-label="Next image">›</button>
+    <div class="product-carousel-dots" aria-label="Product image selector">
+      ${images.map((_, index) => `<button type="button" class="product-carousel-dot${index === 0 ? ' active' : ''}" data-carousel-dot="${index}" aria-label="View image ${index + 1}" aria-current="${index === 0 ? 'true' : 'false'}"></button>`).join('')}
+    </div>
+    <span class="product-image-count">${imageCount} photos</span>
+  ` : '';
 
   const originalPrice = Number(product.price) || 0;
   const currentPrice = Number(product.salePrice || product.price) || 0;
@@ -47,15 +59,69 @@ function productCard(product) {
     ? `<div class="product-card-price"><del>${formatPrice(originalPrice)}</del><strong>${formatPrice(currentPrice)}</strong><span>${discount}% OFF</span></div>`
     : `<div class="product-card-price"><strong>${formatPrice(currentPrice)}</strong></div>`;
 
-  return `<article class="product-card" data-product-id="${slug}">
-    <a href="product.html?id=${encodeURIComponent(slug)}">
-      <div class="product-image ${product.imageClass || ''}">${visual}</div>
+  return `<article class="product-card" data-product-id="${slug}" data-product-images='${JSON.stringify(images).replace(/'/g, '&#39;')}'>
+    <div class="product-image ${product.imageClass || ''} product-image-carousel">
+      ${initialVisual}
+      ${product.label ? `<span class="product-image-label">${product.label}</span>` : ''}
+      ${controls}
+    </div>
+    <a class="product-card-details" href="product.html?id=${encodeURIComponent(slug)}">
       <div class="product-info">
         <div><h3>${product.name}</h3><p>${product.description}</p><small class="product-sku-label">SKU: ${product.sku || "—"}</small></div>
         ${priceMarkup}
       </div>
     </a>
   </article>`;
+}
+
+function setupProductCarousels() {
+  document.querySelectorAll('.product-card[data-product-images]').forEach(card => {
+    let images = [];
+    try { images = JSON.parse(card.dataset.productImages || '[]'); } catch (_) { images = []; }
+    if (images.length < 2) return;
+
+    const visual = card.querySelector('.product-image-carousel');
+    const image = card.querySelector('[data-carousel-image]');
+    const dots = [...card.querySelectorAll('[data-carousel-dot]')];
+    let index = 0;
+
+    const showImage = nextIndex => {
+      index = (nextIndex + images.length) % images.length;
+      image.src = images[index];
+      image.alt = `${card.querySelector('h3')?.textContent || 'Gift'} image ${index + 1}`;
+      dots.forEach((dot, dotIndex) => {
+        const active = dotIndex === index;
+        dot.classList.toggle('active', active);
+        dot.setAttribute('aria-current', active ? 'true' : 'false');
+      });
+    };
+
+    card.querySelector('[data-carousel-prev]')?.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      showImage(index - 1);
+    });
+    card.querySelector('[data-carousel-next]')?.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      showImage(index + 1);
+    });
+    dots.forEach(dot => dot.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      showImage(Number(dot.dataset.carouselDot));
+    }));
+
+    let startX = null;
+    visual.addEventListener('touchstart', event => { startX = event.touches[0]?.clientX ?? null; }, {passive:true});
+    visual.addEventListener('touchend', event => {
+      if (startX === null) return;
+      const endX = event.changedTouches[0]?.clientX ?? startX;
+      const delta = endX - startX;
+      if (Math.abs(delta) > 40) showImage(index + (delta < 0 ? 1 : -1));
+      startX = null;
+    }, {passive:true});
+  });
 }
 
 function applyBudgetFromUrl() {
@@ -104,6 +170,7 @@ function renderCatalog() {
   if (sort === 'name') products.sort((a, b) => a.name.localeCompare(b.name));
 
   grid.innerHTML = products.map(productCard).join('');
+  setupProductCarousels();
   const count = document.querySelector('#product-count');
   if (count) count.textContent = `${products.length} ${products.length === 1 ? 'gift' : 'gifts'}`;
   const empty = document.querySelector('#empty-state');

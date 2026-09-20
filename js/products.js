@@ -73,6 +73,25 @@ function productCard(product) {
 }
 
 function setupProductCarousels() {
+  document.querySelectorAll('.product-card[data-product-id] .product-image-carousel').forEach(visual => {
+    if (visual.dataset.productLinkBound === 'true') return;
+    visual.dataset.productLinkBound = 'true';
+    visual.setAttribute('role', 'link');
+    visual.setAttribute('tabindex', '0');
+    const card = visual.closest('.product-card');
+    const id = card?.dataset.productId;
+    const openProduct = () => { if (id) window.location.href = 'product.html?id=' + encodeURIComponent(id); };
+    visual.addEventListener('click', event => {
+      if (event.target.closest('button')) return;
+      openProduct();
+    });
+    visual.addEventListener('keydown', event => {
+      if (event.target.closest('button')) return;
+      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openProduct(); }
+    });
+  });
+
+
   document.querySelectorAll('.product-card[data-product-images]').forEach(card => {
     let images = [];
     try { images = JSON.parse(card.dataset.productImages || '[]'); } catch (_) { images = []; }

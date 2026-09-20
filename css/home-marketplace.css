@@ -14,6 +14,7 @@
 .marketplace-cart-button{font-size:1.15rem}
 .marketplace-search-section{display:none}
 .marketplace-location{display:none}
+.gh-mobile-location{display:none}
 .marketplace-categories{background:#fff;border-bottom:1px solid #eeeaf0}
 .marketplace-categories .container{padding-top:13px;padding-bottom:13px}
 .marketplace-section-head{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:18px}
@@ -74,12 +75,13 @@
   .marketplace-search-icon{padding-left:14px;color:#777487;font-size:1.35rem}
   .marketplace-search input{flex:1;min-width:0;height:100%;border:0;outline:0;background:transparent;padding:0 10px;font-size:.78rem}
   .marketplace-search button{height:100%;padding:0 13px;border:0;background:#6f2b78;color:#fff;font-size:.68rem;font-weight:800}
-  .marketplace-location{display:block;background:#fff;border-top:1px solid #f0edf2;border-bottom:1px solid #eee9f0}
-  .marketplace-location-inner{width:100%}
-  .marketplace-location .location-button{width:100%;display:flex;align-items:center;gap:7px;min-height:45px;border:0;border-radius:0;background:#fff;color:#393440;padding:0 14px;font-size:.72rem}
-  .marketplace-location .location-button small{flex:1;text-align:left;color:#77717d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .marketplace-location .location-button b{font-size:1.2rem}
-  .marketplace-location .location-pin{color:#6f2b78;font-size:1.05rem}
+  .gh-mobile-location{display:flex!important;min-height:45px!important;padding:0 14px!important;border-top:1px solid #f0edf2!important;border-bottom:1px solid #eee9f0!important;background:#fff!important;color:#393440!important;font-size:.72rem!important}
+  .gh-mobile-location .gh-location-label{gap:7px!important}
+  .gh-mobile-location .gh-location-icon{color:#6f2b78!important;font-size:1.05rem!important}
+  .gh-mobile-location .gh-location-copy{gap:0!important}
+  .gh-mobile-location .gh-location-copy strong{font-size:.72rem!important}
+  .gh-mobile-location .gh-location-copy small{font-size:.62rem!important;max-width:250px!important}
+  .gh-mobile-location .gh-location-arrow{font-size:1.2rem!important}
   .marketplace-categories .container{padding:13px 12px 10px}
   .marketplace-section-head{margin-bottom:13px}
   .marketplace-section-head h2{font-size:1.15rem}

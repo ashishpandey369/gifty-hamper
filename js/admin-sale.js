@@ -67,6 +67,45 @@ function showAccess(message, detail) {
   box.innerHTML = "<strong>" + message + "</strong><span>" + detail + "</span>";
 }
 
+function applySkuQuantitySearch() {
+  const raw = ($("#sale-search").value || "").trim();
+
+  if (!raw || !raw.includes("-")) return false;
+
+  const parts = raw.split(",").map(part => part.trim()).filter(Boolean);
+  if (!parts.length) return false;
+
+  const requested = [];
+  for (const part of parts) {
+    const match = part.match(/^([A-Za-z]{2}[0-9]{4})-(\d+)$/);
+    if (!match) return false;
+
+    const sku = match[1].toUpperCase();
+    const quantity = Number(match[2]);
+    if (!Number.isInteger(quantity) || quantity <= 0) return false;
+
+    const product = catalog.find(item =>
+      String(item.sku || "").toUpperCase() === sku
+    );
+
+    if (!product || product.active === false) return false;
+
+    const stock = Math.max(0, Number(product.stock) || 0);
+    if (quantity > stock) {
+      return false;
+    }
+
+    requested.push({ product, quantity });
+  }
+
+  cart.clear();
+  requested.forEach(({ product, quantity }) => {
+    cart.set(String(product.id), quantity);
+  });
+
+  return true;
+}
+
 function renderProducts() {
   const rawQuery = ($("#sale-search").value || "").trim().toLowerCase();
   const searchTerms = rawQuery.split(",").map(term => term.trim()).filter(Boolean).map(term => term.replace(/-\\d+$/, ""));
@@ -274,7 +313,10 @@ async function completeSale() {
   }
 }
 
-$("#sale-search").addEventListener("input", renderProducts);
+$("#sale-search").addEventListener("input", () => {
+  applySkuQuantitySearch();
+  renderProducts();
+});
 
 $("#sale-product-list").addEventListener("click", (event) => {
   const plus = event.target.closest("[data-plus]");

@@ -186,6 +186,7 @@ async function completeSale() {
 
     return {
       productId: String(product.id),
+      sku: String(product.sku || ""),
       productName: String(product.name || "Product"),
       quantity,
       unitPrice,
@@ -268,8 +269,8 @@ async function completeSale() {
   } catch (error) {
     console.error("Complete sale error:", error);
     alert(
-      "Unable to save the sale.\n\n" +
-      "Please check your internet connection and try again."
+      "Unable to complete the sale.\n\n" +
+      (error?.message || "Please check your Firebase rules and internet connection.")
     );
   } finally {
     button.textContent = "Complete Sale";
@@ -295,6 +296,26 @@ $("#sale-cart").addEventListener("click", (event) => {
 
 
 let quickOrder = [];
+
+function applyQuickOrderToSale() {
+  if (!quickOrder.length) return false;
+
+  const unavailable = quickOrder.filter(item => item.quantity > item.stock);
+  if (unavailable.length) {
+    return false;
+  }
+
+  cart.clear();
+
+  quickOrder.forEach(item => {
+    cart.set(String(item.product.id), Number(item.quantity));
+  });
+
+  renderProducts();
+  renderCart();
+
+  return true;
+}
 
 function parseQuickOrderCommand() {
   const input = $("#quick-order-command").value.trim();
@@ -375,20 +396,8 @@ function parseQuickOrderCommand() {
 
   const total = quickOrder.reduce((sum, item) => sum + item.lineTotal, 0);
 
-  // Sync the quick command into the normal sale cart whenever
-  // every requested quantity is currently available. This means
-  // the same command can be sent to WhatsApp or completed directly
-  // as a staff sale.
-  const canCompleteDirectly = quickOrder.every(item => item.quantity <= item.stock);
-
-  if (canCompleteDirectly) {
-    cart.clear();
-    quickOrder.forEach(item => {
-      cart.set(item.product.id, item.quantity);
-    });
-    renderProducts();
-    renderCart();
-  }
+  // Load the command into the normal Complete Sale cart.
+  applyQuickOrderToSale();
 
   result.hidden = false;
   result.innerHTML =
@@ -444,7 +453,10 @@ function sendQuickOrderToWhatsApp() {
   );
 }
 
-$("#quick-order-parse").addEventListener("click", parseQuickOrderCommand);
+$("#quick-order-parse").addEventListener("click", () => {
+  parseQuickOrderCommand();
+  applyQuickOrderToSale();
+});
 $("#quick-order-command").addEventListener("input", parseQuickOrderCommand);
 $("#quick-order-command").addEventListener("keydown", event => {
   if (event.key === "Enter") {

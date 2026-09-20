@@ -253,6 +253,18 @@ service cloud.firestore {
     }
 
     // ------------------------------------------------------------
+    // CATEGORY MANAGEMENT
+    // ------------------------------------------------------------
+
+    match /categories/{categoryId} {
+      // Category names and images are public storefront data.
+      allow get, list: if resource.data.get('active', true) == true
+        || (isStaff() && featureEnabled('catalog'));
+
+      allow create, update, delete: if isStaff() && featureEnabled('catalog');
+    }
+
+    // ------------------------------------------------------------
     // SALES / POS
     // ------------------------------------------------------------
 

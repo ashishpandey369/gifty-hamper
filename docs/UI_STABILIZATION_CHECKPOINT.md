@@ -24,3 +24,10 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - Do not remove products from the catalog because they appear in Recently Viewed.
 - Do not seed or overwrite Firebase products from the homepage.
 - Make one focused change at a time and update this checkpoint after each step.
+
+
+## Step 7: Product-page “More to love” shelf
+- Requested behavior: make the product-page More to love section use the same horizontal shelf interaction as Recently Viewed.
+- Target: show up to 10 related/active products instead of 3, keep the existing View all gifts CTA, and add left/right scroll controls with disabled-state handling and touch/trackpad horizontal scrolling.
+- Guardrails: keep the current product-page catalog source, do not alter Firebase data, and do not change the existing Recently Viewed behavior.
+- Status: in progress.

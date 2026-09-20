@@ -331,9 +331,51 @@ document.addEventListener('DOMContentLoaded', () => {
         reject(new Error('Only PNG, JPG and WebP images are supported.'));
         return;
       }
+
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
+
+      reader.onload = () => {
+        const source = new Image();
+
+        source.onload = () => {
+          // Firestore documents are limited to 1 MiB. Product images used to
+          // be stored at their original camera/file size, which could make a
+          // multi-image product exceed that limit and cause a generic save
+          // failure. Resize and encode uploaded images consistently before
+          // storing them in the product document.
+          const maxSize = 1000;
+          const scale = Math.min(
+            1,
+            maxSize / Math.max(source.naturalWidth || source.width, source.naturalHeight || source.height)
+          );
+
+          const width = Math.max(1, Math.round((source.naturalWidth || source.width) * scale));
+          const height = Math.max(1, Math.round((source.naturalHeight || source.height) * scale));
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+
+          const context = canvas.getContext('2d');
+          if (!context) {
+            reject(new Error('Unable to process the selected image.'));
+            return;
+          }
+
+          context.drawImage(source, 0, 0, width, height);
+
+          try {
+            resolve(canvas.toDataURL('image/webp', 0.78));
+          } catch (error) {
+            reject(error);
+          }
+        };
+
+        source.onerror = () => reject(new Error('Unable to read the selected image.'));
+        source.src = reader.result;
+      };
+
+      reader.onerror = () => reject(new Error('Unable to read the selected image.'));
       reader.readAsDataURL(file);
     });
   }
@@ -461,7 +503,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (error?.message === 'SKU_COLLISION') {
         alert('That SKU is already reserved. Please click Save again to generate another unique SKU.');
       } else {
-        alert('Unable to save the product to the shared catalog. Please check Firebase rules.');
+        const detail = error?.message || error?.code || 'Unknown Firestore error';
+        console.error('Detailed product save failure:', {
+          code: error?.code,
+          message: error?.message,
+          name: error?.name
+        });
+        alert('Unable to save the product. ' + detail);
       }
     } finally {
       saveButton.disabled = false;

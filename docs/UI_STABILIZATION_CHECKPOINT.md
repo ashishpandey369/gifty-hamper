@@ -50,3 +50,11 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - The homepage now uses the exact same category image stored by the Admin category editor and displayed on the all-categories page.
 - Category IDs are also preserved from the shared records; fallback categories are still generated only when the shared category collection is unavailable.
 - Status: completed.
+
+
+## Step 10: Product image save reliability
+- Product image file uploads are now resized to a maximum 1000px dimension and encoded as WebP before being stored in the Firestore product document.
+- This prevents large original camera/image files and multiple uploads from unnecessarily exceeding Firestore's 1 MiB document limit.
+- The admin product save error now exposes the underlying Firestore error message in addition to logging the detailed error object, making future rule/storage failures diagnosable instead of always showing a generic rules message.
+- Direct image URLs continue to work unchanged.
+- Status: completed.

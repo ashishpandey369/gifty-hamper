@@ -10,6 +10,40 @@ import {
   query
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
+const RECENTLY_VIEWED_KEY = "gifty-hamper-recently-viewed";
+const RECENTLY_VIEWED_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const RECENTLY_VIEWED_LIMIT = 8;
+
+export function getRecentlyViewedIds(limit = RECENTLY_VIEWED_LIMIT) {
+  const now = Date.now();
+  try {
+    const saved = JSON.parse(localStorage.getItem(RECENTLY_VIEWED_KEY) || "[]");
+    const entries = (Array.isArray(saved) ? saved : [])
+      .map(entry => typeof entry === "string" ? { id: entry, viewedAt: now } : entry)
+      .filter(entry => entry && entry.id && now - Number(entry.viewedAt || 0) < RECENTLY_VIEWED_TTL_MS)
+      .sort((a, b) => Number(b.viewedAt || 0) - Number(a.viewedAt || 0))
+      .slice(0, Math.max(1, limit));
+    localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(entries));
+    return entries.map(entry => String(entry.id));
+  } catch (_) {
+    return [];
+  }
+}
+
+export function recordRecentlyViewed(productId, limit = RECENTLY_VIEWED_LIMIT) {
+  const id = String(productId || "").trim();
+  if (!id) return;
+  const now = Date.now();
+  try {
+    const saved = JSON.parse(localStorage.getItem(RECENTLY_VIEWED_KEY) || "[]");
+    const entries = (Array.isArray(saved) ? saved : [])
+      .map(entry => typeof entry === "string" ? { id: entry, viewedAt: now } : entry)
+      .filter(entry => entry && entry.id && now - Number(entry.viewedAt || 0) < RECENTLY_VIEWED_TTL_MS && String(entry.id) !== id);
+    entries.unshift({ id, viewedAt: now });
+    localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(entries.slice(0, Math.max(1, limit))));
+  } catch (_) {}
+}
+
 export const DEFAULT_CATALOG = [
   { id:"little-joy", name:"The Little Joy Hamper", description:"Thoughtful everyday gifting", price:1499, occasion:"Birthday", categories:["Gift Sets","Appreciation Gifts"], label:"Everyday", imageClass:"image-sage", stock:10 },
   { id:"good-things", name:"Good Things Gift Box", description:"A warm collection of favourites", price:1999, occasion:"Thank You", categories:["Gift Sets","Premium Gifts"], label:"Curated", imageClass:"image-sand", stock:10 },

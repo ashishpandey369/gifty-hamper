@@ -51,7 +51,7 @@ function productCard(product) {
     <a href="product.html?id=${encodeURIComponent(slug)}">
       <div class="product-image ${product.imageClass || ''}">${visual}</div>
       <div class="product-info">
-        <div><h3>${product.name}</h3><p>${product.description}</p></div>
+        <div><h3>${product.name}</h3><p>${product.description}</p><small class="product-sku-label">SKU: ${product.sku || "—"}</small></div>
         ${priceMarkup}
       </div>
     </a>
@@ -81,7 +81,8 @@ function renderCatalog() {
   const grid = document.querySelector('#catalog-products');
   if (!grid) return;
 
-  const search = (document.querySelector('#catalog-search')?.value || '').trim().toLowerCase();
+  const rawSearch = (document.querySelector('#catalog-search')?.value || '').trim().toLowerCase();
+  const searchTerms = rawSearch.split(',').map(term => term.trim()).filter(Boolean).map(term => term.replace(/-\d+$/, ''));
   const majorCategories = [...document.querySelectorAll('input[name="major-category"]:checked')].map(input => input.value);
   const categories = [...document.querySelectorAll('input[name="category"]:checked')].map(input => input.value);
   const occasions = [...document.querySelectorAll('input[name="occasion"]:checked')].map(input => input.value);
@@ -89,8 +90,8 @@ function renderCatalog() {
   const sort = document.querySelector('#sort-products')?.value || 'featured';
 
   let products = GIFTS.filter(product => {
-    const searchable = `${product.name} ${product.description} ${product.occasion} ${(product.categories || []).join(' ')} ${product.majorCategory || 'Gifts for Everyone'}`.toLowerCase();
-    const matchesSearch = !search || searchable.includes(search);
+    const searchable = `${product.name} ${product.sku || ''} ${product.id} ${product.description} ${product.occasion} ${(product.categories || []).join(' ')} ${product.majorCategory || 'Gifts for Everyone'}`.toLowerCase();
+    const matchesSearch = !searchTerms.length || searchTerms.some(term => searchable.includes(term));
     const matchesMajorCategory = !majorCategories.length || majorCategories.includes(product.majorCategory || 'Gifts for Everyone');
     const matchesCategory = !categories.length || categories.some(category => (product.categories || []).includes(category));
     const matchesOccasion = !occasions.length || occasions.includes(product.occasion);

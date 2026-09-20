@@ -514,65 +514,195 @@ document.addEventListener('DOMContentLoaded', () => {
     event.target.value = '';
   });
 
-  $('#create-major-category').addEventListener('click', () => {
+  $('#create-major-category').addEventListener('click', async () => {
     const input = $('#new-major-category');
     const name = input.value.trim();
     if (!name) return;
-    if (majorCategories.some(category => category.toLowerCase() === name.toLowerCase())) {
+    if (categoryRecords.some(category => category.type === 'major' && category.name.toLowerCase() === name.toLowerCase())) {
       alert('That major category already exists.');
       return;
     }
-    majorCategories.push(name);
-    saveMajorCategories(majorCategories);
-    input.value = '';
-    renderCategoryManager();
+    try {
+      const saved = await saveCategory({
+        id: categoryId(name, 'major'),
+        name,
+        type: 'major',
+        image: '',
+        order: categoryRecords.filter(item => item.type === 'major').length
+      });
+      categoryRecords.push(saved);
+      majorCategories = categoryRecords.filter(item => item.type === 'major').map(item => item.name);
+      saveMajorCategories(majorCategories);
+      input.value = '';
+      renderCategoryManager();
+    } catch (error) {
+      console.error('Create major category error:', error);
+      alert('Unable to create the major category. Please check Firebase rules.');
+    }
   });
 
-  $('#create-category').addEventListener('click', () => {
+  $('#create-category').addEventListener('click', async () => {
     const input = $('#new-category');
     const name = input.value.trim();
     if (!name) return;
-    if (categories.some(category => category.toLowerCase() === name.toLowerCase())) {
+    if (categoryRecords.some(category => category.type === 'minor' && category.name.toLowerCase() === name.toLowerCase())) {
       alert('That category already exists.');
       return;
     }
-    categories.push(name);
-    saveCategories(categories);
-    input.value = '';
-    renderCategoryManager();
+    try {
+      const saved = await saveCategory({
+        id: categoryId(name, 'minor'),
+        name,
+        type: 'minor',
+        image: '',
+        order: 100 + categoryRecords.filter(item => item.type === 'minor').length
+      });
+      categoryRecords.push(saved);
+      categories = categoryRecords.filter(item => item.type === 'minor').map(item => item.name);
+      saveCategories(categories);
+      input.value = '';
+      renderCategoryManager();
+    } catch (error) {
+      console.error('Create minor category error:', error);
+      alert('Unable to create the category. Please check Firebase rules.');
+    }
   });
 
-  $('#major-category-list').addEventListener('click', (event) => {
-    const button = event.target.closest('[data-delete-major-category]');
-    if (!button) return;
-    const category = button.dataset.deleteMajorCategory;
-    if (majorCategories.length <= 1) {
+  async function deleteManagedCategory(id, name, type) {
+    const category = categoryRecords.find(item => item.id === id);
+    if (!category) return;
+
+    if (type === 'major' && categoryRecords.filter(item => item.type === 'major').length <= 1) {
       alert('Keep at least one major category so products can be organised.');
       return;
     }
-    if (!confirm('Delete the major category "' + category + '"? Products using it will be moved to the first remaining major category.')) return;
-    majorCategories = majorCategories.filter(item => item !== category);
-    const fallback = majorCategories[0];
-    catalog = catalog.map(product => ({ ...product, majorCategory: product.majorCategory === category ? fallback : (product.majorCategory || fallback) }));
-    saveMajorCategories(majorCategories);
-    renderCategoryManager();
-    render();
+
+    const message = type === 'major'
+      ? 'Delete the major category "' + name + '"? Products using it will be moved to the first remaining major category.'
+      : 'Delete the category "' + name + '"? Products using it will keep their other categories.';
+    if (!confirm(message)) return;
+
+    try {
+      if (type === 'major') {
+        const fallback = categoryRecords.find(item => item.type === 'major' && item.id !== id);
+        if (fallback) {
+          for (const product of catalog.filter(item => item.majorCategory === name)) {
+            const saved = await saveCatalogProduct({ ...product, majorCategory: fallback.name });
+            const index = catalog.findIndex(item => item.id === saved.id);
+            if (index >= 0) catalog[index] = saved;
+          }
+        }
+      } else {
+        for (const product of catalog.filter(item => (item.categories || []).includes(name))) {
+          const saved = await saveCatalogProduct({
+            ...product,
+            categories: (product.categories || []).filter(item => item !== name)
+          });
+          const index = catalog.findIndex(item => item.id === saved.id);
+          if (index >= 0) catalog[index] = saved;
+        }
+      }
+
+      await deleteCategory(id);
+      categoryRecords = categoryRecords.filter(item => item.id !== id);
+      majorCategories = categoryRecords.filter(item => item.type === 'major').map(item => item.name);
+      categories = categoryRecords.filter(item => item.type === 'minor').map(item => item.name);
+      saveMajorCategories(majorCategories);
+      saveCategories(categories);
+      renderCategoryManager();
+      render();
+    } catch (error) {
+      console.error('Delete category error:', error);
+      alert('Unable to delete the category. Please check Firebase rules and try again.');
+    }
+  }
+
+  $('#major-category-list').addEventListener('click', event => {
+    const editButton = event.target.closest('[data-edit-category]');
+    if (editButton) return openCategoryEditor(editButton.dataset.editCategory);
+    const deleteButton = event.target.closest('[data-delete-category]');
+    if (!deleteButton) return;
+    deleteManagedCategory(deleteButton.dataset.categoryId, deleteButton.dataset.deleteCategory, deleteButton.dataset.categoryType);
   });
 
-  $('#category-list').addEventListener('click', (event) => {
-    const button = event.target.closest('[data-delete-category]');
-    if (!button) return;
-    const category = button.dataset.deleteCategory;
-    if (!confirm('Delete the category "' + category + '"? Products using it will keep their other categories.')) return;
+  $('#category-list').addEventListener('click', event => {
+    const editButton = event.target.closest('[data-edit-category]');
+    if (editButton) return openCategoryEditor(editButton.dataset.editCategory);
+    const deleteButton = event.target.closest('[data-delete-category]');
+    if (!deleteButton) return;
+    deleteManagedCategory(deleteButton.dataset.categoryId, deleteButton.dataset.deleteCategory, deleteButton.dataset.categoryType);
+  });
 
-    categories = categories.filter(item => item !== category);
-    catalog = catalog.map(product => ({
-      ...product,
-      categories: (product.categories || []).filter(item => item !== category)
-    }));
-    saveCategories(categories);
-    renderCategoryManager();
-    render();
+  $('#category-editor-add-url').addEventListener('click', () => {
+    const url = $('#category-editor-image-url').value.trim();
+    if (!/^((https?:)?\/\/|data:image\/)/i.test(url)) {
+      alert('Please use a valid direct image URL.');
+      return;
+    }
+    categoryEditorImage = url;
+    renderCategoryEditorPreview();
+  });
+
+  $('#category-editor-image-file').addEventListener('change', async event => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      categoryEditorImage = await readCategoryImageFile(file);
+      $('#category-editor-image-url').value = '';
+      renderCategoryEditorPreview();
+    } catch (error) {
+      alert(error.message);
+    }
+    event.target.value = '';
+  });
+
+  $('#category-editor-remove-image').addEventListener('click', () => {
+    categoryEditorImage = '';
+    $('#category-editor-image-url').value = '';
+    renderCategoryEditorPreview();
+  });
+
+  $('#category-editor-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const id = $('#category-editor-id').value;
+    const type = $('#category-editor-type').value;
+    const oldCategory = categoryRecords.find(item => item.id === id);
+    const name = $('#category-editor-name').value.trim();
+    if (!oldCategory || !name) return;
+
+    if (categoryRecords.some(item => item.type === type && item.id !== id && item.name.toLowerCase() === name.toLowerCase())) {
+      alert('That category name already exists.');
+      return;
+    }
+
+    const button = $('#save-category-editor');
+    button.disabled = true;
+    button.textContent = 'Saving…';
+
+    try {
+      await persistCategoryRename(type, oldCategory.name, name);
+      const saved = await saveCategory({ ...oldCategory, name, image: categoryEditorImage });
+      categoryRecords = categoryRecords.map(item => item.id === id ? saved : item);
+      majorCategories = categoryRecords.filter(item => item.type === 'major').map(item => item.name);
+      categories = categoryRecords.filter(item => item.type === 'minor').map(item => item.name);
+      saveMajorCategories(majorCategories);
+      saveCategories(categories);
+      closeCategoryEditor();
+      renderCategoryManager();
+      render();
+    } catch (error) {
+      console.error('Save category error:', error);
+      alert('Unable to save the category. Please check Firebase rules.');
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Save category';
+    }
+  });
+
+  $('#close-category-editor').addEventListener('click', closeCategoryEditor);
+  $('#cancel-category-editor').addEventListener('click', closeCategoryEditor);
+  $('#category-editor-modal').addEventListener('click', event => {
+    if (event.target.matches('[data-close-category-editor]')) closeCategoryEditor();
   });
 
   $('#product-price').addEventListener('input', updatePriceRangeLabel);

@@ -39,8 +39,12 @@ function requireCatalogStaff(request) {
     const active = profile.active === true;
     const roleAllowed = isSuperAdmin || profile.role === "owner" || profile.role === "admin";
     const catalogEnabled = isSuperAdmin || profile.features?.catalog !== false;
+    const expiresAt = profile.expiresAt;
+    const expired = expiresAt && typeof expiresAt.toMillis === "function"
+      ? expiresAt.toMillis() <= Date.now()
+      : false;
 
-    if (!active && !isSuperAdmin) {
+    if ((!active || expired) && !isSuperAdmin) {
       throw new HttpsError("permission-denied", "Your account is inactive or expired.");
     }
 
@@ -116,7 +120,7 @@ exports.uploadImageKitFromUrl = onCall(
     form.append("fileName", fileName);
     form.append("folder", folder);
     form.append("useUniqueFileName", "true");
-    form.append("publicKey", IMAGEKIT_PUBLIC_KEY);
+    // Server-side upload uses ImageKit Basic Auth; do not send client-side auth parameters here.
 
     const response = await fetch("https://upload.imagekit.io/api/v1/files/upload", {
       method: "POST",

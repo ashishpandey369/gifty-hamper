@@ -14,9 +14,9 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - Step 1: Document and isolate the existing behavior (this checkpoint) — completed.
 - Step 2: Normalize the homepage mobile header to the same shared menu positioning without changing `js/main.js` — completed. Also removed a literal `\\n` text artifact from `index.html` that was visible above the header.
 - Step 3: Make Recently Viewed a clean temporary reference list, deduplicated by product id, refreshed on view, expired after 7 days, and always resolved against the live catalog — completed by centralizing the storage/read logic in `js/catalog-store.js`.
-- Step 4: Keep For You independent from Recently Viewed and show exactly 10 active products before the View More CTA.
-- Step 5: Refresh cache versions only for files whose behavior changed.
-- Step 6: Verify no duplicate menu functions/selectors or catalog mutation were introduced.
+- Step 4: Keep For You independent from Recently Viewed and show exactly 10 active products before the View More CTA — verified in `js/home-marketplace.js`.
+- Step 5: Refresh cache versions only for files whose behavior changed — homepage cache bumped to `v=3`.
+- Step 6: Verify no duplicate menu functions/selectors or catalog mutation were introduced — pending final repository check.
 
 ## Guardrails
 - Do not change Firebase schema/rules for this UI task.

@@ -1,6 +1,8 @@
 import { DEFAULT_CATALOG, getDiscountPercent, getRecentlyViewedIds, loadPublicCatalog } from "./catalog-store.js?v=2";
+import { loadCategories } from "./category-store.js";
 
 let catalog = DEFAULT_CATALOG.map(item => ({...item}));
+let categoryRecords = [];
 
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const imagesFor = product => (Array.isArray(product.images) ? product.images : (product.image ? [product.image] : [])).filter(Boolean);
@@ -21,45 +23,43 @@ function categoryIcon(name){
   return '🎁';
 }
 
+function categoryImageMarkup(category) {
+  if (category.image) {
+    return '<img src="' + escapeHtml(category.image) + '" alt="" loading="lazy">';
+  }
+  return '<span class="category-chip-fallback">' + categoryIcon(category.name) + '</span>';
+}
+
 function renderCategories(){
   const target = document.querySelector('#home-categories');
   if (!target) return;
 
-  let savedMajor = [];
-  let savedMinor = [];
-  try {
-    const major = JSON.parse(localStorage.getItem('gifty-hamper-major-categories') || '[]');
-    const minor = JSON.parse(localStorage.getItem('gifty-hamper-categories') || '[]');
-    if (Array.isArray(major)) savedMajor = major.filter(Boolean).map(value => value === 'Gifts' ? 'Gifts for Everyone' : value);
-    if (Array.isArray(minor)) savedMinor = minor.filter(Boolean);
-  } catch (_) {}
-
-  const major = [];
-  const minor = [];
-  const addUnique = (list, value) => {
-    const clean = String(value || '').trim();
-    if (clean && !list.some(item => item.toLowerCase() === clean.toLowerCase())) list.push(clean);
+  const fallback = [];
+  const seen = new Set();
+  const add = (name, type = 'minor') => {
+    const clean = String(name || '').trim();
+    const key = clean.toLowerCase();
+    if (!clean || seen.has(key)) return;
+    seen.add(key);
+    fallback.push({ id: type + '-' + key.replace(/[^a-z0-9]+/g, '-'), name: clean, type, image: '', order: fallback.length });
   };
 
-  savedMajor.forEach(value => addUnique(major, value));
-  catalog.forEach(product => addUnique(major, product.majorCategory || 'Gifts for Everyone'));
+  categoryRecords.forEach(category => add(category.name, category.type));
+  if (!fallback.length) {
+    catalog.forEach(product => add(product.majorCategory || 'Gifts for Everyone', 'major'));
+    catalog.forEach(product => (product.categories || []).forEach(category => add(category, 'minor')));
+  }
 
-  savedMinor.forEach(value => addUnique(minor, value));
-  catalog.forEach(product => (product.categories || []).forEach(value => addUnique(minor, value)));
-
-  const preferred = ['For Him','For Her','For Husband','For Wife','For Boyfriend','For Girlfriend','For Parents','For Friends','For Employees','For Clients'];
-  preferred.forEach(value => addUnique(minor, value));
-  const categories = [...preferred, ...minor.filter(value => !preferred.some(item => item.toLowerCase() === value.toLowerCase()) && !major.some(item => item.toLowerCase() === value.toLowerCase())), ...major].slice(0, 24);
-
-  target.innerHTML = categories.map(name => {
+  const categories = fallback.slice(0, 15);
+  target.innerHTML = categories.map(category => {
     const count = catalog.filter(product =>
-      String(product.majorCategory || 'Gifts for Everyone').toLowerCase() === name.toLowerCase() ||
-      (product.categories || []).some(category => String(category).toLowerCase() === name.toLowerCase())
+      String(product.majorCategory || 'Gifts for Everyone').toLowerCase() === category.name.toLowerCase() ||
+      (product.categories || []).some(value => String(value).toLowerCase() === category.name.toLowerCase())
     ).length;
 
-    return '<a class="category-chip" href="shop.html?category=' + encodeURIComponent(name) + '">' +
-      '<span class="category-chip-icon">' + categoryIcon(name) + '</span>' +
-      '<strong title="' + escapeHtml(name) + '">' + escapeHtml(name) + '</strong>' +
+    return '<a class="category-chip" href="shop.html?category=' + encodeURIComponent(category.name) + '">' +
+      '<span class="category-chip-icon">' + categoryImageMarkup(category) + '</span>' +
+      '<strong title="' + escapeHtml(category.name) + '">' + escapeHtml(category.name) + '</strong>' +
       '<small>' + count + ' ' + (count === 1 ? 'gift' : 'gifts') + '</small>' +
       '</a>';
   }).join('');
@@ -130,6 +130,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (shared.length) catalog = shared;
   } catch (error) {
     console.error('Home catalog load error:', error);
+  }
+  try {
+    categoryRecords = await loadCategories();
+  } catch (error) {
+    console.error('Home category load error:', error);
+    categoryRecords = [];
   }
   renderCategories();
   renderProducts();

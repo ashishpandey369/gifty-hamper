@@ -718,22 +718,15 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#reset-form').addEventListener('click', resetForm);
   $('#cancel-edit').addEventListener('click', resetForm);
 
-  $('#admin-refresh').addEventListener('click', () => {
-    loadSharedCatalog().then(() => {
-      categories = readCategories();
-      renderCategoryManager();
-      render();
-    }).catch(error => {
-      console.error('Catalog refresh error:', error);
-      alert('Unable to refresh the shared catalog.');
-    });
-    categories = readCategories();
+  $('#admin-refresh').addEventListener('click', async () => {
     try {
-      const savedMajor = JSON.parse(localStorage.getItem(MAJOR_CAT_KEY) || 'null');
-      majorCategories = Array.isArray(savedMajor) && savedMajor.length ? savedMajor.map(item => item === 'Gifts' ? 'Gifts for Everyone' : item) : [...DEFAULT_MAJOR_CATS];
-    } catch (_) { majorCategories = [...DEFAULT_MAJOR_CATS]; }
-    renderCategoryManager();
-    render();
+      await loadSharedCategories();
+      await loadSharedCategories();
+      await loadSharedCatalog();
+    } catch (error) {
+      console.error('Admin refresh error:', error);
+      alert('Unable to refresh the shared catalog.');
+    }
   });
 
   $('#export-catalog').addEventListener('click', () => {
@@ -761,6 +754,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   fillOccasions();
   renderCategoryManager();
+  renderCategoryEditorPreview();
   resetForm();
   updatePriceRangeLabel();
 

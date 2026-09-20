@@ -73,9 +73,9 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 
 
 ### ImageKit deployment checklist
-1. Ensure the Firebase project is on the Blaze plan before deploying Cloud Functions; Firebase currently requires Blaze for Cloud Functions. Set a budget/spend cap appropriate for the project. citeturn7search0turn7search1
+1. Ensure the Firebase project is on the Blaze plan before deploying Cloud Functions; Firebase currently requires Blaze for Cloud Functions. Set a budget/spend cap appropriate for the project.
 2. Install/update the Firebase CLI and log in.
-3. From the repository root, run `firebase functions:secrets:set IMAGEKIT_PRIVATE_KEY` and paste the ImageKit private key only when the CLI prompts for it. Firebase stores Secret parameters in Cloud Secret Manager; the secret is only exposed to functions that explicitly bind it. citeturn1search1
+3. From the repository root, run `firebase functions:secrets:set IMAGEKIT_PRIVATE_KEY` and paste the ImageKit private key only when the CLI prompts for it. Firebase stores Secret parameters in Cloud Secret Manager; the secret is only exposed to functions that explicitly bind it.
 4. Run `cd functions && npm install`, then return to the repository root.
 5. Deploy with `firebase deploy --only functions`.
 6. Test the Admin product image upload, category image upload, URL import, image removal, product deletion and category deletion.

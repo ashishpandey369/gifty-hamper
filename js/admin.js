@@ -6,6 +6,7 @@ import {
   loadAdminCatalog,
   saveCatalogProduct
 } from "./catalog-store.js";
+import { deleteCategory, loadCategories, saveCategory, categoryId } from "./category-store.js";
 
 document.addEventListener('DOMContentLoaded', () => {
   const CAT_KEY = 'gifty-hamper-categories';
@@ -77,6 +78,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let editingId = '';
   let categoryRecords = [];
   let categoryEditorImage = '';
+
+  const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 
   const uniqueCategoryId = (name, type) => {
     const base = categoryId(name, type);

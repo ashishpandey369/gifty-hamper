@@ -4,3 +4,32 @@
 .admin-last-update{font-size:.68rem;color:#8b8490;font-weight:600;border-left:1px solid #eadde5;padding-left:12px;white-space:nowrap}.admin-brand{flex-wrap:wrap}@media(max-width:700px){.admin-last-update{display:none}}
 
 .copy-sku-button{border:0;background:transparent;color:#8b8490;padding:2px 4px;border-radius:5px;cursor:pointer;font-size:.78rem;line-height:1}.copy-sku-button:hover{background:#f5edf2;color:#b12b55}.copy-sku-button:focus-visible{outline:2px solid #b12b55;outline-offset:1px}
+
+
+.category-manager-chip{padding:6px 8px 6px 6px;min-width:170px;max-width:100%;border-radius:12px;background:#fff;border-color:#eadde5;box-shadow:0 3px 10px rgba(36,29,43,.05)}
+.category-chip-media{width:38px;height:38px;flex:0 0 38px;border-radius:9px;overflow:hidden;background:#f5edf2;display:grid;place-items:center}
+.category-chip-media img{width:100%;height:100%;object-fit:cover;display:block}
+.category-chip-placeholder{font-size:18px}
+.category-chip-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.category-manager-chip button{width:28px;height:28px;display:grid;place-items:center;border-radius:8px;background:#faf7fb;color:#7655e8;font-size:1rem}
+.category-manager-chip button:last-child{color:#b42318}
+.category-editor-modal{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px}
+.category-editor-modal[hidden]{display:none}
+.category-editor-backdrop{position:absolute;inset:0;background:rgba(28,20,32,.48);backdrop-filter:blur(3px)}
+.category-editor-dialog{position:relative;width:min(560px,100%);max-height:min(90vh,760px);overflow:auto;background:#fff;border-radius:18px;box-shadow:0 24px 70px rgba(28,20,32,.25)}
+.category-editor-dialog form{padding:20px 22px}
+.category-editor-body{display:flex;flex-direction:column;gap:16px}
+.category-editor-body>label{display:flex;flex-direction:column;gap:7px;font-size:.78rem;font-weight:800}
+.category-editor-body input{font:inherit;border:1px solid #dfd3dc;border-radius:10px;background:#fff;padding:10px 11px;color:#241d2b;width:100%;box-sizing:border-box}
+.category-editor-preview{min-height:150px;border:1px dashed #d9cbd5;border-radius:12px;background:#fcfafb;display:grid;place-items:center;overflow:hidden}
+.category-editor-preview-card{width:100%;height:190px;position:relative}
+.category-editor-preview-card img{width:100%;height:100%;object-fit:cover;display:block}
+.category-editor-preview-card span{position:absolute;left:10px;bottom:10px;background:#241d2bcc;color:#fff;border-radius:6px;padding:4px 7px;font-size:.65rem}
+.category-editor-empty{color:#8b8490;font-size:.75rem;padding:28px}
+.category-editor-remove{align-self:flex-start}
+body.category-editor-open{overflow:hidden}
+@media(max-width:700px){
+  .category-manager-chip{min-width:0;width:100%}
+  .category-editor-modal{padding:12px}
+  .category-editor-dialog form{padding:16px}
+}

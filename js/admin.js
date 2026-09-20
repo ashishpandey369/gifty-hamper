@@ -109,15 +109,131 @@ document.addEventListener('DOMContentLoaded', () => {
     ).join('') || '<p class="admin-help">Create a minor category first.</p>';
   }
 
+  async function loadSharedCategories() {
+    const loaded = await loadCategories();
+    if (loaded.length) {
+      categoryRecords = loaded;
+    } else {
+      const seeded = [];
+      majorCategories.forEach((name, index) => seeded.push({
+        id: categoryId(name, 'major'), name, type: 'major', image: '', order: index
+      }));
+      categories.forEach((name, index) => seeded.push({
+        id: categoryId(name, 'minor'), name, type: 'minor', image: '', order: 100 + index
+      }));
+      for (const category of seeded) await saveCategory(category);
+      categoryRecords = seeded;
+    }
+
+    majorCategories = categoryRecords.filter(item => item.type === 'major').map(item => item.name);
+    categories = categoryRecords.filter(item => item.type === 'minor').map(item => item.name);
+    saveMajorCategories(majorCategories);
+    saveCategories(categories);
+    renderCategoryManager();
+  }
+
+  function renderCategoryEditorPreview() {
+    const preview = $('#category-editor-preview');
+    const removeButton = $('#category-editor-remove-image');
+    if (!preview) return;
+    preview.innerHTML = categoryEditorImage
+      ? '<div class="category-editor-preview-card"><img src="' + escapeHtml(categoryEditorImage) + '" alt="Category image preview"><span>Current image</span></div>'
+      : '<div class="category-editor-empty">No image selected yet.</div>';
+    if (removeButton) removeButton.hidden = !categoryEditorImage;
+  }
+
   function renderCategoryManager() {
-    $('#category-list').innerHTML = categories.map(category =>
-      '<div class="category-chip"><span>' + category + '</span><button type="button" data-delete-category="' + category.replace(/"/g, '&quot;') + '" aria-label="Delete ' + category.replace(/"/g, '&quot;') + '">×</button></div>'
-    ).join('');
-    $('#major-category-list').innerHTML = majorCategories.map(category =>
-      '<div class="category-chip"><span>' + category + '</span><button type="button" data-delete-major-category="' + category.replace(/"/g, '&quot;') + '" aria-label="Delete ' + category.replace(/"/g, '&quot;') + '">×</button></div>'
-    ).join('');
+    const renderChip = category => {
+      const image = category.image
+        ? '<img src="' + escapeHtml(category.image) + '" alt="" loading="lazy">'
+        : '<span class="category-chip-placeholder">🎁</span>';
+      return '<div class="category-chip category-manager-chip">' +
+        '<div class="category-chip-media">' + image + '</div>' +
+        '<span class="category-chip-name" title="' + escapeHtml(category.name) + '">' + escapeHtml(category.name) + '</span>' +
+        '<button type="button" data-edit-category="' + escapeHtml(category.id) + '" aria-label="Edit ' + escapeHtml(category.name) + '" title="Edit category">✎</button>' +
+        '<button type="button" data-delete-category="' + escapeHtml(category.name) + '" data-category-id="' + escapeHtml(category.id) + '" data-category-type="' + category.type + '" aria-label="Delete ' + escapeHtml(category.name) + '" title="Delete category">×</button>' +
+      '</div>';
+    };
+
+    $('#category-list').innerHTML = categoryRecords.filter(item => item.type === 'minor').map(renderChip).join('');
+    $('#major-category-list').innerHTML = categoryRecords.filter(item => item.type === 'major').map(renderChip).join('');
     renderMajorCategorySelect($('#product-major-category')?.value || '');
     renderMinorCategoryChecks(getSelectedCategories());
+  }
+
+  function openCategoryEditor(id) {
+    const category = categoryRecords.find(item => item.id === id);
+    if (!category) return;
+    $('#category-editor-id').value = category.id;
+    $('#category-editor-type').value = category.type;
+    $('#category-editor-name').value = category.name;
+    $('#category-editor-image-url').value = category.image?.startsWith('data:image/') ? '' : (category.image || '');
+    categoryEditorImage = category.image || '';
+    $('#category-editor-title').textContent = 'Edit ' + (category.type === 'major' ? 'major' : 'minor') + ' category';
+    renderCategoryEditorPreview();
+    const modal = $('#category-editor-modal');
+    modal.hidden = false;
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('category-editor-open');
+  }
+
+  function closeCategoryEditor() {
+    const modal = $('#category-editor-modal');
+    modal.hidden = true;
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('category-editor-open');
+    categoryEditorImage = '';
+    $('#category-editor-form').reset();
+    renderCategoryEditorPreview();
+  }
+
+  function readCategoryImageFile(file) {
+    return new Promise((resolve, reject) => {
+      if (!/^image\/(png|jpeg|webp)$/i.test(file.type)) {
+        reject(new Error('Only PNG, JPG and WebP images are supported.'));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const image = new Image();
+        image.onload = () => {
+          const maxSize = 900;
+          const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(image.width * scale));
+          canvas.height = Math.max(1, Math.round(image.height * scale));
+          const context = canvas.getContext('2d');
+          context.drawImage(image, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/webp', 0.82));
+        };
+        image.onerror = () => reject(new Error('Unable to read that image.'));
+        image.src = reader.result;
+      };
+      reader.onerror = () => reject(new Error('Unable to read that image.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function persistCategoryRename(type, oldName, newName) {
+    if (oldName === newName) return;
+    const affected = catalog.filter(product =>
+      type === 'major'
+        ? (product.majorCategory || 'Gifts for Everyone') === oldName
+        : (product.categories || []).includes(oldName)
+    );
+
+    for (const product of affected) {
+      const next = {
+        ...product,
+        majorCategory: type === 'major' && product.majorCategory === oldName ? newName : product.majorCategory,
+        categories: type === 'minor'
+          ? (product.categories || []).map(item => item === oldName ? newName : item)
+          : product.categories
+      };
+      const saved = await saveCatalogProduct(next);
+      const index = catalog.findIndex(item => item.id === saved.id);
+      if (index >= 0) catalog[index] = saved;
+    }
   }
 
   function getSelectedCategories() {

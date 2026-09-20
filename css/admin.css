@@ -2,3 +2,5 @@
 .price-range-tag{display:inline-block;margin-top:3px;font-size:.68rem;color:#7655e8;font-weight:700}
 .admin-user-email{font-size:.78rem;color:#6f6877;font-weight:700;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.admin-top-actions #admin-logout{color:#b42318}.admin-top-actions button:disabled{opacity:.6;cursor:wait}.admin-auth-checking body{visibility:hidden}.admin-auth-checking{background:#f7f3f6}@media(max-width:700px){.admin-user-email{display:none}.admin-top-actions{gap:6px}.admin-top-actions button{padding:8px 11px}}
 .admin-last-update{font-size:.68rem;color:#8b8490;font-weight:600;border-left:1px solid #eadde5;padding-left:12px;white-space:nowrap}.admin-brand{flex-wrap:wrap}@media(max-width:700px){.admin-last-update{display:none}}
+
+.copy-sku-button{border:0;background:transparent;color:#8b8490;padding:2px 4px;border-radius:5px;cursor:pointer;font-size:.78rem;line-height:1}.copy-sku-button:hover{background:#f5edf2;color:#b12b55}.copy-sku-button:focus-visible{outline:2px solid #b12b55;outline-offset:1px}

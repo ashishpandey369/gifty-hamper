@@ -343,6 +343,16 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   $('#admin-product-list').addEventListener('click', async (event) => {
+    const copyButton = event.target.closest('[data-copy-sku]');
+    if (copyButton) {
+      const sku = copyButton.dataset.copySku || '';
+      navigator.clipboard.writeText(sku).then(() => {
+        copyButton.textContent = '✓';
+        setTimeout(() => { copyButton.textContent = '⧉'; }, 1200);
+      }).catch(() => alert('Unable to copy SKU.'));
+      return;
+    }
+
     const editButton = event.target.closest('[data-edit]');
     const deleteButton = event.target.closest('[data-delete]');
 

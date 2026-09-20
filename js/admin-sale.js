@@ -350,6 +350,13 @@ function commitSkuSearchToSale() {
 $("#sale-search").addEventListener("keydown", event => {
   if (event.key !== "Enter") return;
   event.preventDefault();
+  event.stopPropagation();
+  commitSkuSearchToSale();
+});
+
+$("#sale-search").addEventListener("keyup", event => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
   commitSkuSearchToSale();
 });
 

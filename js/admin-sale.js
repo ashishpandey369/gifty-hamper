@@ -68,16 +68,12 @@ function showAccess(message, detail) {
 }
 
 function renderProducts() {
-  const query = ($("#sale-search").value || "").toLowerCase().trim();
+  const rawQuery = ($("#sale-search").value || "").trim().toLowerCase();
+  const searchTerms = rawQuery.split(",").map(term => term.trim()).filter(Boolean).map(term => term.replace(/-\\d+$/, ""));
   const products = catalog.filter(product => {
     if (product.active === false) return false;
-    return !query || [
-      product.name,
-      product.id,
-      product.sku,
-      product.description,
-      ...(product.categories || [])
-    ].join(" ").toLowerCase().includes(query);
+    const searchable = [product.name, product.id, product.sku, product.description, product.occasion, product.majorCategory, ...(product.categories || [])].join(" ").toLowerCase();
+    return !searchTerms.length || searchTerms.some(term => searchable.includes(term));
   });
 
   $("#sale-product-list").innerHTML = products.map(product => {

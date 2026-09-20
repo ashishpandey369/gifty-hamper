@@ -42,14 +42,21 @@ service cloud.firestore {
       return isSuperAdmin() || isOwner() || isAdmin();
     }
 
-    // Feature switches live on each user's profile. Missing switches
-    // default to enabled so existing staff accounts continue working.
+    // Super Admin is the only role that can change feature switches.
+    // Missing switches remain enabled for backward compatibility with
+    // existing accounts created before feature controls were added.
     function featureEnabled(feature) {
       return isSuperAdmin()
         || (
           signedIn()
           && currentUser().data.get('features', {}).get(feature, true) == true
         );
+    }
+
+    function validFeatures(data) {
+      return data.get('features', {}).get('catalog', true) is bool
+        && data.get('features', {}).get('sales', true) is bool
+        && data.get('features', {}).get('staff', false) is bool;
     }
 
     function validSku(sku) {
@@ -67,62 +74,98 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
+      // A user can read only their own profile. Super Admin can read the
+      // complete staff directory. Private notes are stored separately.
       allow get: if isSuperAdmin()
         || (signedIn() && request.auth.uid == userId);
+
       allow list: if isSuperAdmin();
 
+      // Super Admin creates Owners/Admins with explicit feature defaults.
       allow create: if isSuperAdmin()
         && request.resource.data.role in ['owner', 'admin']
-        && request.resource.data.active == true;
+        && request.resource.data.active == true
+        && request.resource.data.features is map
+        && validFeatures(request.resource.data);
 
+      // Owner can create only Admins under their own account.
       allow create: if isOwner()
+        && featureEnabled('staff')
         && request.resource.data.role == 'admin'
         && request.resource.data.active == true
-        && request.resource.data.ownerUid == request.auth.uid;
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.features is map
+        && validFeatures(request.resource.data);
 
+      // Super Admin may manage operational account fields and feature switches,
+      // but cannot write the private-note collection through this profile.
       allow update: if isSuperAdmin()
         && resource.data.role in ['owner', 'admin']
-        && request.resource.data.role in ['owner', 'admin'];
+        && request.resource.data.role in ['owner', 'admin']
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['role', 'active', 'expiresAt', 'ownerUid', 'features'])
+        && validFeatures(request.resource.data);
 
+      // Owner may manage only their own Admins' role/status. They cannot
+      // change features, expiry, ownership, or any other protected field.
       allow update: if isOwner()
+        && featureEnabled('staff')
         && resource.data.role == 'admin'
         && request.resource.data.role == 'admin'
         && resource.data.ownerUid == request.auth.uid
-        && request.resource.data.ownerUid == request.auth.uid;
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['role', 'active']);
 
       allow delete: if isSuperAdmin()
         && resource.data.role in ['owner', 'admin'];
 
       allow delete: if isOwner()
+        && featureEnabled('staff')
         && resource.data.role == 'admin'
         && resource.data.ownerUid == request.auth.uid;
     }
 
+    // Private notes are deliberately separate from /users so the member
+    // cannot read their own Super Admin notes.
+    match /staffNotes/{userId} {
+      allow get, list: if isSuperAdmin();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
     match /ownerStaff/{ownerUid}/admins/{adminUid} {
       allow read: if isSuperAdmin()
-        || (isOwner() && featureEnabled('staff') && request.auth.uid == ownerUid);
+        || (
+          isOwner()
+          && featureEnabled('staff')
+          && request.auth.uid == ownerUid
+        );
 
       allow create: if isOwner()
         && featureEnabled('staff')
         && request.auth.uid == ownerUid
         && request.resource.data.role == 'admin'
         && request.resource.data.ownerUid == request.auth.uid
-        && request.resource.data.active == true;
+        && request.resource.data.active == true
+        && request.resource.data.features is map
+        && validFeatures(request.resource.data);
 
       allow update, delete: if isSuperAdmin();
 
       allow update, delete: if isOwner()
         && featureEnabled('staff')
         && request.auth.uid == ownerUid
-        && resource.data.ownerUid == request.auth.uid;
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['role', 'active']);
     }
 
     // ------------------------------------------------------------
-    // SKU RESERVATIONS
+    // SKU RESERVATIONS / CATALOG
     // ------------------------------------------------------------
 
     match /skus/{sku} {
-      allow get, list: if isStaff();
+      allow get, list: if isStaff() && featureEnabled('catalog');
 
       allow create: if isStaff()
         && featureEnabled('catalog')
@@ -148,22 +191,15 @@ service cloud.firestore {
         );
     }
 
-    // ------------------------------------------------------------
-    // PRODUCTS / CATALOG / INVENTORY
-    // ------------------------------------------------------------
-
     match /products/{productId} {
+      // Public storefront reads active products. Staff with Catalog enabled
+      // can read the complete catalog, including inactive products.
+      allow get: if resource.data.get('active', false) == true
+        || (isStaff() && featureEnabled('catalog'));
 
-      // Public store: active products only.
-      // Staff: complete catalog.
-      allow get: if isStaff()
-        || resource.data.get('active', false) == true;
+      allow list: if resource.data.get('active', false) == true
+        || (isStaff() && featureEnabled('catalog'));
 
-      allow list: if isStaff()
-        || resource.data.get('active', false) == true;
-
-      // Product creation requires a matching SKU reservation
-      // in the same transaction.
       allow create: if isStaff()
         && featureEnabled('catalog')
         && validSku(request.resource.data.get('sku', ''))
@@ -178,33 +214,31 @@ service cloud.firestore {
           /databases/$(database)/documents/skus/$(request.resource.data.sku)
         ).data.productId == productId;
 
-      // SKU remains permanent after creation.
       allow update: if isStaff()
         && (
           (
             featureEnabled('catalog')
             && validSku(request.resource.data.get('sku', ''))
-        && request.resource.data.get('name', '') is string
-        && request.resource.data.get('name', '') != ''
-        && request.resource.data.get('price', 0) is number
-        && request.resource.data.get('price', 0) >= 0
-        && request.resource.data.get('stock', 0) is number
-        && request.resource.data.get('stock', 0) >= 0
-        && validSalePrice(request.resource.data)
-        && validSku(resource.data.get('sku', ''))
-        && request.resource.data.sku == resource.data.sku
-        && get(
-          /databases/$(database)/documents/skus/$(resource.data.sku)
-        ).data.productId == productId
+            && request.resource.data.get('name', '') is string
+            && request.resource.data.get('name', '') != ''
+            && request.resource.data.get('price', 0) is number
+            && request.resource.data.get('price', 0) >= 0
+            && request.resource.data.get('stock', 0) is number
+            && request.resource.data.get('stock', 0) >= 0
+            && validSalePrice(request.resource.data)
+            && validSku(resource.data.get('sku', ''))
+            && request.resource.data.sku == resource.data.sku
+            && get(
+              /databases/$(database)/documents/skus/$(resource.data.sku)
+            ).data.productId == productId
           )
-          || (
+          ||
+          (
             featureEnabled('sales')
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock'])
           )
         );
 
-      // Product deletion must remove its SKU reservation in the
-      // same transaction.
       allow delete: if isStaff()
         && featureEnabled('catalog')
         && (
@@ -219,13 +253,17 @@ service cloud.firestore {
     }
 
     // ------------------------------------------------------------
-    // SALES
+    // SALES / POS
     // ------------------------------------------------------------
 
     match /sales/{saleId} {
       allow read: if isSuperAdmin()
         || (isOwner() && featureEnabled('sales'))
-        || (isAdmin() && featureEnabled('sales') && resource.data.sellerUid == request.auth.uid);
+        || (
+          isAdmin()
+          && featureEnabled('sales')
+          && resource.data.sellerUid == request.auth.uid
+        );
 
       allow create: if signedIn()
         && isStaff()
@@ -240,25 +278,18 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // ------------------------------------------------------------
-    // CUSTOMER / WHATSAPP ORDERS
-    // ------------------------------------------------------------
-
+    // Customer / WhatsApp orders are part of the Sales workspace.
     match /orders/{orderId} {
       allow read, create, update: if isStaff() && featureEnabled('sales');
       allow delete: if false;
     }
 
-    // ------------------------------------------------------------
-    // INVENTORY HISTORY
-    // ------------------------------------------------------------
-
+    // Inventory history belongs to the Products & Stock workspace.
     match /inventoryMovements/{movementId} {
-      allow read: if isStaff();
+      allow read: if isStaff() && featureEnabled('catalog');
       allow create, update, delete: if false;
     }
 
-    // Deny everything else.
     match /{document=**} {
       allow read, write: if false;
     }

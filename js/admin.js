@@ -135,13 +135,32 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function render() {
-    const query = ($('#admin-search').value || '').toLowerCase().trim();
+    const rawQuery = ($('#admin-search').value || '').trim();
+    const searchTerms = rawQuery
+      .split(',')
+      .map(term => term.trim().toLowerCase())
+      .filter(Boolean);
     const status = $('#admin-status').value;
 
     const rows = catalog.filter(product => {
-      const searchable = [product.name, product.sku, product.id, product.description, ...(product.categories || [])].join(' ').toLowerCase();
-      const statusMatch = status === 'all' || (status === 'active' ? product.active !== false : product.active === false);
-      return (!query || searchable.includes(query)) && statusMatch;
+      const searchable = [
+        product.name,
+        product.sku,
+        product.id,
+        product.description,
+        ...(product.categories || [])
+      ].join(' ').toLowerCase();
+
+      const statusMatch =
+        status === 'all'
+        || (status === 'active' && product.active !== false)
+        || (status === 'draft' && product.active === false);
+
+      const searchMatch =
+        searchTerms.length === 0
+        || searchTerms.some(term => searchable.includes(term));
+
+      return searchMatch && statusMatch;
     });
 
     $('#admin-product-list').innerHTML = rows.map(product => {
@@ -150,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const image = product.images?.[0];
       return '<tr>' +
         '<td><div class="admin-product-cell">' + (image ? '<img src="' + image + '" alt="">' : '<span class="admin-thumb-placeholder">🎁</span>') +
-        '<div><div class="admin-product-name">' + product.name + '</div><div class="admin-product-id">' + product.id + '</div></div></div></td>' +
+        '<div><div class="admin-product-name">' + product.name + '</div><div class="admin-product-id">SKU: ' + (product.sku || 'Generating…') + '</div></div></div></td>' +
         '<td><strong>' + (product.majorCategory || 'Gifts') + '</strong><br><small>' + ((product.categories || []).join(', ') || '—') + '</small></td>' +
         '<td><strong>' + money(product.salePrice || product.price) + '</strong><br><small class="price-range-tag">' + getPriceRange(product.salePrice || product.price) + '</small></td>' +
         '<td class="' + stockClass + '">' + stock + '</td>' +

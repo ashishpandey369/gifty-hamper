@@ -314,8 +314,11 @@ async function completeSale() {
 }
 
 $("#sale-search").addEventListener("input", () => {
-  applySkuQuantitySearch();
+  const added = applySkuQuantitySearch();
   renderProducts();
+  if (added) {
+    renderCart();
+  }
 });
 
 $("#sale-product-list").addEventListener("click", (event) => {

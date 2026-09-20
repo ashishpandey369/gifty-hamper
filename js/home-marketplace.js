@@ -1,4 +1,4 @@
-import { DEFAULT_CATALOG, getDiscountPercent, getRecentlyViewedIds, loadPublicCatalog } from "./catalog-store.js";
+import { DEFAULT_CATALOG, getDiscountPercent, getRecentlyViewedIds, loadPublicCatalog } from "./catalog-store.js?v=2";
 
 let catalog = DEFAULT_CATALOG.map(item => ({...item}));
 
@@ -99,9 +99,17 @@ function renderProducts(){
 
     const left = document.querySelector('#recent-scroll-left');
     const right = document.querySelector('#recent-scroll-right');
+    const updateScrollButtons = () => {
+      const maxScroll = Math.max(0, recentTarget.scrollWidth - recentTarget.clientWidth);
+      if (left) left.disabled = recentTarget.scrollLeft <= 2;
+      if (right) right.disabled = recentTarget.scrollLeft >= maxScroll - 2;
+    };
     const scroll = amount => recentTarget.scrollBy({left: amount, behavior: 'smooth'});
     left?.addEventListener('click', () => scroll(-Math.max(260, recentTarget.clientWidth * .72)));
     right?.addEventListener('click', () => scroll(Math.max(260, recentTarget.clientWidth * .72)));
+    recentTarget.addEventListener('scroll', updateScrollButtons, { passive: true });
+    window.addEventListener('resize', updateScrollButtons);
+    requestAnimationFrame(updateScrollButtons);
   }
 
   if (target) target.innerHTML = forYou.map(productCard).join('');

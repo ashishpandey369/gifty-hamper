@@ -61,6 +61,17 @@
           <span id="sale-item-count" class="sale-count">0 items</span>
         </div>
 
+        <div class="quick-order-box">
+          <label for="quick-order-command"><strong>Quick WhatsApp order</strong></label>
+          <p class="admin-help">Enter multiple SKUs with quantities, for example: <code>GH1042-4, AB5831-2</code></p>
+          <div class="quick-order-input-row">
+            <input id="quick-order-command" type="text" placeholder="GH1042-4, AB5831-2" autocomplete="off">
+            <button id="quick-order-parse" type="button">Calculate</button>
+          </div>
+          <div id="quick-order-result" class="quick-order-result" hidden></div>
+          <button id="quick-order-whatsapp" class="admin-primary" type="button" disabled>Send order to WhatsApp</button>
+        </div>
+
         <div id="sale-cart" class="sale-cart"></div>
 
         <div class="sale-summary">
@@ -75,6 +86,6 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
-  <script type="module" src="js/admin-sale.js?v=6"></script>
+  <script type="module" src="js/admin-sale.js?v=7"></script>
 </body>
 </html>

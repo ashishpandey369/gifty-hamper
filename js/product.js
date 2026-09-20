@@ -42,6 +42,8 @@ function renderProduct(product) {
   document.querySelector('#product-description').textContent = product.description;
   const skuElement = document.querySelector('#product-sku');
   if (skuElement) skuElement.textContent = product.sku ? 'SKU: ' + product.sku : '';
+  const skuElement = document.querySelector('#product-sku');
+  if (skuElement) skuElement.textContent = product.sku ? 'SKU: ' + product.sku : '';
 
   const visual = document.querySelector('#product-visual');
   visual.className = `product-visual ${product.imageClass || ''}`;

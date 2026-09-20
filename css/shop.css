@@ -91,3 +91,21 @@
   .catalog-grid .product-card-price span{font-size:.5rem;padding:3px 5px}
   .catalog-grid .product-sku-label{font-size:.52rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 }
+
+/* Final clean product cards */
+.catalog-grid .product-image-label,.catalog-grid .product-image-count{display:none!important}
+.catalog-grid .product-card{border-radius:7px;overflow:hidden}
+.catalog-grid .product-image-carousel{border-radius:7px 7px 0 0;box-shadow:none}
+.catalog-grid .product-info{padding:9px 2px 2px;gap:6px}
+.catalog-grid .product-info h3{margin:0;font-size:.86rem;line-height:1.2;min-height:2.4em;max-height:2.4em;overflow:hidden}
+.catalog-grid .product-info p{margin:2px 0 0;font-size:.66rem;line-height:1.2;min-height:1.2em;max-height:1.2em;overflow:hidden}
+.catalog-grid .product-sku-label{margin-top:2px;font-size:.56rem;line-height:1.1}
+.catalog-grid .product-card-price{margin-top:3px;min-height:20px}
+@media(max-width:430px){
+ .catalog-grid .product-image-carousel{border-radius:6px 6px 0 0}
+ .catalog-grid .product-info{padding:7px 1px 1px;gap:4px}
+ .catalog-grid .product-info h3{font-size:.77rem;line-height:1.18;min-height:2.36em;max-height:2.36em}
+ .catalog-grid .product-info p{font-size:.58rem;line-height:1.15;min-height:1.15em;max-height:1.15em}
+ .catalog-grid .product-sku-label{font-size:.5rem;margin-top:2px}
+ .catalog-grid .product-card-price{margin-top:2px}
+}

@@ -293,6 +293,152 @@ $("#sale-cart").addEventListener("click", (event) => {
   if (minus) changeQuantity(minus.dataset.cartMinus, -1);
 });
 
+
+let quickOrder = [];
+
+function parseQuickOrderCommand() {
+  const input = $("#quick-order-command").value.trim();
+  const result = $("#quick-order-result");
+  const sendButton = $("#quick-order-whatsapp");
+
+  quickOrder = [];
+
+  if (!input) {
+    result.hidden = true;
+    result.innerHTML = "";
+    sendButton.disabled = true;
+    return;
+  }
+
+  const parts = input.split(",").map(part => part.trim()).filter(Boolean);
+  const combined = new Map();
+  const invalid = [];
+
+  for (const part of parts) {
+    const match = part.match(/^([A-Za-z]{2}[0-9]{4})-(\d+)$/);
+    if (!match) {
+      invalid.push(part);
+      continue;
+    }
+
+    const sku = match[1].toUpperCase();
+    const quantity = Number(match[2]);
+
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      invalid.push(part);
+      continue;
+    }
+
+    combined.set(sku, (combined.get(sku) || 0) + quantity);
+  }
+
+  for (const [sku, quantity] of combined) {
+    const product = catalog.find(item => String(item.sku || "").toUpperCase() === sku);
+
+    if (!product) {
+      invalid.push(sku);
+      continue;
+    }
+
+    const unitPrice = Number(product.salePrice || product.price) || 0;
+    const stock = Math.max(0, Number(product.stock) || 0);
+
+    quickOrder.push({
+      product,
+      sku,
+      quantity,
+      unitPrice,
+      lineTotal: unitPrice * quantity,
+      stock
+    });
+  }
+
+  if (invalid.length) {
+    result.hidden = false;
+    result.innerHTML =
+      '<div class="quick-order-error"><strong>Check these entries:</strong> ' +
+      invalid.map(escapeHtml).join(", ") +
+      '</div>';
+  } else {
+    result.hidden = true;
+    result.innerHTML = "";
+  }
+
+  if (!quickOrder.length) {
+    sendButton.disabled = true;
+    if (!invalid.length) {
+      result.hidden = false;
+      result.innerHTML = '<div class="quick-order-error">Enter at least one valid SKU and quantity.</div>';
+    }
+    return;
+  }
+
+  const total = quickOrder.reduce((sum, item) => sum + item.lineTotal, 0);
+
+  result.hidden = false;
+  result.innerHTML =
+    '<div class="quick-order-list">' +
+    quickOrder.map(item => {
+      const stockWarning = item.quantity > item.stock
+        ? '<span class="quick-order-warning">Requested ' + item.quantity + ', current stock ' + item.stock + '</span>'
+        : '';
+      return '<div class="quick-order-row">' +
+        '<div><strong>' + escapeHtml(item.product.name) + '</strong><span>SKU: ' + escapeHtml(item.sku) + ' • ' + item.quantity + ' × ' + money(item.unitPrice) + '</span>' + stockWarning + '</div>' +
+        '<strong>' + money(item.lineTotal) + '</strong>' +
+      '</div>';
+    }).join("") +
+    '<div class="quick-order-total"><span>SUBTOTAL</span><strong>' + money(total) + '</strong></div>' +
+    '</div>';
+
+  sendButton.disabled = false;
+}
+
+function sendQuickOrderToWhatsApp() {
+  if (!quickOrder.length) return;
+
+  const subtotal = quickOrder.reduce((sum, item) => sum + item.lineTotal, 0);
+  const skuCommand = quickOrder.map(item => item.sku + "-" + item.quantity).join(", ");
+
+  const message = [
+    "Hello Gifty Hamper 👋",
+    "",
+    "I would like to place the following order:",
+    "",
+    "🛍️ ORDER DETAILS",
+    "",
+    ...quickOrder.map((item, index) => [
+      (index + 1) + ". " + item.product.name,
+      "",
+      "   Quantity: " + item.quantity,
+      "",
+      "   Amount: " + money(item.lineTotal),
+      ""
+    ].join("\n")),
+    "💰 SUBTOTAL: " + money(subtotal),
+    "(SKU: " + skuCommand + ")",
+    "",
+    "Please confirm product availability, delivery details, and the final order amount.",
+    "",
+    "Thank you!"
+  ].join("\n");
+
+  window.open(
+    "https://wa.me/919448588793?text=" + encodeURIComponent(message),
+    "_blank",
+    "noopener"
+  );
+}
+
+$("#quick-order-parse").addEventListener("click", parseQuickOrderCommand);
+$("#quick-order-command").addEventListener("input", parseQuickOrderCommand);
+$("#quick-order-command").addEventListener("keydown", event => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    parseQuickOrderCommand();
+  }
+});
+$("#quick-order-whatsapp").addEventListener("click", sendQuickOrderToWhatsApp);
+
 $("#complete-sale").addEventListener("click", completeSale);
 
 onAuthStateChanged(auth, async (user) => {

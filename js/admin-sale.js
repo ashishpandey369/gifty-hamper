@@ -67,43 +67,63 @@ function showAccess(message, detail) {
   box.innerHTML = "<strong>" + message + "</strong><span>" + detail + "</span>";
 }
 
-function applySkuQuantitySearch() {
+function parseSkuQuantitySearch() {
   const raw = ($("#sale-search").value || "").trim();
 
-  if (!raw || !raw.includes("-")) return false;
+  if (!raw || !raw.includes("-")) return [];
 
   const parts = raw.split(",").map(part => part.trim()).filter(Boolean);
-  if (!parts.length) return false;
-
   const requested = [];
+
   for (const part of parts) {
-    const match = part.match(/^([A-Za-z]{2}[0-9]{4})-(\d+)$/);
-    if (!match) return false;
+    const match = part.match(/^([A-Za-z]{2}[0-9]{4})-(\\d+)$/);
+    if (!match) return [];
 
     const sku = match[1].toUpperCase();
     const quantity = Number(match[2]);
-    if (!Number.isInteger(quantity) || quantity <= 0) return false;
+
+    if (!Number.isInteger(quantity) || quantity <= 0) return [];
 
     const product = catalog.find(item =>
       String(item.sku || "").toUpperCase() === sku
     );
 
-    if (!product || product.active === false) return false;
-
-    const stock = Math.max(0, Number(product.stock) || 0);
-    if (quantity > stock) {
-      return false;
-    }
+    if (!product || product.active === false) return [];
 
     requested.push({ product, quantity });
   }
 
+  return requested;
+}
+
+function applySkuQuantitySearch() {
+  const requested = parseSkuQuantitySearch();
+
+  if (!requested.length) return false;
+
+  const unavailable = requested.some(({ product, quantity }) => {
+    const stock = Math.max(0, Number(product.stock) || 0);
+    return quantity > stock;
+  });
+
+  if (unavailable) {
+    alert("One or more requested quantities are higher than the available stock.");
+    return false;
+  }
+
   cart.clear();
+
   requested.forEach(({ product, quantity }) => {
     cart.set(String(product.id), quantity);
   });
 
   return true;
+}
+
+function getSearchQuantity(product) {
+  const requested = parseSkuQuantitySearch();
+  const match = requested.find(item => String(item.product.id) === String(product.id));
+  return match ? match.quantity : (cart.get(product.id) || 0);
 }
 
 function renderProducts() {
@@ -117,7 +137,7 @@ function renderProducts() {
 
   $("#sale-product-list").innerHTML = products.map(product => {
     const stock = Math.max(0, Number(product.stock) || 0);
-    const selected = cart.get(product.id) || 0;
+    const selected = getSearchQuantity(product);
     const image = product.images?.[0];
 
     return `<article class="sale-product-card">
@@ -314,9 +334,18 @@ async function completeSale() {
 }
 
 $("#sale-search").addEventListener("input", () => {
-  const added = applySkuQuantitySearch();
   renderProducts();
+});
+
+$("#sale-search").addEventListener("keydown", event => {
+  if (event.key !== "Enter") return;
+
+  event.preventDefault();
+
+  const added = applySkuQuantitySearch();
+
   if (added) {
+    renderProducts();
     renderCart();
   }
 });

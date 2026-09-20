@@ -760,6 +760,22 @@ document.addEventListener('DOMContentLoaded', () => {
     deleteManagedCategory(deleteButton.dataset.categoryId, deleteButton.dataset.deleteCategory, deleteButton.dataset.categoryType);
   });
 
+  async function replaceCategoryEditorImage(result) {
+    if (!result?.url) throw new Error('ImageKit did not return an image URL.');
+    const previousPendingFileId = categoryEditorImageFileId
+      && categoryEditorImageFileId !== categoryEditorOriginalImageFileId
+      ? categoryEditorImageFileId
+      : '';
+
+    if (previousPendingFileId) {
+      await Promise.allSettled([deleteImageFile(previousPendingFileId)]);
+    }
+
+    categoryEditorImage = result.url;
+    categoryEditorImageFileId = result.fileId || '';
+    renderCategoryEditorPreview();
+  }
+
   $('#category-editor-add-url').addEventListener('click', async () => {
     const url = $('#category-editor-image-url').value.trim();
     if (!/^https?:\/\//i.test(url)) {
@@ -776,10 +792,8 @@ document.addEventListener('DOMContentLoaded', () => {
         folder: '/gifty-hamper/categories',
         fileName: 'category-' + Date.now().toString(36) + '.webp'
       });
-      categoryEditorImage = result.url;
-      categoryEditorImageFileId = result.fileId || '';
+      await replaceCategoryEditorImage(result);
       $('#category-editor-image-url').value = '';
-      renderCategoryEditorPreview();
     } catch (error) {
       console.error('ImageKit category URL import error:', error);
       alert('Unable to import the category image to ImageKit. ' + (error?.message || 'Please check the URL.'));
@@ -799,10 +813,8 @@ document.addEventListener('DOMContentLoaded', () => {
         folder: '/gifty-hamper/categories',
         fileName: (file.name || 'category-image').replace(/\.[^.]+$/, '') + '.webp'
       });
-      categoryEditorImage = result.url;
-      categoryEditorImageFileId = result.fileId || '';
+      await replaceCategoryEditorImage(result);
       $('#category-editor-image-url').value = '';
-      renderCategoryEditorPreview();
     } catch (error) {
       console.error('ImageKit category upload error:', error);
       alert('Unable to upload the category image to ImageKit. ' + (error?.message || 'Please try again.'));
@@ -811,11 +823,20 @@ document.addEventListener('DOMContentLoaded', () => {
     event.target.value = '';
   });
 
-  $('#category-editor-remove-image').addEventListener('click', () => {
+  $('#category-editor-remove-image').addEventListener('click', async () => {
+    const pendingFileId = categoryEditorImageFileId
+      && categoryEditorImageFileId !== categoryEditorOriginalImageFileId
+      ? categoryEditorImageFileId
+      : '';
+
     categoryEditorImage = '';
     categoryEditorImageFileId = '';
     $('#category-editor-image-url').value = '';
     renderCategoryEditorPreview();
+
+    if (pendingFileId) {
+      await Promise.allSettled([deleteImageFile(pendingFileId)]);
+    }
   });
 
   $('#category-editor-form').addEventListener('submit', async event => {

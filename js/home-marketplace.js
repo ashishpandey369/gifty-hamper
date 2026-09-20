@@ -47,7 +47,9 @@ function renderCategories(){
   savedMinor.forEach(value => addUnique(minor, value));
   catalog.forEach(product => (product.categories || []).forEach(value => addUnique(minor, value)));
 
-  const categories = [...major, ...minor.filter(value => !major.some(item => item.toLowerCase() === value.toLowerCase()))].slice(0, 14);
+  const preferred = ['For Him','For Her','For Husband','For Wife','For Boyfriend','For Girlfriend','For Parents','For Friends','For Employees','For Clients'];
+  preferred.forEach(value => addUnique(minor, value));
+  const categories = [...preferred, ...minor.filter(value => !preferred.some(item => item.toLowerCase() === value.toLowerCase()) && !major.some(item => item.toLowerCase() === value.toLowerCase())), ...major].slice(0, 24);
 
   target.innerHTML = categories.map(name => {
     const count = catalog.filter(product =>
@@ -72,7 +74,7 @@ function productCard(product){
     ? '<img src="' + escapeHtml(images[0]) + '" alt="' + escapeHtml(product.name) + '" loading="lazy">'
     : '<div class="market-product-placeholder">' + escapeHtml((product.label || 'GIFT') + ' • ' + product.name) + '</div>';
   return '<a class="market-product-card" href="product.html?id=' + encodeURIComponent(product.id) + '">' +
-    '<div class="market-product-image">' + imageMarkup + (product.label ? '<span class="market-product-label">' + escapeHtml(product.label) + '</span>' : '') + '</div>' +
+    '<div class="market-product-image">' + imageMarkup + '</div>' +
     '<div class="market-product-body"><h3>' + escapeHtml(product.name) + '</h3><p>' + escapeHtml(product.description || 'Thoughtfully curated gift') + '</p>' +
     '<div class="market-product-price">' + (discount ? '<del>' + price(original) + '</del>' : '') + '<strong>' + price(current) + '</strong>' + (discount ? '<span>' + discount + '% OFF</span>' : '') + '</div></div>' +
     '</a>';

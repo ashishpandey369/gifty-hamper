@@ -85,13 +85,18 @@ function renderProducts(){
   const target = document.querySelector('#home-products');
   if (!recentTarget && !target) return;
 
-  let recentIds = [];
-  try { recentIds = JSON.parse(localStorage.getItem('gifty-hamper-recently-viewed') || '[]'); } catch (_) {}
+  let recentEntries = [];
+  try {
+    const saved = JSON.parse(localStorage.getItem('gifty-hamper-recently-viewed') || '[]');
+    recentEntries = Array.isArray(saved) ? saved.map(entry =>
+      typeof entry === 'string' ? { id: entry, viewedAt: Date.now() } : entry
+    ).filter(entry => entry && entry.id && Date.now() - Number(entry.viewedAt || 0) < 7 * 24 * 60 * 60 * 1000) : [];
+    localStorage.setItem('gifty-hamper-recently-viewed', JSON.stringify(recentEntries));
+  } catch (_) {}
 
-  const recent = recentIds.map(id => catalog.find(product => product.id === id)).filter(Boolean).slice(0, 8);
+  const recent = recentEntries.map(entry => catalog.find(product => product.id === entry.id)).filter(Boolean).slice(0, 8);
   const forYou = catalog
     .filter(product => product.active !== false)
-    .filter(product => !recent.some(recentProduct => recentProduct.id === product.id))
     .slice(0, 10);
 
   if (recentTarget) {

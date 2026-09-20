@@ -75,6 +75,14 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (_) { return [...DEFAULT_MAJOR_CATS]; }
   })();
   let editingId = '';
+  let categoryRecords = [];
+  let categoryEditorImage = '';
+
+  const uniqueCategoryId = (name, type) => {
+    const base = categoryId(name, type);
+    if (!categoryRecords.some(item => item.id === base)) return base;
+    return base + '-' + Date.now().toString(36);
+  };
 
   async function loadSharedCatalog() {
     catalog = await loadAdminCatalog();
@@ -116,10 +124,10 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       const seeded = [];
       majorCategories.forEach((name, index) => seeded.push({
-        id: categoryId(name, 'major'), name, type: 'major', image: '', order: index
+        id: uniqueCategoryId(name, 'major'), name, type: 'major', image: '', order: index
       }));
       categories.forEach((name, index) => seeded.push({
-        id: categoryId(name, 'minor'), name, type: 'minor', image: '', order: 100 + index
+        id: uniqueCategoryId(name, 'minor'), name, type: 'minor', image: '', order: 100 + index
       }));
       for (const category of seeded) await saveCategory(category);
       categoryRecords = seeded;
@@ -524,7 +532,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     try {
       const saved = await saveCategory({
-        id: categoryId(name, 'major'),
+        id: uniqueCategoryId(name, 'major'),
         name,
         type: 'major',
         image: '',
@@ -551,7 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     try {
       const saved = await saveCategory({
-        id: categoryId(name, 'minor'),
+        id: uniqueCategoryId(name, 'minor'),
         name,
         type: 'minor',
         image: '',

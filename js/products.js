@@ -213,6 +213,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlSearch = urlParams.get('search');
+  const urlCategory = urlParams.get('category');
+  const urlOccasion = urlParams.get('occasion');
+  const searchInput = document.querySelector('#catalog-search');
+  if (searchInput && urlSearch) searchInput.value = urlSearch;
+  const categoryInput = urlCategory ? [...document.querySelectorAll('input[name="category"]')].find(input => input.value.toLowerCase() === urlCategory.toLowerCase()) : null;
+  if (categoryInput) categoryInput.checked = true;
+  const majorInput = urlCategory ? [...document.querySelectorAll('input[name="major-category"]')].find(input => input.value.toLowerCase() === urlCategory.toLowerCase()) : null;
+  if (majorInput) majorInput.checked = true;
+  const occasionInput = urlOccasion ? [...document.querySelectorAll('input[name="occasion"]')].find(input => input.value.toLowerCase() === urlOccasion.toLowerCase()) : null;
+  if (occasionInput) occasionInput.checked = true;
+
   applyBudgetFromUrl();
   renderCatalog();
   document.querySelector('#catalog-search')?.addEventListener('input', renderCatalog);

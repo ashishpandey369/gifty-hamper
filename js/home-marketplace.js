@@ -36,15 +36,29 @@ function renderCategories(){
 
   const fallback = [];
   const seen = new Set();
-  const add = (name, type = 'minor') => {
+  const add = (name, type = 'minor', image = '', id = '') => {
     const clean = String(name || '').trim();
     const key = clean.toLowerCase();
     if (!clean || seen.has(key)) return;
     seen.add(key);
-    fallback.push({ id: type + '-' + key.replace(/[^a-z0-9]+/g, '-'), name: clean, type, image: '', order: fallback.length });
+    fallback.push({
+      id: id || (type + '-' + key.replace(/[^a-z0-9]+/g, '-')),
+      name: clean,
+      type,
+      image: String(image || '').trim(),
+      order: fallback.length
+    });
   };
 
-  categoryRecords.forEach(category => add(category.name, category.type));
+  // Keep the complete shared category record, especially its image.
+  // The previous homepage mapper only copied the name/type and accidentally
+  // discarded the Firestore image field.
+  categoryRecords.forEach(category => add(
+    category.name,
+    category.type,
+    category.image,
+    category.id
+  ));
   if (!fallback.length) {
     catalog.forEach(product => add(product.majorCategory || 'Gifts for Everyone', 'major'));
     catalog.forEach(product => (product.categories || []).forEach(category => add(category, 'minor')));

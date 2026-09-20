@@ -25,7 +25,7 @@
 .category-scroller::-webkit-scrollbar{display:none}
 .category-chip{flex:0 0 102px;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center}
 .category-chip-icon{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#fff1f7,#f0e9ff);border:2px solid #eadcf0;box-shadow:0 5px 13px rgba(71,39,83,.08);font-size:1.7rem}
-.category-chip strong{font-size:.7rem;line-height:1.2;color:#45404d;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.category-chip strong{font-size:.7rem;line-height:1.2;color:#45404d;max-width:100%;height:2.4em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .category-chip small{font-size:.56rem;color:#99929e}
 .marketplace-hero{padding:18px 0 10px;background:linear-gradient(180deg,#fff,#fff8fb)}
 .marketplace-hero-card{min-height:330px;display:grid;grid-template-columns:1fr 1fr;overflow:hidden;border-radius:20px;background:linear-gradient(120deg,#fff0f5 0%,#f9efff 53%,#efe9ff 100%);box-shadow:0 12px 30px rgba(69,44,74,.08)}
@@ -51,11 +51,14 @@
 .marketplace-product-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 .market-product-card{min-width:0;border:1px solid #e8e4eb;border-radius:13px;overflow:hidden;background:#fff;transition:transform .18s,box-shadow .18s}
 .market-product-card:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(64,42,68,.09)}
-.market-product-image{height:245px;position:relative;background:#faf9fb;overflow:hidden}
-.market-product-image img{width:100%;height:100%;object-fit:cover;display:block}
-.market-product-placeholder{height:100%;display:grid;place-items:center;background:linear-gradient(145deg,#fff0f5,#f1ecff);font:700 1.1rem/1.1 'Playfair Display',Georgia,serif;text-align:center;padding:20px}
+.market-product-image{height:245px;aspect-ratio:1/1;position:relative;background:#faf9fb;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.market-product-image img{width:100%;height:100%;object-fit:contain;object-position:center;padding:8px;display:block;background:#fff}
+.market-product-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#fff0f5,#f1ecff);font:700 1.1rem/1.15 'Playfair Display',Georgia,serif;text-align:center;padding:20px;color:#6f2b78}
 .market-product-label{position:absolute;left:9px;top:9px;padding:5px 8px;border-radius:999px;background:#fff;color:#6f2b78;font-size:.56rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
-.market-product-body{padding:11px 11px 13px}.market-product-body h3{margin:0;color:#332d39;font-size:.82rem;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.market-product-body p{margin:5px 0 8px;color:#8a8390;font-size:.65rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.market-product-body{padding:11px 11px 13px;min-width:0}
+.market-product-body h3{margin:0;color:#332d39;font-size:.82rem;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em}
+.market-product-body p{margin:5px 0 8px;color:#8a8390;font-size:.65rem;line-height:1.35;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;min-height:1.35em}
+.market-product-price{min-height:22px}
 .market-product-price{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.market-product-price strong{font-size:.88rem}.market-product-price del{font-size:.63rem;color:#aaa2ac}.market-product-price span{font-size:.56rem;color:#138a6e;font-weight:800}
 .marketplace-occasions{padding:42px 0;background:#fff8fb}
 .occasion-market-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.occasion-market-grid a{position:relative;height:180px;border-radius:15px;overflow:hidden;box-shadow:0 8px 22px rgba(74,46,75,.08)}.occasion-market-grid img{width:100%;height:100%;object-fit:cover;display:block}.occasion-market-grid a:after{content:'';position:absolute;inset:auto 0 0;height:48%;background:linear-gradient(transparent,rgba(35,25,38,.62))}.occasion-market-grid span{position:absolute;left:14px;bottom:12px;z-index:2;color:#fff;font-weight:800;font-size:.86rem}
@@ -111,10 +114,24 @@
   .marketplace-products-section .container,.marketplace-occasions .container,.marketplace-trust .container{width:100%;padding-left:12px;padding-right:12px}
   .marketplace-product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
   .market-product-card{border-radius:10px}
-  .market-product-image{height:190px}
+  .market-product-image{height:auto;aspect-ratio:1/1}
   .market-product-body{padding:9px 8px 11px}.market-product-body h3{font-size:.7rem}.market-product-body p{font-size:.56rem;margin:4px 0 6px}.market-product-price strong{font-size:.76rem}.market-product-price del{font-size:.56rem}.market-product-price span{font-size:.5rem}
   .marketplace-occasions{padding:30px 0}
   .occasion-market-grid{grid-template-columns:repeat(2,1fr);gap:8px}.occasion-market-grid a{height:125px;border-radius:10px}.occasion-market-grid span{font-size:.7rem;left:10px;bottom:8px}
   .trust-row{grid-template-columns:1fr;gap:9px}.trust-row>div{padding:7px 0}.trust-row strong{font-size:.68rem}.trust-row small{font-size:.55rem}
 }
 @media(min-width:761px) and (max-width:1000px){.marketplace-header-inner{grid-template-columns:150px 1fr auto}.marketplace-brand .brand-logo{max-width:150px}.marketplace-product-grid{grid-template-columns:repeat(3,1fr)}}
+
+/* Compact mobile product cards: marketplace density without losing readability */
+@media(max-width:760px){
+  .market-product-image img{padding:5px}
+  .market-product-placeholder{font-size:.8rem;padding:12px}
+  .market-product-body{padding:8px 8px 10px}
+  .market-product-body h3{font-size:.69rem;line-height:1.28;min-height:2.56em}
+  .market-product-body p{display:none}
+  .market-product-body .market-product-price{margin-top:6px}
+  .market-product-price strong{font-size:.78rem}
+  .market-product-price del{font-size:.55rem}
+  .market-product-price span{font-size:.5rem;padding:3px 5px;border-radius:999px;background:#fde8f0}
+  .market-product-label{left:6px;top:6px;padding:4px 6px;font-size:.48rem;max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}

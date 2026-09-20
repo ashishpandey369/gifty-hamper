@@ -31,3 +31,15 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - Target: show up to 10 related/active products instead of 3, keep the existing View all gifts CTA, and add left/right scroll controls with disabled-state handling and touch/trackpad horizontal scrolling.
 - Guardrails: keep the current product-page catalog source, do not alter Firebase data, and do not change the existing Recently Viewed behavior.
 - Status: completed. The product page now renders up to 10 active related products, keeps the existing View all gifts link, and uses the same left/right horizontal shelf interaction with disabled arrow states and touch/trackpad scrolling.
+
+
+## Step 8: Shared category management and storefront category browsing
+- Category metadata is now stored in the Firestore `categories` collection so names/images are shared across admin sessions and storefront devices.
+- Admin major and minor category cards now show an image thumbnail, pencil edit action, and delete action. Editing supports category-name changes plus image URL upload/file upload/remove.
+- Category image uploads are resized in the browser before being stored as compact WebP data URLs, keeping each category image in its own Firestore document rather than adding a large catalog blob.
+- Existing local category names are migrated into Firestore when the shared category collection is first initialized.
+- The homepage Shop by category shelf now shows the first 15 shared categories and links to a dedicated all-categories page.
+- The new all-categories page uses large circular category images, six categories per desktop row, responsive scrolling down the page, and links each category directly to the existing shop category filter.
+- Existing product-category assignments are preserved when a category is renamed; deleting a category now also persists the corresponding product assignment cleanup/move before removing the category record.
+- Firebase product schema and existing Recently Viewed/More to love logic remain unchanged.
+- Status: in progress pending repository verification.

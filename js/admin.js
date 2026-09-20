@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const readCategories = () => {
     try {
       const saved = JSON.parse(localStorage.getItem(CAT_KEY) || 'null');
-      return Array.isArray(saved) && saved.length ? saved : [...DEFAULT_CATS];
+      return Array.isArray(saved) && saved.length ? [...new Set([...DEFAULT_CATS, ...saved])] : [...DEFAULT_CATS];
     } catch (_) {
       return [...DEFAULT_CATS];
     }

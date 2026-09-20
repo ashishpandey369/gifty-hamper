@@ -1,0 +1,118 @@
+/* Gifty Hamper marketplace-style home */
+.marketplace-body{background:#fffdfb;color:#292635}
+.marketplace-header{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.97);border-bottom:1px solid #ece8ee;backdrop-filter:blur(14px)}
+.marketplace-header-inner{min-height:76px;grid-template-columns:180px minmax(280px,1fr) auto;gap:22px}
+.marketplace-brand .brand-logo{height:58px;max-width:180px}
+.marketplace-header-search{height:48px;display:flex;align-items:center;background:#f5f3f7;border:1px solid #e2dfe8;border-radius:10px;overflow:hidden}
+.marketplace-header-search>span{padding-left:17px;color:#777487;font-size:1.4rem}
+.marketplace-header-search input{flex:1;min-width:0;height:100%;border:0;outline:0;background:transparent;padding:0 12px;font:500 .88rem 'DM Sans',Arial,sans-serif;color:#292635}
+.marketplace-header-search button{height:100%;padding:0 20px;border:0;background:#6f2b78;color:#fff;font:700 .78rem 'DM Sans',Arial,sans-serif;cursor:pointer}
+.marketplace-header-actions{gap:8px}
+.marketplace-header-actions .location-button{display:inline-flex;min-height:40px;padding:0 11px;border:1px solid #e5e1e8;border-radius:10px;background:#fff;color:#45404d}
+.marketplace-header-actions .location-button small{max-width:100px;overflow:hidden;text-overflow:ellipsis}
+.marketplace-header-actions .icon-button{border:1px solid #e5e1e8;background:#fff;width:40px;height:40px}
+.marketplace-cart-button{font-size:1.15rem}
+.marketplace-search-section{display:none}
+.marketplace-location{display:none}
+.marketplace-categories{background:#fff;border-bottom:1px solid #eeeaf0}
+.marketplace-categories .container{padding-top:13px;padding-bottom:13px}
+.marketplace-section-head{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:18px}
+.marketplace-section-head .eyebrow{margin:0 0 4px;color:#8a8390;font-size:.58rem}
+.marketplace-section-head h2{margin:0;font-size:1.55rem;line-height:1.1;letter-spacing:-.03em}
+.marketplace-section-head>a{font-size:.76rem;font-weight:700;color:#6f2b78;white-space:nowrap}
+.category-scroller{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding:2px 1px 5px}
+.category-scroller::-webkit-scrollbar{display:none}
+.category-chip{flex:0 0 102px;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center}
+.category-chip-icon{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#fff1f7,#f0e9ff);border:2px solid #eadcf0;box-shadow:0 5px 13px rgba(71,39,83,.08);font-size:1.7rem}
+.category-chip strong{font-size:.7rem;line-height:1.2;color:#45404d;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.category-chip small{font-size:.56rem;color:#99929e}
+.marketplace-hero{padding:18px 0 10px;background:linear-gradient(180deg,#fff,#fff8fb)}
+.marketplace-hero-card{min-height:330px;display:grid;grid-template-columns:1fr 1fr;overflow:hidden;border-radius:20px;background:linear-gradient(120deg,#fff0f5 0%,#f9efff 53%,#efe9ff 100%);box-shadow:0 12px 30px rgba(69,44,74,.08)}
+.marketplace-hero-copy{padding:42px 44px;display:flex;flex-direction:column;justify-content:center}
+.marketplace-hero-copy .eyebrow{color:#8b6579}
+.marketplace-hero-copy h1{margin:0;font-family:'Playfair Display',Georgia,serif;font-size:clamp(2.5rem,5vw,4.5rem);line-height:.95;letter-spacing:-.05em}
+.marketplace-hero-copy h1 em{color:#8d3e89}
+.marketplace-hero-copy>p:not(.eyebrow){max-width:500px;margin:18px 0 22px;color:#6f6877;font-size:.88rem}
+.marketplace-hero-button{display:inline-flex;align-items:center;gap:9px;width:max-content;padding:12px 18px;border-radius:999px;background:#6f2b78;color:#fff;font-size:.76rem;font-weight:700}
+.marketplace-hero-art{position:relative;min-height:330px;display:grid;place-items:center}
+.marketplace-hero-art>img{width:min(78%,380px);max-height:290px;object-fit:contain;filter:drop-shadow(0 22px 24px rgba(60,34,64,.18));position:relative;z-index:2}
+.hero-art-card{position:absolute;z-index:3;padding:11px 14px;border-radius:12px;background:rgba(255,255,255,.9);box-shadow:0 10px 24px rgba(56,37,59,.12)}
+.hero-art-card-one{left:8%;top:14%;transform:rotate(-6deg);display:flex;gap:8px;align-items:center}
+.hero-art-card-one span{color:#e83f6f}.hero-art-card-one strong{font:700 .7rem/1.15 'Playfair Display',Georgia,serif}
+.hero-art-card-two{right:8%;bottom:15%;transform:rotate(5deg);display:flex;flex-direction:column;line-height:1}
+.hero-art-card-two small{font-size:.5rem;letter-spacing:.14em;color:#8b8390}.hero-art-card-two b{font:700 1.2rem 'Playfair Display',Georgia,serif;color:#6f2b78}
+.marketplace-quick-links{padding:14px 0;background:#fff}
+.quick-link-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.quick-link-grid a{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:10px;padding:13px 15px;border:1px solid #eee8ef;border-radius:12px;background:#fff;transition:.2s}
+.quick-link-grid a:hover{transform:translateY(-2px);box-shadow:0 7px 18px rgba(67,39,70,.08)}
+.quick-link-grid span{grid-row:1/3;font-size:1.5rem}.quick-link-grid strong{font-size:.76rem}.quick-link-grid small{font-size:.6rem;color:#938b97}
+.marketplace-products-section{padding:38px 0 46px;background:#fff}
+.marketplace-product-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.market-product-card{min-width:0;border:1px solid #e8e4eb;border-radius:13px;overflow:hidden;background:#fff;transition:transform .18s,box-shadow .18s}
+.market-product-card:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(64,42,68,.09)}
+.market-product-image{height:245px;position:relative;background:#faf9fb;overflow:hidden}
+.market-product-image img{width:100%;height:100%;object-fit:cover;display:block}
+.market-product-placeholder{height:100%;display:grid;place-items:center;background:linear-gradient(145deg,#fff0f5,#f1ecff);font:700 1.1rem/1.1 'Playfair Display',Georgia,serif;text-align:center;padding:20px}
+.market-product-label{position:absolute;left:9px;top:9px;padding:5px 8px;border-radius:999px;background:#fff;color:#6f2b78;font-size:.56rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.market-product-body{padding:11px 11px 13px}.market-product-body h3{margin:0;color:#332d39;font-size:.82rem;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.market-product-body p{margin:5px 0 8px;color:#8a8390;font-size:.65rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.market-product-price{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.market-product-price strong{font-size:.88rem}.market-product-price del{font-size:.63rem;color:#aaa2ac}.market-product-price span{font-size:.56rem;color:#138a6e;font-weight:800}
+.marketplace-occasions{padding:42px 0;background:#fff8fb}
+.occasion-market-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.occasion-market-grid a{position:relative;height:180px;border-radius:15px;overflow:hidden;box-shadow:0 8px 22px rgba(74,46,75,.08)}.occasion-market-grid img{width:100%;height:100%;object-fit:cover;display:block}.occasion-market-grid a:after{content:'';position:absolute;inset:auto 0 0;height:48%;background:linear-gradient(transparent,rgba(35,25,38,.62))}.occasion-market-grid span{position:absolute;left:14px;bottom:12px;z-index:2;color:#fff;font-weight:800;font-size:.86rem}
+.marketplace-trust{padding:28px 0;background:#fff;border-top:1px solid #eee8ef}
+.trust-row{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.trust-row>div{display:flex;gap:11px;align-items:center}.trust-row>div>span{width:34px;height:34px;display:grid;place-items:center;border-radius:50%;background:#f2e6f4;color:#6f2b78;font-weight:900}.trust-row strong{display:block;font-size:.74rem}.trust-row small{display:block;color:#928b96;font-size:.6rem;margin-top:2px}
+
+@media(max-width:760px){
+  .marketplace-header{position:sticky;top:0}
+  .marketplace-header-inner{min-height:60px;grid-template-columns:1fr auto;gap:7px;padding:0 12px}
+  .marketplace-brand .brand-logo{height:47px;max-width:145px}
+  .marketplace-header-search{display:none}
+  .marketplace-header-actions .location-button{display:none}
+  .marketplace-header-actions .icon-button{width:37px;height:37px}
+  .marketplace-header-actions{gap:4px}
+  .marketplace-search-section{display:block;padding:10px 0 8px;background:#fff}
+  .marketplace-search{height:46px;display:flex;align-items:center;background:#f5f3f7;border:1px solid #dfdbe5;border-radius:10px;overflow:hidden}
+  .marketplace-search-icon{padding-left:14px;color:#777487;font-size:1.35rem}
+  .marketplace-search input{flex:1;min-width:0;height:100%;border:0;outline:0;background:transparent;padding:0 10px;font-size:.78rem}
+  .marketplace-search button{height:100%;padding:0 13px;border:0;background:#6f2b78;color:#fff;font-size:.68rem;font-weight:800}
+  .marketplace-location{display:block;background:#fff;border-top:1px solid #f0edf2;border-bottom:1px solid #eee9f0}
+  .marketplace-location-inner{width:100%}
+  .marketplace-location .location-button{width:100%;display:flex;align-items:center;gap:7px;min-height:45px;border:0;border-radius:0;background:#fff;color:#393440;padding:0 14px;font-size:.72rem}
+  .marketplace-location .location-button small{flex:1;text-align:left;color:#77717d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .marketplace-location .location-button b{font-size:1.2rem}
+  .marketplace-location .location-pin{color:#6f2b78;font-size:1.05rem}
+  .marketplace-categories .container{padding:13px 12px 10px}
+  .marketplace-section-head{margin-bottom:13px}
+  .marketplace-section-head h2{font-size:1.15rem}
+  .marketplace-section-head .eyebrow{font-size:.5rem}
+  .marketplace-section-head>a{font-size:.67rem}
+  .category-scroller{gap:9px}
+  .category-chip{flex-basis:82px;gap:5px}
+  .category-chip-icon{width:58px;height:58px;font-size:1.35rem}
+  .category-chip strong{font-size:.62rem}
+  .category-chip small{font-size:.5rem}
+  .marketplace-hero{padding:7px 0 4px}
+  .marketplace-hero-card{min-height:235px;grid-template-columns:1.08fr .92fr;border-radius:0;box-shadow:none}
+  .marketplace-hero-copy{padding:23px 14px}
+  .marketplace-hero-copy .eyebrow{font-size:.5rem;margin-bottom:8px}
+  .marketplace-hero-copy h1{font-size:clamp(1.8rem,8vw,2.7rem)}
+  .marketplace-hero-copy>p:not(.eyebrow){font-size:.66rem;line-height:1.45;margin:11px 0 14px}
+  .marketplace-hero-button{padding:9px 13px;font-size:.62rem}
+  .marketplace-hero-art{min-height:235px}
+  .marketplace-hero-art>img{width:110%;max-height:205px}
+  .hero-art-card{padding:7px 8px;border-radius:8px}
+  .hero-art-card-one{left:2%;top:13%}.hero-art-card-one strong{font-size:.5rem}.hero-art-card-one span{font-size:.7rem}
+  .hero-art-card-two{right:3%;bottom:12%}.hero-art-card-two small{font-size:.4rem}.hero-art-card-two b{font-size:.9rem}
+  .quick-link-grid{grid-template-columns:repeat(4,1fr);gap:6px;padding:9px 12px}
+  .quick-link-grid a{display:flex;flex-direction:column;align-items:center;text-align:center;padding:10px 4px;border-radius:10px}
+  .quick-link-grid span{font-size:1.2rem;margin-bottom:3px}.quick-link-grid strong{font-size:.59rem}.quick-link-grid small{font-size:.46rem;white-space:nowrap}
+  .marketplace-products-section{padding:26px 0 32px}
+  .marketplace-products-section .container,.marketplace-occasions .container,.marketplace-trust .container{width:100%;padding-left:12px;padding-right:12px}
+  .marketplace-product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .market-product-card{border-radius:10px}
+  .market-product-image{height:190px}
+  .market-product-body{padding:9px 8px 11px}.market-product-body h3{font-size:.7rem}.market-product-body p{font-size:.56rem;margin:4px 0 6px}.market-product-price strong{font-size:.76rem}.market-product-price del{font-size:.56rem}.market-product-price span{font-size:.5rem}
+  .marketplace-occasions{padding:30px 0}
+  .occasion-market-grid{grid-template-columns:repeat(2,1fr);gap:8px}.occasion-market-grid a{height:125px;border-radius:10px}.occasion-market-grid span{font-size:.7rem;left:10px;bottom:8px}
+  .trust-row{grid-template-columns:1fr;gap:9px}.trust-row>div{padding:7px 0}.trust-row strong{font-size:.68rem}.trust-row small{font-size:.55rem}
+}
+@media(min-width:761px) and (max-width:1000px){.marketplace-header-inner{grid-template-columns:150px 1fr auto}.marketplace-brand .brand-logo{max-width:150px}.marketplace-product-grid{grid-template-columns:repeat(3,1fr)}}

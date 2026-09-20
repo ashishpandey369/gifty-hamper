@@ -76,7 +76,7 @@ function parseSkuQuantitySearch() {
   const requested = [];
 
   for (const part of parts) {
-    const match = part.match(/^([A-Za-z]{2}[0-9]{4})-(\\d+)$/);
+    const match = part.match(/^([A-Za-z]{2}[0-9]{4})-(\d+)$/);
     if (!match) return [];
 
     const sku = match[1].toUpperCase();

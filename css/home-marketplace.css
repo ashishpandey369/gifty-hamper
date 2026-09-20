@@ -185,3 +185,9 @@
   .marketplace-header-inner .primary-nav{grid-column:1/-1;grid-row:2;position:relative;z-index:60;background:#fff}
   .marketplace-header-inner .primary-nav.open{display:flex}
 }
+
+/* Recently viewed: predictable horizontal shelf behavior */
+.marketplace-recent-row{scroll-snap-type:x proximity;cursor:grab}
+.marketplace-recent-row:active{cursor:grabbing}
+.marketplace-recent-row .market-product-card{scroll-snap-align:start}
+.marketplace-scroll-btn:disabled{opacity:.35;cursor:default;background:#faf9fb}

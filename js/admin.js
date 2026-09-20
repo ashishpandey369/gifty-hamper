@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const image = product.images?.[0];
       return '<tr>' +
         '<td><div class="admin-product-cell">' + (image ? '<img src="' + image + '" alt="">' : '<span class="admin-thumb-placeholder">🎁</span>') +
-        '<div><div class="admin-product-name">' + product.name + '</div><div class="admin-product-id">SKU: ' + (product.sku || 'Generating…') + '</div></div></div></td>' +
+        '<div><div class="admin-product-name">' + product.name + '</div><div class="admin-product-id">SKU: ' + (product.sku || 'Generating…') + ' <button type="button" class="copy-sku-button" data-copy-sku="' + (product.sku || '') + '" title="Copy SKU" aria-label="Copy SKU">⧉</button></div></div></div></td>' +
         '<td><strong>' + (product.majorCategory || 'Gifts') + '</strong><br><small>' + ((product.categories || []).join(', ') || '—') + '</small></td>' +
         '<td><strong>' + money(product.salePrice || product.price) + '</strong><br><small class="price-range-tag">' + getPriceRange(product.salePrice || product.price) + '</small></td>' +
         '<td class="' + stockClass + '">' + stock + '</td>' +

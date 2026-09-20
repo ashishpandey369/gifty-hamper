@@ -74,6 +74,38 @@
         </table>
       </div>
     </section>
+    <div id="staff-detail-modal" class="staff-modal" hidden>
+      <div class="staff-modal-backdrop" data-close-detail-modal></div>
+      <section class="staff-modal-card staff-detail-card" role="dialog" aria-modal="true" aria-labelledby="staff-detail-title">
+        <button class="staff-modal-close" type="button" data-close-detail-modal aria-label="Close">×</button>
+        <p class="eyebrow">Member details</p>
+        <h2 id="staff-detail-title">Member</h2>
+        <div id="staff-detail-meta" class="staff-detail-meta"></div>
+
+        <div id="staff-feature-section" class="staff-feature-section" hidden>
+          <p class="eyebrow">Feature access</p>
+          <h3>Visible admin features</h3>
+          <p class="admin-help">Only the Super Admin can change these switches. Turning a feature off hides it and blocks direct access for that member.</p>
+          <div class="staff-feature-grid">
+            <label><input type="checkbox" data-feature-toggle="catalog"> Products & stock</label>
+            <label><input type="checkbox" data-feature-toggle="sales"> Sales</label>
+            <label><input type="checkbox" data-feature-toggle="staff"> Staff & roles</label>
+          </div>
+        </div>
+
+        <div class="staff-notes-section">
+          <p class="eyebrow">Private notes</p>
+          <textarea id="staff-member-notes" rows="6" placeholder="Keep notes about this member…"></textarea>
+          <p id="staff-detail-status" class="admin-help staff-modal-status"></p>
+        </div>
+
+        <div class="staff-modal-actions">
+          <button type="button" class="admin-secondary" data-close-detail-modal>Close</button>
+          <button id="save-staff-details" type="button" class="admin-primary" hidden>Save details</button>
+        </div>
+      </section>
+    </div>
+
     <div id="staff-modal" class="staff-modal" hidden>
       <div class="staff-modal-backdrop" data-close-staff-modal></div>
       <section class="staff-modal-card" role="dialog" aria-modal="true" aria-labelledby="staff-modal-title">

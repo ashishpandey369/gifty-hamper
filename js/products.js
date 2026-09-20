@@ -24,7 +24,7 @@ import {
   DEFAULT_CATALOG,
   getDiscountPercent,
   loadPublicCatalog
-} from "./catalog-store.js";
+} from "./catalog-store.js?v=2";
 
 let GIFTS = DEFAULT_CATALOG.map(product => ({ ...product }));
 

@@ -43,3 +43,10 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - Existing product-category assignments are preserved when a category is renamed; deleting a category now also persists the corresponding product assignment cleanup/move before removing the category record.
 - Firebase product schema and existing Recently Viewed/More to love logic remain unchanged.
 - Status: completed after repository verification.
+
+
+## Step 9: Homepage category images
+- Fixed the homepage Shop by category mapper so it preserves each shared Firestore category's `image` field instead of rebuilding the category with an empty image.
+- The homepage now uses the exact same category image stored by the Admin category editor and displayed on the all-categories page.
+- Category IDs are also preserved from the shared records; fallback categories are still generated only when the shared category collection is unavailable.
+- Status: completed.

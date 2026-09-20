@@ -10,7 +10,7 @@ import {
 document.addEventListener('DOMContentLoaded', () => {
   const CAT_KEY = 'gifty-hamper-categories';
   const MAJOR_CAT_KEY = 'gifty-hamper-major-categories';
-  const DEFAULT_CATS = ['Appreciation Gifts','Celebration Gifts','Eco Friendly Gifts','Employee Gifts','Festive Gifts','Gadgets and Electronic Gifts','Gift Sets','MR Gifts','Office Accessories','Premium Gifts'];
+  const DEFAULT_CATS = ['For Him','For Her','For Husband','For Wife','For Boyfriend','For Girlfriend','For Parents','For Friends','For Employees','For Clients','Appreciation Gifts','Celebration Gifts','Eco Friendly Gifts','Festive Gifts','Gadgets and Electronic Gifts','Gift Sets','MR Gifts','Office Accessories','Premium Gifts'];
   const DEFAULT_MAJOR_CATS = ['Gifts for Everyone'];
   const OCC = ['Birthday','Anniversary','Rakhi','Corporate','Festive','Thank You','Personalized','Wedding','Other'];
   const DEFAULT_ADMIN_PRODUCTS = [

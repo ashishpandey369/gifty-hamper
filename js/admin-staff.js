@@ -96,6 +96,83 @@ function showAccess(message, detail) {
   box.innerHTML = "<strong>" + message + "</strong><span>" + detail + "</span>";
 }
 
+const FEATURE_DEFAULTS = { catalog: true, sales: true, staff: true };
+let detailUser = null;
+let detailViewerRole = "";
+
+function defaultFeaturesForRole(role) {
+  return { ...FEATURE_DEFAULTS, ...(role === "admin" ? { staff: false } : {}) };
+}
+
+function formatDateValue(value) {
+  const date = value?.toDate ? value.toDate() : (value ? new Date(value) : null);
+  return date && !Number.isNaN(date.getTime())
+    ? date.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })
+    : "Not recorded";
+}
+
+function openStaffDetails(user, viewerRole) {
+  detailUser = user;
+  detailViewerRole = viewerRole;
+  const role = user.role || "admin";
+  const expiresAt = user.expiresAt?.toDate ? user.expiresAt.toDate() : null;
+  $("#staff-detail-title").textContent = user.email || "Member details";
+  const meta = [
+    ["Email", user.email || "Not recorded"],
+    ["Role", roleLabel(role)],
+    ["User ID", user.id],
+    ["Status", user.active === true ? (expiresAt && expiresAt.getTime() <= Date.now() ? "Expired" : "Active") : "Inactive"],
+    ["Valid until", expiresAt ? expiresAt.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "No expiry"],
+    ["Owner UID", user.ownerUid || "Not applicable"],
+    ["Created", formatDateValue(user.createdAt)]
+  ];
+  $("#staff-detail-meta").innerHTML = meta.map(([label, value]) =>
+    '<div><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + '</strong></div>'
+  ).join("");
+  const superAdmin = viewerRole === "super_admin";
+  $("#staff-feature-section").hidden = !superAdmin;
+  document.querySelector(".staff-notes-section").hidden = !superAdmin;
+  $("#save-staff-details").hidden = !superAdmin;
+  if (superAdmin) {
+    const features = { ...defaultFeaturesForRole(role), ...(user.features && typeof user.features === "object" ? user.features : {}) };
+    document.querySelectorAll("[data-feature-toggle]").forEach(input => {
+      const key = input.dataset.featureToggle;
+      input.checked = features[key] === true;
+      input.disabled = role === "admin" && key === "staff";
+    });
+    $("#staff-member-notes").value = user.notes || "";
+  }
+  $("#staff-detail-status").textContent = "";
+  $("#staff-detail-modal").hidden = false;
+}
+
+function closeStaffDetails() {
+  detailUser = null;
+  $("#staff-detail-modal").hidden = true;
+}
+
+async function saveStaffDetails() {
+  if (!detailUser || detailViewerRole !== "super_admin") return;
+  const button = $("#save-staff-details");
+  const status = $("#staff-detail-status");
+  const features = {};
+  document.querySelectorAll("[data-feature-toggle]").forEach(input => {
+    features[input.dataset.featureToggle] = input.disabled ? false : input.checked;
+  });
+  button.disabled = true;
+  status.textContent = "Saving…";
+  try {
+    await updateDoc(doc(db, "users", detailUser.id), { notes: $("#staff-member-notes").value.trim(), features });
+    status.textContent = "Details saved.";
+    await loadStaff("super_admin", currentManagerUid);
+    setTimeout(closeStaffDetails, 500);
+  } catch (error) {
+    console.error("Save staff details error:", error);
+    status.textContent = error?.message || "Unable to save member details.";
+  } finally {
+    button.disabled = false;
+  }
+}
 function roleLabel(role) {
   if (role === "super_admin") return "Super Admin";
   if (role === "owner") return "Owner";
@@ -195,7 +272,7 @@ async function loadStaff(currentRole, currentUid) {
       <td><span class="status-pill ${effectiveActive ? "" : "draft"}">${expired ? "Expired" : (active ? "Active" : "Inactive")}</span></td>
       <td><span class="staff-validity ${expired ? "expired" : ""}" data-expiry="${expiresAt ? expiresAt.toISOString() : ""}">${expiresAt ? formatRemaining(expiresAt) : "No expiry"}</span></td>
       <td><code>${escapeHtml(user.id)}</code></td>
-      <td>${canManage
+      <td><div class="staff-actions"><button type="button" class="admin-secondary" data-view-user="${escapeHtml(user.id)}">View</button>${canManage
         ? `<div class="staff-actions">
             <select data-role-for="${escapeHtml(user.id)}">${roleOptions}</select>
             <button type="button" class="admin-secondary" data-save-user="${escapeHtml(user.id)}">Save</button>
@@ -207,9 +284,16 @@ async function loadStaff(currentRole, currentUid) {
             ${canDelete ? `<button type="button" class="admin-secondary danger" data-delete-user="${escapeHtml(user.id)}">Delete</button>` : ""}
             ${saleButton}
           </div>`
-        : saleButton}</td>
+        : saleButton}</div></td>
     </tr>`;
   }).join("");
+
+  list.querySelectorAll("[data-view-user]").forEach(button => {
+    button.addEventListener("click", () => {
+      const user = users.find(item => item.id === button.dataset.viewUser);
+      if (user) openStaffDetails(user, currentRole);
+    });
+  });
 
   list.querySelectorAll("[data-save-user]").forEach(button => {
     button.addEventListener("click", async () => {
@@ -406,6 +490,7 @@ async function createStaffAccount() {
         role: staffRoleToCreate,
         active: true,
         expiresAt: Timestamp.fromDate(expiresAt),
+        createdAt: Timestamp.now(),
         ...(staffRoleToCreate === "admin" && currentManagerRole === "owner"
           ? { ownerUid: currentManagerUid }
           : {})
@@ -454,6 +539,12 @@ $("#create-staff-account")?.addEventListener("click", createStaffAccount);
 document.querySelectorAll("[data-close-staff-modal]").forEach(element => {
   element.addEventListener("click", closeStaffModal);
 });
+
+document.querySelectorAll("[data-close-detail-modal]").forEach(element => {
+  element.addEventListener("click", closeStaffDetails);
+});
+
+$("#save-staff-details")?.addEventListener("click", saveStaffDetails);
 
 onAuthStateChanged(auth, async (user) => {
   showDiagnostic(user ? "Firebase Authentication detected your signed-in account. Loading permissions…" : "Firebase Authentication is ready, but no signed-in account was detected.");

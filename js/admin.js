@@ -80,6 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let categoryRecords = [];
   let categoryEditorImage = '';
   let categoryEditorImageFileId = '';
+  let categoryEditorOriginalImageFileId = '';
 
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 
@@ -183,6 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#category-editor-image-url').value = category.image?.startsWith('data:image/') ? '' : (category.image || '');
     categoryEditorImage = category.image || '';
     categoryEditorImageFileId = category.imageFileId || '';
+    categoryEditorOriginalImageFileId = category.imageFileId || '';
     $('#category-editor-title').textContent = 'Edit ' + (category.type === 'major' ? 'major' : 'minor') + ' category';
     renderCategoryEditorPreview();
     const modal = $('#category-editor-modal');
@@ -191,13 +193,26 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.add('category-editor-open');
   }
 
-  function closeCategoryEditor() {
+  async function cleanupPendingCategoryUpload() {
+    if (
+      categoryEditorImageFileId
+      && categoryEditorImageFileId !== categoryEditorOriginalImageFileId
+    ) {
+      await Promise.allSettled([deleteImageFile(categoryEditorImageFileId)]);
+    }
+    categoryEditorImageFileId = '';
+    categoryEditorOriginalImageFileId = '';
+  }
+
+  function closeCategoryEditor(options = {}) {
     const modal = $('#category-editor-modal');
+    if (options.cleanup !== false) void cleanupPendingCategoryUpload();
     modal.hidden = true;
     modal.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('category-editor-open');
     categoryEditorImage = '';
     categoryEditorImageFileId = '';
+    categoryEditorOriginalImageFileId = '';
     $('#category-editor-form').reset();
     renderCategoryEditorPreview();
   }
@@ -832,6 +847,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (previousImageFileId && previousImageFileId !== categoryEditorImageFileId) {
         await Promise.allSettled([deleteImageFile(previousImageFileId)]);
       }
+      categoryEditorOriginalImageFileId = categoryEditorImageFileId;
       categoryRecords = categoryRecords.map(item => item.id === id ? saved : item);
       majorCategories = categoryRecords.filter(item => item.type === 'major').map(item => item.name);
       categories = categoryRecords.filter(item => item.type === 'minor').map(item => item.name);

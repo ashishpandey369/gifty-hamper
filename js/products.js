@@ -190,7 +190,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   const majorCategories = readList('gifty-hamper-major-categories', ['Gifts for Everyone']).map(item => item === 'Gifts' ? 'Gifts for Everyone' : item);
-  const minorCategories = readList('gifty-hamper-categories', [...new Set(DEFAULT_GIFTS.flatMap(product => product.categories || []))]);
+  const recipientCategories = ['For Him','For Her','For Husband','For Wife','For Boyfriend','For Girlfriend','For Parents','For Friends','For Employees','For Clients'];
+  const minorCategories = [...new Set([...recipientCategories, ...readList('gifty-hamper-categories', [...new Set(DEFAULT_GIFTS.flatMap(product => product.categories || []))])])];
 
   const majorBox = document.querySelector('#major-category-filters');
   const minorBox = document.querySelector('#minor-category-filters');

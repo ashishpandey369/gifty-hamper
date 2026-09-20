@@ -79,17 +79,33 @@ function productCard(product){
 }
 
 function renderProducts(){
+  const recentTarget = document.querySelector('#home-recent-products');
   const target = document.querySelector('#home-products');
-  if (!target) return;
+  if (!recentTarget && !target) return;
+
   let recentIds = [];
   try { recentIds = JSON.parse(localStorage.getItem('gifty-hamper-recently-viewed') || '[]'); } catch (_) {}
-  const recent = recentIds.map(id => catalog.find(product => product.id === id)).filter(Boolean);
-  const title = document.querySelector('#home-products-title');
-  const products = recent.length ? recent.slice(0, 6) : catalog.filter(product => product.featured || product.active !== false).slice(0, 6);
-  if (title) title.textContent = recent.length ? 'Recently viewed' : 'Featured gifts';
-  target.innerHTML = products.map(productCard).join('');
-}
 
+  const recent = recentIds.map(id => catalog.find(product => product.id === id)).filter(Boolean).slice(0, 8);
+  const forYou = catalog
+    .filter(product => product.active !== false)
+    .filter(product => !recent.some(recentProduct => recentProduct.id === product.id))
+    .slice(0, 10);
+
+  if (recentTarget) {
+    recentTarget.innerHTML = recent.map(productCard).join('');
+    const recentSection = document.querySelector('#recently-viewed');
+    if (recentSection) recentSection.hidden = recent.length === 0;
+
+    const left = document.querySelector('#recent-scroll-left');
+    const right = document.querySelector('#recent-scroll-right');
+    const scroll = amount => recentTarget.scrollBy({left: amount, behavior: 'smooth'});
+    left?.addEventListener('click', () => scroll(-Math.max(260, recentTarget.clientWidth * .72)));
+    right?.addEventListener('click', () => scroll(Math.max(260, recentTarget.clientWidth * .72)));
+  }
+
+  if (target) target.innerHTML = forYou.map(productCard).join('');
+}
 function runSearch(form){
   form?.addEventListener('submit', event => {
     event.preventDefault();

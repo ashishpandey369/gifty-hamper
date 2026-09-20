@@ -131,9 +131,18 @@ function addToCart(product, quantity) {
 function renderRelated(product) {
   const grid = document.querySelector('#related-products');
   if (!grid) return;
-  const related = GIFTS.filter(item => item.id !== product.id && item.occasion === product.occasion).slice(0, 3);
-  const fallback = GIFTS.filter(item => item.id !== product.id && !related.includes(item)).slice(0, 3 - related.length);
-  [...related, ...fallback].forEach(item => {
+
+  const active = GIFTS.filter(item => item.active !== false && item.id !== product.id);
+  const sameOccasion = active.filter(item => item.occasion && item.occasion === product.occasion);
+  const related = [];
+  const addUnique = item => {
+    if (item && !related.some(existing => existing.id === item.id)) related.push(item);
+  };
+
+  sameOccasion.forEach(addUnique);
+  active.forEach(addUnique);
+
+  grid.innerHTML = related.slice(0, 10).map(item => {
     const originalPrice = Number(item.price) || 0;
     const currentPrice = Number(item.salePrice || item.price) || 0;
     const discount = getDiscountPercent(item);
@@ -141,8 +150,30 @@ function renderRelated(product) {
       ? '<div class="product-card-price"><del>' + formatPrice(originalPrice) + '</del><strong>' + formatPrice(currentPrice) + '</strong><span>' + discount + '% OFF</span></div>'
       : '<div class="product-card-price"><strong>' + formatPrice(currentPrice) + '</strong></div>';
 
-    grid.insertAdjacentHTML('beforeend', `<article class="product-card"><a href="product.html?id=${encodeURIComponent(item.id)}"><div class="product-image ${item.imageClass || ''}"><span>${item.label || ''}</span><b>${item.name.split(' ').slice(0, 2).join('<br>')}</b></div><div class="product-info"><div><h3>${item.name}</h3><p>${item.description}</p></div>${priceMarkup}</div></a></article>`);
-  });
+    const images = Array.isArray(item.images) && item.images.length
+      ? item.images.filter(Boolean)
+      : (item.image ? [item.image] : []);
+    const imageMarkup = images.length
+      ? '<img src="' + images[0].replace(/"/g, '&quot;') + '" alt="' + item.name.replace(/"/g, '&quot;') + '" loading="lazy">'
+      : '<span>' + (item.label || '') + '</span><b>' + item.name.split(' ').slice(0, 2).join('<br>') + '</b>';
+
+    return '<article class="product-card"><a href="product.html?id=' + encodeURIComponent(item.id) + '"><div class="product-image ' + (item.imageClass || '') + '">' + imageMarkup + '</div><div class="product-info"><div><h3>' + item.name + '</h3><p>' + (item.description || 'Thoughtfully curated gift') + '</p></div>' + priceMarkup + '</div></a></article>';
+  }).join('');
+
+  const left = document.querySelector('#related-scroll-left');
+  const right = document.querySelector('#related-scroll-right');
+  const updateScrollButtons = () => {
+    const maxScroll = Math.max(0, grid.scrollWidth - grid.clientWidth);
+    if (left) left.disabled = grid.scrollLeft <= 2;
+    if (right) right.disabled = grid.scrollLeft >= maxScroll - 2;
+  };
+  const scroll = amount => grid.scrollBy({ left: amount, behavior: 'smooth' });
+
+  left?.addEventListener('click', () => scroll(-Math.max(280, grid.clientWidth * .72)));
+  right?.addEventListener('click', () => scroll(Math.max(280, grid.clientWidth * .72)));
+  grid.addEventListener('scroll', updateScrollButtons, { passive: true });
+  window.addEventListener('resize', updateScrollButtons);
+  requestAnimationFrame(updateScrollButtons);
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

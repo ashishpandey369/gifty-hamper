@@ -113,6 +113,7 @@ function addToCart(product, quantity) {
     cart.push({
       id: product.id,
       sku: product.sku || '',
+      image: Array.isArray(product.images) && product.images.length ? product.images[0] : (product.image || ''),
       name: product.name,
       price: Number(product.salePrice || product.price) || 0,
       originalPrice: Number(product.price) || 0,

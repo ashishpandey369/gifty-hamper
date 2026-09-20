@@ -47,14 +47,17 @@ function renderProduct(product) {
   visual.className = `product-visual ${product.imageClass || ''}`;
 
   const images = Array.isArray(product.images) && product.images.length
-    ? product.images
+    ? product.images.filter(Boolean)
     : (product.image ? [product.image] : []);
 
-  const image = images[0];
   const label = document.querySelector('#product-label');
   const art = document.querySelector('#product-art');
+  const thumbnails = document.querySelector('#product-thumbnails');
 
-  if (image) {
+  function selectImage(index) {
+    const image = images[index];
+    if (!image) return;
+
     visual.style.backgroundImage = `url("${image.replace(/"/g, '%22')}")`;
     visual.style.backgroundSize = 'cover';
     visual.style.backgroundPosition = 'center';
@@ -62,11 +65,37 @@ function renderProduct(product) {
     if (label) label.textContent = product.label || '';
     if (art) art.innerHTML = '';
     visual.classList.add('has-product-image');
+
+    thumbnails?.querySelectorAll('[data-image-index]').forEach(button => {
+      button.classList.toggle('active', Number(button.dataset.imageIndex) === index);
+      button.setAttribute('aria-current', Number(button.dataset.imageIndex) === index ? 'true' : 'false');
+    });
+  }
+
+  if (images.length) {
+    selectImage(0);
+
+    if (thumbnails) {
+      thumbnails.innerHTML = images.map((image, index) => `
+        <button type="button" class="product-thumbnail${index === 0 ? ' active' : ''}" data-image-index="${index}" aria-label="View image ${index + 1}" aria-current="${index === 0 ? 'true' : 'false'}">
+          <img src="${image.replace(/"/g, '&quot;')}" alt="${product.name} image ${index + 1}" loading="lazy">
+        </button>
+      `).join('');
+
+      thumbnails.querySelectorAll('[data-image-index]').forEach(button => {
+        button.addEventListener('click', () => selectImage(Number(button.dataset.imageIndex)));
+      });
+      thumbnails.hidden = images.length < 2;
+    }
   } else {
     visual.style.backgroundImage = '';
     if (label) label.textContent = product.label || '';
     if (art) art.innerHTML = product.name.split(' ').slice(0, 2).join('<br>');
     visual.classList.remove('has-product-image');
+    if (thumbnails) {
+      thumbnails.innerHTML = '';
+      thumbnails.hidden = true;
+    }
   }
 }
 

@@ -140,7 +140,17 @@ function openStaffDetails(user, viewerRole) {
       input.checked = features[key] === true;
       input.disabled = role === "admin" && key === "staff";
     });
-    $("#staff-member-notes").value = user.notes || "";
+    $("#staff-member-notes").value = "Loading private notes…";
+    getDoc(doc(db, "staffNotes", user.id))
+      .then(snapshot => {
+        if (detailUser?.id === user.id) {
+          $("#staff-member-notes").value = snapshot.exists() ? (snapshot.data().notes || "") : "";
+        }
+      })
+      .catch(error => {
+        console.error("Load private staff note error:", error);
+        if (detailUser?.id === user.id) $("#staff-member-notes").value = "";
+      });
   }
   $("#staff-detail-status").textContent = "";
   $("#staff-detail-modal").hidden = false;
@@ -162,7 +172,12 @@ async function saveStaffDetails() {
   button.disabled = true;
   status.textContent = "Saving…";
   try {
-    await updateDoc(doc(db, "users", detailUser.id), { notes: $("#staff-member-notes").value.trim(), features });
+    await updateDoc(doc(db, "users", detailUser.id), { features });
+    await setDoc(
+      doc(db, "staffNotes", detailUser.id),
+      { notes: $("#staff-member-notes").value.trim(), updatedAt: Timestamp.now() },
+      { merge: true }
+    );
     status.textContent = "Details saved.";
     await loadStaff("super_admin", currentManagerUid);
     setTimeout(closeStaffDetails, 500);
@@ -491,6 +506,7 @@ async function createStaffAccount() {
         active: true,
         expiresAt: Timestamp.fromDate(expiresAt),
         createdAt: Timestamp.now(),
+        features: defaultFeaturesForRole(staffRoleToCreate),
         ...(staffRoleToCreate === "admin" && currentManagerRole === "owner"
           ? { ownerUid: currentManagerUid }
           : {})

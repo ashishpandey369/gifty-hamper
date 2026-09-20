@@ -375,6 +375,21 @@ function parseQuickOrderCommand() {
 
   const total = quickOrder.reduce((sum, item) => sum + item.lineTotal, 0);
 
+  // Sync the quick command into the normal sale cart whenever
+  // every requested quantity is currently available. This means
+  // the same command can be sent to WhatsApp or completed directly
+  // as a staff sale.
+  const canCompleteDirectly = quickOrder.every(item => item.quantity <= item.stock);
+
+  if (canCompleteDirectly) {
+    cart.clear();
+    quickOrder.forEach(item => {
+      cart.set(item.product.id, item.quantity);
+    });
+    renderProducts();
+    renderCart();
+  }
+
   result.hidden = false;
   result.innerHTML =
     '<div class="quick-order-list">' +

@@ -8,6 +8,7 @@ import {
 } from "./catalog-store.js";
 import { deleteCategory, loadCategories, saveCategory, categoryId } from "./category-store.js";
 import { deleteImageFile, uploadImageFile, uploadImageUrl } from "./imagekit-store.js";
+import { loadMostSoldImages, saveMostSoldImages, MAX_MOST_SOLD_IMAGES } from "./most-sold-store.js";
 
 document.addEventListener('DOMContentLoaded', () => {
   const CAT_KEY = 'gifty-hamper-categories';
@@ -83,6 +84,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let categoryEditorOriginalImageFileId = '';
   let categoryEditorPendingImage = null;
   let categoryEditorPendingObjectUrl = '';
+  let mostSoldImages = [];
+  let mostSoldPendingImages = [];
+  let mostSoldRemovedKeys = new Set();
+
 
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 
@@ -148,6 +153,10 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCategoryManager();
   }
 
+  async function loadSharedHomepageSettings() {
+    await loadMostSoldManager();
+  }
+
   function renderCategoryEditorPreview() {
     const preview = $('#category-editor-preview');
     const removeButton = $('#category-editor-remove-image');
@@ -175,6 +184,105 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#major-category-list').innerHTML = categoryRecords.filter(item => item.type === 'major').map(renderChip).join('');
     renderMajorCategorySelect($('#product-major-category')?.value || '');
     renderMinorCategoryChecks(getSelectedCategories());
+  }
+
+  function mostSoldImageKey(image) {
+    return image?.fileId || image?.url || '';
+  }
+
+  function cleanupMostSoldPendingImages() {
+    mostSoldPendingImages.forEach(item => {
+      if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+    });
+    mostSoldPendingImages = [];
+  }
+
+  function renderMostSoldManager() {
+    const target = $('#most-sold-image-list');
+    const count = $('#most-sold-count');
+    if (!target || !count) return;
+
+    const saved = mostSoldImages.filter(image => !mostSoldRemovedKeys.has(mostSoldImageKey(image)));
+    const total = saved.length + mostSoldPendingImages.length;
+    count.textContent = total + ' / ' + MAX_MOST_SOLD_IMAGES + ' images';
+
+    target.innerHTML =
+      saved.map((image, index) =>
+        '<div class="most-sold-image-card">' +
+          '<img src="' + escapeHtml(image.url) + '" alt="Most sold category image ' + (index + 1) + '" loading="lazy">' +
+          '<button type="button" class="most-sold-image-remove" data-most-sold-remove-saved="' + escapeHtml(mostSoldImageKey(image)) + '" aria-label="Remove image">×</button>' +
+          '<span class="most-sold-image-name">' + escapeHtml(image.fileId || 'Image ' + (index + 1)) + '</span>' +
+        '</div>'
+      ).join('') +
+      mostSoldPendingImages.map((image, index) =>
+        '<div class="most-sold-image-card pending">' +
+          '<img src="' + escapeHtml(image.previewUrl) + '" alt="Pending most sold image ' + (index + 1) + '">' +
+          '<button type="button" class="most-sold-image-remove" data-most-sold-remove-pending="' + index + '" aria-label="Remove pending image">×</button>' +
+          '<span class="most-sold-image-name">Pending — save to upload</span>' +
+        '</div>'
+      ).join('');
+  }
+
+  async function loadMostSoldManager() {
+    try {
+      mostSoldImages = await loadMostSoldImages();
+      mostSoldRemovedKeys = new Set();
+      renderMostSoldManager();
+    } catch (error) {
+      console.error('Most sold settings load error:', error);
+      alert('Unable to load the Most Sold Categories slideshow settings. Please check Firebase rules.');
+    }
+  }
+
+  async function saveMostSoldManager() {
+    const button = $('#save-most-sold');
+    if (!button) return;
+
+    const savedImages = mostSoldImages.filter(image => !mostSoldRemovedKeys.has(mostSoldImageKey(image)));
+    const total = savedImages.length + mostSoldPendingImages.length;
+    if (total > MAX_MOST_SOLD_IMAGES) {
+      alert('You can keep up to ' + MAX_MOST_SOLD_IMAGES + ' images.');
+      return;
+    }
+
+    button.disabled = true;
+    button.textContent = 'Saving…';
+    const newlyUploadedFileIds = [];
+
+    try {
+      const uploaded = [];
+      for (const pending of mostSoldPendingImages) {
+        const result = await uploadImageFile(pending.blob, {
+          folder: '/gifty-hamper/most-sold-categories',
+          fileName: pending.fileName
+        });
+        if (!result?.url) throw new Error('ImageKit did not return an image URL.');
+        uploaded.push({ url: result.url, fileId: result.fileId || '' });
+        if (result.fileId) newlyUploadedFileIds.push(result.fileId);
+      }
+
+      const finalImages = [...savedImages, ...uploaded];
+      const saved = await saveMostSoldImages(finalImages);
+
+      const removedFileIds = mostSoldImages
+        .filter(image => mostSoldRemovedKeys.has(mostSoldImageKey(image)))
+        .map(image => image.fileId)
+        .filter(Boolean);
+
+      await Promise.allSettled(removedFileIds.map(fileId => deleteImageFile(fileId)));
+
+      cleanupMostSoldPendingImages();
+      mostSoldImages = saved;
+      mostSoldRemovedKeys = new Set();
+      renderMostSoldManager();
+    } catch (error) {
+      await Promise.allSettled(newlyUploadedFileIds.map(fileId => deleteImageFile(fileId)));
+      console.error('Save most sold settings error:', error);
+      alert('Unable to save the Most Sold Categories slideshow. ' + (error?.message || 'Please try again.'));
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Save slideshow';
+    }
   }
 
   function openCategoryEditor(id) {
@@ -641,6 +749,54 @@ document.addEventListener('DOMContentLoaded', () => {
     input.value = '';
   });
 
+  $('#most-sold-image-files').addEventListener('change', async event => {
+    const files = [...event.target.files];
+    const currentCount = mostSoldImages.filter(image => !mostSoldRemovedKeys.has(mostSoldImageKey(image))).length + mostSoldPendingImages.length;
+    const available = Math.max(0, MAX_MOST_SOLD_IMAGES - currentCount);
+
+    if (files.length > available) {
+      alert('You can add only ' + available + ' more image' + (available === 1 ? '' : 's') + '.');
+    }
+
+    for (const file of files.slice(0, available)) {
+      try {
+        const blob = await prepareImageBlob(file, 1600, 0.82);
+        const previewUrl = URL.createObjectURL(blob);
+        mostSoldPendingImages.push({
+          blob,
+          previewUrl,
+          fileName: (file.name || 'most-sold-image').replace(/\.[^.]+$/, '') + '.webp'
+        });
+      } catch (error) {
+        console.error('Most sold image preparation error:', error);
+        alert('Unable to prepare one of the selected images. ' + (error?.message || 'Please try again.'));
+      }
+    }
+
+    event.target.value = '';
+    renderMostSoldManager();
+  });
+
+  $('#most-sold-image-list').addEventListener('click', event => {
+    const savedButton = event.target.closest('[data-most-sold-remove-saved]');
+    if (savedButton) {
+      mostSoldRemovedKeys.add(savedButton.dataset.mostSoldRemoveSaved);
+      renderMostSoldManager();
+      return;
+    }
+
+    const pendingButton = event.target.closest('[data-most-sold-remove-pending]');
+    if (pendingButton) {
+      const index = Number(pendingButton.dataset.mostSoldRemovePending);
+      const pending = mostSoldPendingImages[index];
+      if (pending?.previewUrl) URL.revokeObjectURL(pending.previewUrl);
+      mostSoldPendingImages.splice(index, 1);
+      renderMostSoldManager();
+    }
+  });
+
+  $('#save-most-sold').addEventListener('click', saveMostSoldManager);
+
   $('#create-major-category').addEventListener('click', async () => {
     const input = $('#new-major-category');
     const name = input.value.trim();
@@ -926,9 +1082,6 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('Save category error:', error);
       alert('Unable to save the category. ' + (error?.message || 'Please check Firebase rules and try again.'));
     } finally {
-      console.error('Save category error:', error);
-      alert('Unable to save the category. Please check Firebase rules.');
-    } finally {
       button.disabled = false;
       button.textContent = 'Save category';
     }
@@ -956,6 +1109,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#admin-refresh').addEventListener('click', async () => {
     try {
       await loadSharedCategories();
+      await loadMostSoldManager();
       await loadSharedCatalog();
     } catch (error) {
       console.error('Admin refresh error:', error);
@@ -988,6 +1142,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   fillOccasions();
   renderCategoryManager();
+  renderMostSoldManager();
   renderCategoryEditorPreview();
   resetForm();
   updatePriceRangeLabel();

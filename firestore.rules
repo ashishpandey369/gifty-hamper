@@ -264,13 +264,6 @@ service cloud.firestore {
       allow create, update, delete: if isStaff() && featureEnabled('catalog');
     }
 
-    match /homepageSettings/{settingId} {
-      // The fixed homepage showcase document contains only public image URLs.
-      allow get: if settingId == 'mostSoldCategories';
-
-      allow create, update, delete: if isStaff() && featureEnabled('catalog');
-    }
-
     // ------------------------------------------------------------
     // SALES / POS
     // ------------------------------------------------------------

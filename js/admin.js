@@ -183,12 +183,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderMostSoldManager() {
     const target = $('#most-sold-product-list');
+    const selectedTarget = $('#most-sold-selected-list');
     const count = $('#most-sold-count');
     const searchInput = $('#most-sold-search');
-    if (!target || !count) return;
+    if (!target || !selectedTarget || !count) return;
 
-    const selectedCount = mostSoldSelectedIds.size;
-    count.textContent = selectedCount + ' / ' + MAX_MOST_SOLD_PRODUCTS + ' products selected';
+    const selectedProducts = catalog
+      .filter(product => mostSoldSelectedIds.has(product.id));
+
+    count.textContent = mostSoldSelectedIds.size + ' / ' + MAX_MOST_SOLD_PRODUCTS + ' selected';
 
     const query = mostSoldSearch.trim().toLowerCase();
     const products = catalog
@@ -227,6 +230,21 @@ document.addEventListener('DOMContentLoaded', () => {
         '<span class="most-sold-check">✓</span>' +
       '</label>';
     }).join('') || '<p class="admin-help">No active products match your search.</p>';
+
+    selectedTarget.innerHTML = selectedProducts.map((product, index) => {
+      const image = product.images?.[0] || '';
+      return '<div class="most-sold-selected-card">' +
+        '<span class="most-sold-selected-number">' + (index + 1) + '</span>' +
+        '<div class="most-sold-selected-media">' +
+          (image ? '<img src="' + escapeHtml(image) + '" alt="" loading="lazy">' : '<span>🎁</span>') +
+        '</div>' +
+        '<div class="most-sold-product-info">' +
+          '<strong>' + escapeHtml(product.name) + '</strong>' +
+          '<small>' + escapeHtml(product.sku || product.id) + '</small>' +
+        '</div>' +
+        '<button type="button" class="most-sold-selected-remove" data-most-sold-remove="' + escapeHtml(product.id) + '" aria-label="Remove ' + escapeHtml(product.name) + '" title="Remove">×</button>' +
+      '</div>';
+    }).join('') || '<div class="most-sold-empty">No products selected yet.</div>';
   }
 
   function loadMostSoldManager() {
@@ -758,6 +776,13 @@ document.addEventListener('DOMContentLoaded', () => {
       mostSoldSelectedIds.delete(input.dataset.mostSoldProduct);
     }
 
+    renderMostSoldManager();
+  });
+
+  $('#most-sold-selected-list').addEventListener('click', event => {
+    const button = event.target.closest('[data-most-sold-remove]');
+    if (!button) return;
+    mostSoldSelectedIds.delete(button.dataset.mostSoldRemove);
     renderMostSoldManager();
   });
 

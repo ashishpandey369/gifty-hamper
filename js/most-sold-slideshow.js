@@ -1,6 +1,6 @@
 import { loadPublicCatalog } from "./catalog-store.js";
 
-const INTERVAL_MS = 1000;
+const INTERVAL_MS = 1500;
 let timer = null;
 
 const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({

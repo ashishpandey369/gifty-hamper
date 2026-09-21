@@ -118,3 +118,13 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - Existing product images, ImageKit management, category management, product deletion, and normal catalog behavior remain unchanged.
 - Removed the unused image-based Most Sold settings store and its Firestore rule.
 - Status: completed in GitHub. No new image uploads are required for Most Sold.
+
+
+## Step 15 — Compact Most Sold product picker
+- Split the Most Sold admin control into two panes: searchable All Products on the left and Selected Most Sold on the right.
+- Product cards are compact to avoid a large vertical list.
+- Ticking a product immediately reflects it in the Selected Most Sold pane.
+- Selected products can be removed individually from the right pane.
+- Save action is separated into a bottom row.
+- Maximum remains 20 selected products.
+- Status: completed in GitHub.

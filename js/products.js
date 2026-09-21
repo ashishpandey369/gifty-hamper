@@ -173,6 +173,7 @@ function renderCatalog() {
   const occasions = [...document.querySelectorAll('input[name="occasion"]:checked')].map(input => input.value);
   const prices = [...document.querySelectorAll('input[name="price"]:checked')].map(input => input.value);
   const sort = document.querySelector('#sort-products')?.value || 'featured';
+  const mostSoldOnly = urlCollection === 'most-sold';
 
   let products = GIFTS.filter(product => {
     const searchable = `${product.name} ${product.sku || ''} ${product.id} ${product.description} ${product.occasion} ${(product.categories || []).join(' ')} ${product.majorCategory || 'Gifts for Everyone'}`.toLowerCase();
@@ -181,7 +182,8 @@ function renderCatalog() {
     const matchesCategory = !categories.length || categories.some(category => (product.categories || []).includes(category));
     const matchesOccasion = !occasions.length || occasions.includes(product.occasion);
     const matchesPrice = !prices.length || prices.some(range => PRICE_RANGES.some(item => item.id === range && item.matches(Number(product.salePrice || product.price) || 0)));
-    return matchesSearch && matchesMajorCategory && matchesCategory && matchesOccasion && matchesPrice;
+    const matchesMostSold = !mostSoldOnly || product.mostSold === true;
+    return matchesSearch && matchesMajorCategory && matchesCategory && matchesOccasion && matchesPrice && matchesMostSold;
   });
 
   if (sort === 'price-low') products.sort((a, b) => (Number(a.salePrice || a.price) || 0) - (Number(b.salePrice || b.price) || 0));
@@ -247,6 +249,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const urlSearch = urlParams.get('search');
   const urlCategory = urlParams.get('category');
   const urlOccasion = urlParams.get('occasion');
+  const urlCollection = urlParams.get('collection');
   const searchInput = document.querySelector('#catalog-search');
   if (searchInput && urlSearch) searchInput.value = urlSearch;
   const categoryInput = urlCategory ? [...document.querySelectorAll('input[name="category"]')].find(input => input.value.toLowerCase() === urlCategory.toLowerCase()) : null;
@@ -257,6 +260,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (occasionInput) occasionInput.checked = true;
 
   applyBudgetFromUrl();
+  if (urlCollection === 'most-sold') {
+    const heading = document.querySelector('.shop-hero h1');
+    const eyebrow = document.querySelector('.shop-hero .eyebrow');
+    if (heading) heading.innerHTML = 'Most <em>sold gifts.</em>';
+    if (eyebrow) eyebrow.textContent = 'Most Sold';
+  }
   renderCatalog();
   document.querySelector('#catalog-search')?.addEventListener('input', renderCatalog);
   document.querySelector('#sort-products')?.addEventListener('change', renderCatalog);

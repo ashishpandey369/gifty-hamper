@@ -128,3 +128,11 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - Save action is separated into a bottom row.
 - Maximum remains 20 selected products.
 - Status: completed in GitHub.
+
+
+## Step 16 — Most Sold slideshow timing and category navigation
+- Most Sold homepage slides now change every 1 second.
+- Clicking the current slideshow opens a dedicated Most Sold category view instead of the generic Most Sold product list.
+- The category view shows only categories represented by the selected Most Sold products.
+- Selecting one of those categories opens the shop with both the Most Sold collection and that category filter applied.
+- Status: completed in GitHub.

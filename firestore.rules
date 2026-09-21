@@ -264,6 +264,15 @@ service cloud.firestore {
       allow create, update, delete: if isStaff() && featureEnabled('catalog');
     }
 
+    match /homepageSettings/{settingId} {
+      // Homepage showcase settings are public only while active.
+      allow get: if resource.data.get('active', true) == true
+        || (isStaff() && featureEnabled('catalog'));
+
+      allow create, update: if isStaff() && featureEnabled('catalog');
+      allow delete: if isStaff() && featureEnabled('catalog');
+    }
+
     // ------------------------------------------------------------
     // SALES / POS
     // ------------------------------------------------------------

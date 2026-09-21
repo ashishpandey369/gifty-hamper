@@ -1,6 +1,6 @@
 import { loadPublicCatalog } from "./catalog-store.js";
 
-const INTERVAL_MS = 4000;
+const INTERVAL_MS = 1000;
 let timer = null;
 
 const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -26,11 +26,11 @@ function render(target, products, index) {
 
   target.innerHTML =
     '<div class="most-sold-slideshow-frame">' +
-      '<a class="most-sold-slide-link" href="shop.html?collection=most-sold" aria-label="View all most sold products">' +
+      '<a class="most-sold-slide-link" href="categories.html?collection=most-sold" aria-label="View Most Sold categories">' +
         (image
           ? '<img class="most-sold-slide-image" src="' + escapeHtml(image) + '" alt="' + escapeHtml(current.name || "Most sold gift") + '" loading="eager">'
           : '<div class="most-sold-slide-placeholder">🎁</div>') +
-        '<div class="most-sold-slide-caption"><strong>' + escapeHtml(current.name || "Most sold gift") + '</strong><span>View all most sold gifts →</span></div>' +
+        '<div class="most-sold-slide-caption"><strong>' + escapeHtml(current.name || "Most sold gift") + '</strong><span>View Most Sold categories →</span></div>' +
       '</a>' +
       '<button type="button" class="most-sold-arrow most-sold-arrow-left" data-most-sold-prev aria-label="Previous most sold product">‹</button>' +
       '<button type="button" class="most-sold-arrow most-sold-arrow-right" data-most-sold-next aria-label="Next most sold product">›</button>' +

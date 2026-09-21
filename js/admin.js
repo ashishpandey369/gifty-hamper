@@ -81,6 +81,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let categoryEditorImage = '';
   let categoryEditorImageFileId = '';
   let categoryEditorOriginalImageFileId = '';
+  let categoryEditorPendingImage = null;
+  let categoryEditorPendingObjectUrl = '';
 
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 
@@ -185,6 +187,8 @@ document.addEventListener('DOMContentLoaded', () => {
     categoryEditorImage = category.image || '';
     categoryEditorImageFileId = category.imageFileId || '';
     categoryEditorOriginalImageFileId = category.imageFileId || '';
+    categoryEditorPendingImage = null;
+    categoryEditorPendingObjectUrl = '';
     $('#category-editor-title').textContent = 'Edit ' + (category.type === 'major' ? 'major' : 'minor') + ' category';
     renderCategoryEditorPreview();
     const modal = $('#category-editor-modal');
@@ -193,15 +197,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.add('category-editor-open');
   }
 
-  async function cleanupPendingCategoryUpload() {
-    if (
-      categoryEditorImageFileId
-      && categoryEditorImageFileId !== categoryEditorOriginalImageFileId
-    ) {
-      await Promise.allSettled([deleteImageFile(categoryEditorImageFileId)]);
+  function cleanupPendingCategoryUpload() {
+    if (categoryEditorPendingObjectUrl) {
+      URL.revokeObjectURL(categoryEditorPendingObjectUrl);
     }
-    categoryEditorImageFileId = '';
-    categoryEditorOriginalImageFileId = '';
+    categoryEditorPendingObjectUrl = '';
+    categoryEditorPendingImage = null;
+    categoryEditorImageFileId = categoryEditorOriginalImageFileId;
   }
 
   function closeCategoryEditor(options = {}) {
@@ -213,6 +215,9 @@ document.addEventListener('DOMContentLoaded', () => {
     categoryEditorImage = '';
     categoryEditorImageFileId = '';
     categoryEditorOriginalImageFileId = '';
+    categoryEditorPendingImage = null;
+    if (categoryEditorPendingObjectUrl) URL.revokeObjectURL(categoryEditorPendingObjectUrl);
+    categoryEditorPendingObjectUrl = '';
     $('#category-editor-form').reset();
     renderCategoryEditorPreview();
   }
@@ -760,19 +765,26 @@ document.addEventListener('DOMContentLoaded', () => {
     deleteManagedCategory(deleteButton.dataset.categoryId, deleteButton.dataset.deleteCategory, deleteButton.dataset.categoryType);
   });
 
-  async function replaceCategoryEditorImage(result) {
-    if (!result?.url) throw new Error('ImageKit did not return an image URL.');
-    const previousPendingFileId = categoryEditorImageFileId
-      && categoryEditorImageFileId !== categoryEditorOriginalImageFileId
-      ? categoryEditorImageFileId
-      : '';
-
-    if (previousPendingFileId) {
-      await Promise.allSettled([deleteImageFile(previousPendingFileId)]);
+  function stageCategoryEditorImage(pendingImage) {
+    if (categoryEditorPendingObjectUrl) {
+      URL.revokeObjectURL(categoryEditorPendingObjectUrl);
+      categoryEditorPendingObjectUrl = '';
     }
 
-    categoryEditorImage = result.url;
-    categoryEditorImageFileId = result.fileId || '';
+    categoryEditorPendingImage = pendingImage || null;
+
+    if (pendingImage?.previewUrl) {
+      categoryEditorPendingObjectUrl = pendingImage.previewUrl.startsWith('blob:')
+        ? pendingImage.previewUrl
+        : '';
+      categoryEditorImage = pendingImage.previewUrl;
+    } else if (pendingImage?.sourceUrl) {
+      categoryEditorImage = pendingImage.sourceUrl;
+    } else {
+      categoryEditorImage = '';
+    }
+
+    categoryEditorImageFileId = categoryEditorOriginalImageFileId;
     renderCategoryEditorPreview();
   }
 
@@ -788,11 +800,10 @@ document.addEventListener('DOMContentLoaded', () => {
     button.textContent = 'Uploading…';
 
     try {
-      const result = await uploadImageUrl(url, {
-        folder: '/gifty-hamper/categories',
+      stageCategoryEditorImage({
+        sourceUrl: url,
         fileName: 'category-' + Date.now().toString(36) + '.webp'
       });
-      await replaceCategoryEditorImage(result);
       $('#category-editor-image-url').value = '';
     } catch (error) {
       console.error('ImageKit category URL import error:', error);
@@ -809,11 +820,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       const blob = await readCategoryImageFile(file);
-      const result = await uploadImageFile(blob, {
-        folder: '/gifty-hamper/categories',
+      const previewUrl = URL.createObjectURL(blob);
+      stageCategoryEditorImage({
+        blob,
+        previewUrl,
         fileName: (file.name || 'category-image').replace(/\.[^.]+$/, '') + '.webp'
       });
-      await replaceCategoryEditorImage(result);
       $('#category-editor-image-url').value = '';
     } catch (error) {
       console.error('ImageKit category upload error:', error);
@@ -823,20 +835,16 @@ document.addEventListener('DOMContentLoaded', () => {
     event.target.value = '';
   });
 
-  $('#category-editor-remove-image').addEventListener('click', async () => {
-    const pendingFileId = categoryEditorImageFileId
-      && categoryEditorImageFileId !== categoryEditorOriginalImageFileId
-      ? categoryEditorImageFileId
-      : '';
-
+  $('#category-editor-remove-image').addEventListener('click', () => {
+    if (categoryEditorPendingObjectUrl) {
+      URL.revokeObjectURL(categoryEditorPendingObjectUrl);
+      categoryEditorPendingObjectUrl = '';
+    }
+    categoryEditorPendingImage = { remove: true };
     categoryEditorImage = '';
     categoryEditorImageFileId = '';
     $('#category-editor-image-url').value = '';
     renderCategoryEditorPreview();
-
-    if (pendingFileId) {
-      await Promise.allSettled([deleteImageFile(pendingFileId)]);
-    }
   });
 
   $('#category-editor-form').addEventListener('submit', async event => {
@@ -856,28 +864,68 @@ document.addEventListener('DOMContentLoaded', () => {
     button.disabled = true;
     button.textContent = 'Saving…';
 
+    let newlyUploadedFileId = '';
+    let nextImage = categoryEditorImage;
+    let nextImageFileId = categoryEditorImageFileId;
+
     try {
+      // Stage uploads locally and only send them to ImageKit when the category
+      // is actually saved. This prevents abandoned editors from creating
+      // orphaned ImageKit files.
+      if (categoryEditorPendingImage?.remove) {
+        nextImage = '';
+        nextImageFileId = '';
+      } else if (categoryEditorPendingImage?.blob) {
+        const result = await uploadImageFile(categoryEditorPendingImage.blob, {
+          folder: '/gifty-hamper/categories',
+          fileName: categoryEditorPendingImage.fileName || ('category-' + Date.now().toString(36) + '.webp')
+        });
+        nextImage = result.url;
+        nextImageFileId = result.fileId || '';
+        newlyUploadedFileId = result.fileId || '';
+      } else if (categoryEditorPendingImage?.sourceUrl) {
+        const result = await uploadImageUrl(categoryEditorPendingImage.sourceUrl, {
+          folder: '/gifty-hamper/categories',
+          fileName: categoryEditorPendingImage.fileName || ('category-' + Date.now().toString(36) + '.webp')
+        });
+        nextImage = result.url;
+        nextImageFileId = result.fileId || '';
+        newlyUploadedFileId = result.fileId || '';
+      }
+
       await persistCategoryRename(type, oldCategory.name, name);
       const previousImageFileId = oldCategory.imageFileId || '';
       const saved = await saveCategory({
         ...oldCategory,
         name,
-        image: categoryEditorImage,
-        imageFileId: categoryEditorImageFileId
+        image: nextImage,
+        imageFileId: nextImageFileId
       });
-      if (previousImageFileId && previousImageFileId !== categoryEditorImageFileId) {
+
+      if (previousImageFileId && previousImageFileId !== nextImageFileId) {
         await Promise.allSettled([deleteImageFile(previousImageFileId)]);
       }
-      categoryEditorOriginalImageFileId = categoryEditorImageFileId;
+
+      categoryEditorOriginalImageFileId = nextImageFileId;
+      categoryEditorImageFileId = nextImageFileId;
+      categoryEditorPendingImage = null;
+      if (categoryEditorPendingObjectUrl) URL.revokeObjectURL(categoryEditorPendingObjectUrl);
+      categoryEditorPendingObjectUrl = '';
       categoryRecords = categoryRecords.map(item => item.id === id ? saved : item);
       majorCategories = categoryRecords.filter(item => item.type === 'major').map(item => item.name);
       categories = categoryRecords.filter(item => item.type === 'minor').map(item => item.name);
       saveMajorCategories(majorCategories);
       saveCategories(categories);
-      closeCategoryEditor();
+      closeCategoryEditor({ cleanup: false });
       renderCategoryManager();
       render();
     } catch (error) {
+      if (newlyUploadedFileId) {
+        await Promise.allSettled([deleteImageFile(newlyUploadedFileId)]);
+      }
+      console.error('Save category error:', error);
+      alert('Unable to save the category. ' + (error?.message || 'Please check Firebase rules and try again.'));
+    } finally {
       console.error('Save category error:', error);
       alert('Unable to save the category. Please check Firebase rules.');
     } finally {

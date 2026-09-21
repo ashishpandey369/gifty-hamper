@@ -8,7 +8,6 @@ import {
 } from "./catalog-store.js";
 import { deleteCategory, loadCategories, saveCategory, categoryId } from "./category-store.js";
 import { deleteImageFile, uploadImageFile, uploadImageUrl } from "./imagekit-store.js";
-import { loadMostSoldImages, saveMostSoldImages, MAX_MOST_SOLD_IMAGES } from "./most-sold-store.js";
 
 document.addEventListener('DOMContentLoaded', () => {
   const CAT_KEY = 'gifty-hamper-categories';
@@ -84,9 +83,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let categoryEditorOriginalImageFileId = '';
   let categoryEditorPendingImage = null;
   let categoryEditorPendingObjectUrl = '';
-  let mostSoldImages = [];
-  let mostSoldPendingImages = [];
-  let mostSoldRemovedKeys = new Set();
+  const MAX_MOST_SOLD_PRODUCTS = 20;
+  let mostSoldSelectedIds = new Set();
+  let mostSoldSearch = '';
 
 
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -182,102 +181,96 @@ document.addEventListener('DOMContentLoaded', () => {
     renderMinorCategoryChecks(getSelectedCategories());
   }
 
-  function mostSoldImageKey(image) {
-    return image?.fileId || image?.url || '';
-  }
-
-  function cleanupMostSoldPendingImages() {
-    mostSoldPendingImages.forEach(item => {
-      if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
-    });
-    mostSoldPendingImages = [];
-  }
-
   function renderMostSoldManager() {
-    const target = $('#most-sold-image-list');
+    const target = $('#most-sold-product-list');
     const count = $('#most-sold-count');
+    const searchInput = $('#most-sold-search');
     if (!target || !count) return;
 
-    const saved = mostSoldImages.filter(image => !mostSoldRemovedKeys.has(mostSoldImageKey(image)));
-    const total = saved.length + mostSoldPendingImages.length;
-    count.textContent = total + ' / ' + MAX_MOST_SOLD_IMAGES + ' images';
+    const selectedCount = mostSoldSelectedIds.size;
+    count.textContent = selectedCount + ' / ' + MAX_MOST_SOLD_PRODUCTS + ' products selected';
 
-    target.innerHTML =
-      saved.map((image, index) =>
-        '<div class="most-sold-image-card">' +
-          '<img src="' + escapeHtml(image.url) + '" alt="Most sold category image ' + (index + 1) + '" loading="lazy">' +
-          '<button type="button" class="most-sold-image-remove" data-most-sold-remove-saved="' + escapeHtml(mostSoldImageKey(image)) + '" aria-label="Remove image">×</button>' +
-          '<span class="most-sold-image-name">' + escapeHtml(image.fileId || 'Image ' + (index + 1)) + '</span>' +
-        '</div>'
-      ).join('') +
-      mostSoldPendingImages.map((image, index) =>
-        '<div class="most-sold-image-card pending">' +
-          '<img src="' + escapeHtml(image.previewUrl) + '" alt="Pending most sold image ' + (index + 1) + '">' +
-          '<button type="button" class="most-sold-image-remove" data-most-sold-remove-pending="' + index + '" aria-label="Remove pending image">×</button>' +
-          '<span class="most-sold-image-name">Pending — save to upload</span>' +
-        '</div>'
-      ).join('');
+    const query = mostSoldSearch.trim().toLowerCase();
+    const products = catalog
+      .filter(product => product.active !== false)
+      .filter(product => {
+        if (!query) return true;
+        return [
+          product.name,
+          product.sku,
+          product.id,
+          ...(product.categories || []),
+          product.majorCategory
+        ].join(' ').toLowerCase().includes(query);
+      })
+      .sort((a, b) => {
+        const aSelected = mostSoldSelectedIds.has(a.id) ? 0 : 1;
+        const bSelected = mostSoldSelectedIds.has(b.id) ? 0 : 1;
+        return aSelected - bSelected || String(a.name).localeCompare(String(b.name));
+      });
+
+    if (searchInput && searchInput.value !== mostSoldSearch) searchInput.value = mostSoldSearch;
+
+    target.innerHTML = products.map(product => {
+      const image = product.images?.[0] || '';
+      const checked = mostSoldSelectedIds.has(product.id);
+      return '<label class="most-sold-product-card' + (checked ? ' selected' : '') + '">' +
+        '<input type="checkbox" data-most-sold-product="' + escapeHtml(product.id) + '"' + (checked ? ' checked' : '') + '>' +
+        '<div class="most-sold-product-media">' +
+          (image ? '<img src="' + escapeHtml(image) + '" alt="" loading="lazy">' : '<span>🎁</span>') +
+        '</div>' +
+        '<div class="most-sold-product-info">' +
+          '<strong>' + escapeHtml(product.name) + '</strong>' +
+          '<small>' + escapeHtml(product.sku || product.id) + '</small>' +
+          '<small>' + money(product.salePrice || product.price) + '</small>' +
+        '</div>' +
+        '<span class="most-sold-check">✓</span>' +
+      '</label>';
+    }).join('') || '<p class="admin-help">No active products match your search.</p>';
   }
 
-  async function loadMostSoldManager() {
-    try {
-      mostSoldImages = await loadMostSoldImages();
-      mostSoldRemovedKeys = new Set();
-      renderMostSoldManager();
-    } catch (error) {
-      console.error('Most sold settings load error:', error);
-      alert('Unable to load the Most Sold Categories slideshow settings. Please check Firebase rules.');
-    }
+  function loadMostSoldManager() {
+    mostSoldSelectedIds = new Set(
+      catalog.filter(product => product.mostSold === true).map(product => product.id)
+    );
+    renderMostSoldManager();
   }
 
   async function saveMostSoldManager() {
     const button = $('#save-most-sold');
     if (!button) return;
 
-    const savedImages = mostSoldImages.filter(image => !mostSoldRemovedKeys.has(mostSoldImageKey(image)));
-    const total = savedImages.length + mostSoldPendingImages.length;
-    if (total > MAX_MOST_SOLD_IMAGES) {
-      alert('You can keep up to ' + MAX_MOST_SOLD_IMAGES + ' images.');
+    if (mostSoldSelectedIds.size > MAX_MOST_SOLD_PRODUCTS) {
+      alert('You can select up to ' + MAX_MOST_SOLD_PRODUCTS + ' products.');
       return;
     }
 
     button.disabled = true;
     button.textContent = 'Saving…';
-    const newlyUploadedFileIds = [];
 
     try {
-      const uploaded = [];
-      for (const pending of mostSoldPendingImages) {
-        const result = await uploadImageFile(pending.blob, {
-          folder: '/gifty-hamper/most-sold-categories',
-          fileName: pending.fileName
+      const changedProducts = catalog.filter(product =>
+        Boolean(product.mostSold) !== mostSoldSelectedIds.has(product.id)
+      );
+
+      for (const product of changedProducts) {
+        const saved = await saveCatalogProduct({
+          ...product,
+          mostSold: mostSoldSelectedIds.has(product.id)
         });
-        if (!result?.url) throw new Error('ImageKit did not return an image URL.');
-        uploaded.push({ url: result.url, fileId: result.fileId || '' });
-        if (result.fileId) newlyUploadedFileIds.push(result.fileId);
+        const index = catalog.findIndex(item => item.id === saved.id);
+        if (index >= 0) catalog[index] = saved;
       }
 
-      const finalImages = [...savedImages, ...uploaded];
-      const saved = await saveMostSoldImages(finalImages);
-
-      const removedFileIds = mostSoldImages
-        .filter(image => mostSoldRemovedKeys.has(mostSoldImageKey(image)))
-        .map(image => image.fileId)
-        .filter(Boolean);
-
-      await Promise.allSettled(removedFileIds.map(fileId => deleteImageFile(fileId)));
-
-      cleanupMostSoldPendingImages();
-      mostSoldImages = saved;
-      mostSoldRemovedKeys = new Set();
       renderMostSoldManager();
+      render();
     } catch (error) {
-      await Promise.allSettled(newlyUploadedFileIds.map(fileId => deleteImageFile(fileId)));
-      console.error('Save most sold settings error:', error);
-      alert('Unable to save the Most Sold Categories slideshow. ' + (error?.message || 'Please try again.'));
+      console.error('Save most sold products error:', error);
+      alert('Unable to save the Most Sold products. ' + (error?.message || 'Please try again.'));
+      loadMostSoldManager();
     } finally {
       button.disabled = false;
-      button.textContent = 'Save slideshow';
+      button.textContent = 'Save Most Sold products';
     }
   }
 
@@ -745,50 +738,27 @@ document.addEventListener('DOMContentLoaded', () => {
     input.value = '';
   });
 
-  $('#most-sold-image-files').addEventListener('change', async event => {
-    const files = [...event.target.files];
-    const currentCount = mostSoldImages.filter(image => !mostSoldRemovedKeys.has(mostSoldImageKey(image))).length + mostSoldPendingImages.length;
-    const available = Math.max(0, MAX_MOST_SOLD_IMAGES - currentCount);
-
-    if (files.length > available) {
-      alert('You can add only ' + available + ' more image' + (available === 1 ? '' : 's') + '.');
-    }
-
-    for (const file of files.slice(0, available)) {
-      try {
-        const blob = await prepareImageBlob(file, 1600, 0.82);
-        const previewUrl = URL.createObjectURL(blob);
-        mostSoldPendingImages.push({
-          blob,
-          previewUrl,
-          fileName: (file.name || 'most-sold-image').replace(/\.[^.]+$/, '') + '.webp'
-        });
-      } catch (error) {
-        console.error('Most sold image preparation error:', error);
-        alert('Unable to prepare one of the selected images. ' + (error?.message || 'Please try again.'));
-      }
-    }
-
-    event.target.value = '';
+  $('#most-sold-search').addEventListener('input', event => {
+    mostSoldSearch = event.target.value || '';
     renderMostSoldManager();
   });
 
-  $('#most-sold-image-list').addEventListener('click', event => {
-    const savedButton = event.target.closest('[data-most-sold-remove-saved]');
-    if (savedButton) {
-      mostSoldRemovedKeys.add(savedButton.dataset.mostSoldRemoveSaved);
-      renderMostSoldManager();
-      return;
+  $('#most-sold-product-list').addEventListener('change', event => {
+    const input = event.target.closest('[data-most-sold-product]');
+    if (!input) return;
+
+    if (input.checked) {
+      if (mostSoldSelectedIds.size >= MAX_MOST_SOLD_PRODUCTS && !mostSoldSelectedIds.has(input.dataset.mostSoldProduct)) {
+        input.checked = false;
+        alert('You can select up to ' + MAX_MOST_SOLD_PRODUCTS + ' products.');
+        return;
+      }
+      mostSoldSelectedIds.add(input.dataset.mostSoldProduct);
+    } else {
+      mostSoldSelectedIds.delete(input.dataset.mostSoldProduct);
     }
 
-    const pendingButton = event.target.closest('[data-most-sold-remove-pending]');
-    if (pendingButton) {
-      const index = Number(pendingButton.dataset.mostSoldRemovePending);
-      const pending = mostSoldPendingImages[index];
-      if (pending?.previewUrl) URL.revokeObjectURL(pending.previewUrl);
-      mostSoldPendingImages.splice(index, 1);
-      renderMostSoldManager();
-    }
+    renderMostSoldManager();
   });
 
   $('#save-most-sold').addEventListener('click', saveMostSoldManager);
@@ -1105,8 +1075,8 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#admin-refresh').addEventListener('click', async () => {
     try {
       await loadSharedCategories();
-      await loadMostSoldManager();
       await loadSharedCatalog();
+      loadMostSoldManager();
     } catch (error) {
       console.error('Admin refresh error:', error);
       alert('Unable to refresh the shared catalog.');

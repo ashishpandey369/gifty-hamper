@@ -200,6 +200,22 @@ export async function loadPublicCatalog() {
   return snapshot.docs.map(item => normaliseProduct({ id:item.id, ...item.data() }));
 }
 
+export async function migrateMissingProductVisibility(products = []) {
+  const migrated = [];
+
+  for (const product of products) {
+    if (Object.prototype.hasOwnProperty.call(product, "active")) {
+      migrated.push(product);
+      continue;
+    }
+
+    const normalised = normaliseProduct({ ...product, active: true });
+    migrated.push(await saveCatalogProduct(normalised));
+  }
+
+  return migrated;
+}
+
 export async function loadAdminCatalog() {
   const snapshot = await getDocs(collection(db, "products"));
   return snapshot.docs.map(item => normaliseProduct({ id:item.id, ...item.data() }));

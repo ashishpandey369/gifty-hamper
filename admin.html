@@ -95,6 +95,26 @@
       </aside>
     </section>
 
+    <section class="admin-panel most-sold-manager">
+      <div>
+        <p class="eyebrow">Homepage showcase</p>
+        <h2>Most Sold Categories</h2>
+        <p>Add up to 20 separate images. The homepage will show them in a random slideshow in the current hero logo position.</p>
+      </div>
+      <div class="most-sold-manager-controls">
+        <div class="most-sold-toolbar">
+          <label class="upload-box most-sold-upload">
+            <input id="most-sold-image-files" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" multiple>
+            <span>Choose PNG / JPG / WebP images</span>
+            <small>Up to 20 images</small>
+          </label>
+          <div class="most-sold-count" id="most-sold-count">0 / 20 images</div>
+          <button class="admin-primary" id="save-most-sold" type="button">Save slideshow</button>
+        </div>
+        <div id="most-sold-image-list" class="most-sold-image-list"></div>
+      </div>
+    </section>
+
     <section class="admin-panel category-manager">
       <div><p class="eyebrow">Store taxonomy</p><h2>Major categories</h2><p>Create or remove the top-level categories used to organise your store.</p></div>
       <div class="category-manager-controls">

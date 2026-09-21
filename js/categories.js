@@ -34,7 +34,7 @@ function buildFallbackCategories() {
   return result;
 }
 
-function render(categories) {
+function render(categories, mostSoldOnly = false) {
   const grid = document.querySelector('#all-category-grid');
   const count = document.querySelector('#category-count');
   const empty = document.querySelector('#category-empty');
@@ -52,15 +52,22 @@ function render(categories) {
 
   grid.innerHTML = categories.map(category => {
     const productCount = catalog.filter(product =>
-      String(product.majorCategory || 'Gifts for Everyone').toLowerCase() === category.name.toLowerCase() ||
-      (product.categories || []).some(value => String(value).toLowerCase() === category.name.toLowerCase())
+      (!mostSoldOnly || product.mostSold === true) &&
+      (
+        String(product.majorCategory || 'Gifts for Everyone').toLowerCase() === category.name.toLowerCase() ||
+        (product.categories || []).some(value => String(value).toLowerCase() === category.name.toLowerCase())
+      )
     ).length;
 
     const visual = category.image
       ? '<img src="' + escapeHtml(category.image) + '" alt="' + escapeHtml(category.name) + '" loading="lazy">'
       : '<span class="all-category-fallback">' + iconFor(category.name) + '</span>';
 
-    return '<a class="all-category-card" href="shop.html?category=' + encodeURIComponent(category.name) + '">' +
+    const href = mostSoldOnly
+      ? 'shop.html?collection=most-sold&category=' + encodeURIComponent(category.name)
+      : 'shop.html?category=' + encodeURIComponent(category.name);
+
+    return '<a class="all-category-card" href="' + href + '">' +
       '<div class="all-category-image">' + visual + '</div>' +
       '<h2>' + escapeHtml(category.name) + '</h2>' +
       '<p>' + productCount + ' ' + (productCount === 1 ? 'gift' : 'gifts') + '</p>' +
@@ -85,5 +92,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   if (!categories.length) categories = buildFallbackCategories();
-  render(categories);
+
+  const mostSoldOnly = new URLSearchParams(window.location.search).get('collection') === 'most-sold';
+  if (mostSoldOnly) {
+    categories = categories.filter(category =>
+      catalog.some(product =>
+        product.mostSold === true &&
+        (
+          String(product.majorCategory || 'Gifts for Everyone').toLowerCase() === category.name.toLowerCase() ||
+          (product.categories || []).some(value => String(value).toLowerCase() === category.name.toLowerCase())
+        )
+      )
+    );
+
+    const heading = document.querySelector('.categories-hero h1');
+    const eyebrow = document.querySelector('.categories-hero .eyebrow');
+    if (heading) heading.innerHTML = 'Most <em>sold categories.</em>';
+    if (eyebrow) eyebrow.textContent = 'Most Sold';
+  }
+
+  render(categories, mostSoldOnly);
 });

@@ -265,12 +265,10 @@ service cloud.firestore {
     }
 
     match /homepageSettings/{settingId} {
-      // Homepage showcase settings are public only while active.
-      allow get: if resource.data.get('active', true) == true
-        || (isStaff() && featureEnabled('catalog'));
+      // The fixed homepage showcase document contains only public image URLs.
+      allow get: if settingId == 'mostSoldCategories';
 
-      allow create, update: if isStaff() && featureEnabled('catalog');
-      allow delete: if isStaff() && featureEnabled('catalog');
+      allow create, update, delete: if isStaff() && featureEnabled('catalog');
     }
 
     // ------------------------------------------------------------

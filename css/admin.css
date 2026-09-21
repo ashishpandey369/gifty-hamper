@@ -40,29 +40,44 @@ body.category-editor-open{overflow:hidden}
 .most-sold-manager h2{margin:4px 0}
 .most-sold-manager p:last-child{color:#6f6877}
 .most-sold-manager-controls{margin-top:18px}
-.most-sold-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.most-sold-search{flex:1 1 280px;font:inherit;border:1px solid #dfd3dc;border-radius:10px;background:#fff;padding:11px 12px;color:#241d2b}
-.most-sold-count{padding:10px 13px;border:1px solid #e8e0eb;border-radius:10px;background:#fff;color:#6f2b78;font-weight:800;font-size:.78rem;white-space:nowrap}
-.most-sold-product-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:16px;max-height:430px;overflow:auto;padding:2px}
-.most-sold-product-card{position:relative;display:grid;grid-template-columns:64px minmax(0,1fr);gap:10px;align-items:center;min-width:0;padding:9px;border:1px solid #e9e2eb;border-radius:12px;background:#fff;cursor:pointer;box-shadow:0 4px 12px rgba(74,46,75,.04);transition:border-color .15s,box-shadow .15s,transform .15s}
-.most-sold-product-card:hover{transform:translateY(-1px);box-shadow:0 7px 16px rgba(74,46,75,.07)}
-.most-sold-product-card.selected{border-color:#7655e8;box-shadow:0 0 0 2px rgba(118,85,232,.12)}
+.most-sold-columns{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);gap:16px}
+.most-sold-picker,.most-sold-selected{min-width:0;border:1px solid #e7dfe9;border-radius:14px;background:#fbf9fc;padding:12px}
+.most-sold-column-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.most-sold-column-head strong{font-size:.85rem;color:#33253a}
+.most-sold-column-head span{font-size:.7rem;color:#817785}
+.most-sold-search{width:100%;box-sizing:border-box;font:inherit;border:1px solid #dfd3dc;border-radius:9px;background:#fff;padding:9px 11px;color:#241d2b;margin-bottom:10px}
+.most-sold-product-list,.most-sold-selected-list{height:360px;overflow:auto;padding:2px}
+.most-sold-product-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:7px}
+.most-sold-product-card{position:relative;display:grid;grid-template-columns:38px minmax(0,1fr);gap:8px;align-items:center;min-width:0;padding:6px 7px;border:1px solid #e7e0e9;border-radius:9px;background:#fff;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.most-sold-product-card:hover{border-color:#c9b7d2;box-shadow:0 3px 9px rgba(74,46,75,.06)}
+.most-sold-product-card.selected{border-color:#7655e8;background:#faf7ff;box-shadow:0 0 0 1px rgba(118,85,232,.1)}
 .most-sold-product-card>input{position:absolute;opacity:0;pointer-events:none}
-.most-sold-product-media{width:64px;height:64px;border-radius:9px;overflow:hidden;background:#f5edf2;display:grid;place-items:center}
+.most-sold-product-media{width:38px;height:38px;border-radius:7px;overflow:hidden;background:#f5edf2;display:grid;place-items:center}
 .most-sold-product-media img{width:100%;height:100%;object-fit:cover;display:block}
-.most-sold-product-media span{font-size:24px}
-.most-sold-product-info{min-width:0;display:flex;flex-direction:column;gap:3px}
-.most-sold-product-info strong{font-size:.78rem;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.most-sold-product-info small{font-size:.68rem;color:#7b7480;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.most-sold-check{position:absolute;right:8px;top:8px;width:22px;height:22px;border-radius:50%;background:#eee7f3;color:transparent;display:grid;place-items:center;font-size:.72rem;font-weight:900}
-.most-sold-product-card.selected .most-sold-check{background:#7655e8;color:#fff}
-@media(max-width:1050px){.most-sold-product-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:700px){
-  .most-sold-manager{padding:16px}
-  .most-sold-toolbar{align-items:stretch}
-  .most-sold-search{flex-basis:100%}
-  .most-sold-count,.most-sold-toolbar .admin-primary{flex:1}
-  .most-sold-product-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:520px}
-  .most-sold-product-card{grid-template-columns:52px minmax(0,1fr);padding:7px}
-  .most-sold-product-media{width:52px;height:52px}
+.most-sold-product-media span{font-size:17px}
+.most-sold-product-info{min-width:0;display:flex;flex-direction:column;gap:2px;padding-right:20px}
+.most-sold-product-info strong{font-size:.69rem;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.most-sold-product-info small{font-size:.59rem;color:#7b7480;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.most-sold-check{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:17px;height:17px;border-radius:50%;border:1px solid #d9cedd;background:#fff;color:transparent;display:grid;place-items:center;font-size:.58rem;font-weight:900}
+.most-sold-product-card.selected .most-sold-check{background:#7655e8;border-color:#7655e8;color:#fff}
+.most-sold-selected-list{display:flex;flex-direction:column;gap:7px}
+.most-sold-selected-card{position:relative;display:grid;grid-template-columns:20px 42px minmax(0,1fr) 25px;gap:8px;align-items:center;min-width:0;padding:6px 7px;border:1px solid #e7e0e9;border-radius:9px;background:#fff}
+.most-sold-selected-number{font-size:.65rem;font-weight:800;color:#8a7a8e;text-align:center}
+.most-sold-selected-media{width:42px;height:42px;border-radius:7px;overflow:hidden;background:#f5edf2;display:grid;place-items:center}
+.most-sold-selected-media img{width:100%;height:100%;object-fit:cover;display:block}
+.most-sold-selected-media span{font-size:17px}
+.most-sold-selected-remove{width:24px;height:24px;border:1px solid #e2d7e3;border-radius:50%;background:#fff;color:#7a2f83;font-size:15px;line-height:1;cursor:pointer}
+.most-sold-selected-remove:hover{background:#f8edf7}
+.most-sold-empty{height:100%;display:grid;place-items:center;text-align:center;color:#918692;font-size:.76rem;padding:20px}
+.most-sold-save-row{margin-top:14px;display:flex;justify-content:flex-end;border-top:1px solid #eee7f0;padding-top:14px}
+.most-sold-save-row .admin-primary{min-width:210px}
+@media(max-width:900px){
+  .most-sold-columns{grid-template-columns:1fr}
+  .most-sold-product-list,.most-sold-selected-list{height:300px}
 }
+@media(max-width:600px){
+  .most-sold-manager{padding:16px}
+  .most-sold-product-list{grid-template-columns:1fr}
+  .most-sold-save-row .admin-primary{width:100%}
+}
+

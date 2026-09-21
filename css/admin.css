@@ -35,23 +35,34 @@ body.category-editor-open{overflow:hidden}
 }
 
 
-/* Most sold categories manager */
-.most-sold-manager{margin-top:24px}
+/* Most sold products manager */
+.most-sold-manager{margin-top:24px;padding:22px}
+.most-sold-manager h2{margin:4px 0}
+.most-sold-manager p:last-child{color:#6f6877}
 .most-sold-manager-controls{margin-top:18px}
 .most-sold-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.most-sold-upload{flex:1 1 300px;min-height:74px}
+.most-sold-search{flex:1 1 280px;font:inherit;border:1px solid #dfd3dc;border-radius:10px;background:#fff;padding:11px 12px;color:#241d2b}
 .most-sold-count{padding:10px 13px;border:1px solid #e8e0eb;border-radius:10px;background:#fff;color:#6f2b78;font-weight:800;font-size:.78rem;white-space:nowrap}
-.most-sold-image-list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:16px}
-.most-sold-image-card{position:relative;min-width:0;overflow:hidden;border:1px solid #e9e2eb;border-radius:12px;background:#fff;box-shadow:0 5px 14px rgba(74,46,75,.06)}
-.most-sold-image-card img{width:100%;aspect-ratio:1/1;display:block;object-fit:cover;background:#faf8fb}
-.most-sold-image-card .most-sold-image-name{display:block;padding:7px 8px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.62rem;color:#706875}
-.most-sold-image-remove{position:absolute;top:7px;right:7px;width:28px;height:28px;border:1px solid #f0dce5;border-radius:50%;background:rgba(255,255,255,.95);color:#d13d66;font-weight:900;cursor:pointer}
-.most-sold-image-card.pending{border-style:dashed}
-.most-sold-image-card.pending .most-sold-image-name{color:#8a4b87}
-@media(max-width:1000px){.most-sold-image-list{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.most-sold-product-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:16px;max-height:430px;overflow:auto;padding:2px}
+.most-sold-product-card{position:relative;display:grid;grid-template-columns:64px minmax(0,1fr);gap:10px;align-items:center;min-width:0;padding:9px;border:1px solid #e9e2eb;border-radius:12px;background:#fff;cursor:pointer;box-shadow:0 4px 12px rgba(74,46,75,.04);transition:border-color .15s,box-shadow .15s,transform .15s}
+.most-sold-product-card:hover{transform:translateY(-1px);box-shadow:0 7px 16px rgba(74,46,75,.07)}
+.most-sold-product-card.selected{border-color:#7655e8;box-shadow:0 0 0 2px rgba(118,85,232,.12)}
+.most-sold-product-card>input{position:absolute;opacity:0;pointer-events:none}
+.most-sold-product-media{width:64px;height:64px;border-radius:9px;overflow:hidden;background:#f5edf2;display:grid;place-items:center}
+.most-sold-product-media img{width:100%;height:100%;object-fit:cover;display:block}
+.most-sold-product-media span{font-size:24px}
+.most-sold-product-info{min-width:0;display:flex;flex-direction:column;gap:3px}
+.most-sold-product-info strong{font-size:.78rem;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.most-sold-product-info small{font-size:.68rem;color:#7b7480;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.most-sold-check{position:absolute;right:8px;top:8px;width:22px;height:22px;border-radius:50%;background:#eee7f3;color:transparent;display:grid;place-items:center;font-size:.72rem;font-weight:900}
+.most-sold-product-card.selected .most-sold-check{background:#7655e8;color:#fff}
+@media(max-width:1050px){.most-sold-product-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:700px){
+  .most-sold-manager{padding:16px}
   .most-sold-toolbar{align-items:stretch}
-  .most-sold-upload{flex-basis:100%}
+  .most-sold-search{flex-basis:100%}
   .most-sold-count,.most-sold-toolbar .admin-primary{flex:1}
-  .most-sold-image-list{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .most-sold-product-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:520px}
+  .most-sold-product-card{grid-template-columns:52px minmax(0,1fr);padding:7px}
+  .most-sold-product-media{width:52px;height:52px}
 }

@@ -84,3 +84,14 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 7. Existing Firestore-hosted Base64/data-URL images remain intact. Only newly managed ImageKit files are removed through the ImageKit file ID metadata.
 8. Do not run `firebase deploy --only functions`, do not add the ImageKit private key to Firebase, and do not upgrade the Firebase project to Blaze for this feature.
 9. Never commit the ImageKit private key or expose it in `js/`, HTML, GitHub Actions logs, or other frontend files.
+
+
+## Step 12 — Stage category images until save
+- Category image selection is now staged in the admin editor instead of uploading immediately to ImageKit.
+- File/URL selection shows a preview, but ImageKit upload happens only when the category is actually saved.
+- If category save fails, any newly uploaded ImageKit file is deleted automatically.
+- Cancel/close or replacing a pending selection no longer creates unnecessary ImageKit assets.
+- Existing saved category ImageKit files remain protected until the new category save succeeds.
+- Removing an existing category image clears Firestore and then deletes the old ImageKit file.
+- Admin cache was refreshed so the new workflow is loaded by GitHub Pages.
+- Status: completed after repository verification.

@@ -200,17 +200,16 @@ export async function loadPublicCatalog() {
   return snapshot.docs.map(item => normaliseProduct({ id:item.id, ...item.data() }));
 }
 
-export async function migrateMissingProductVisibility(products = []) {
+export async function migrateMissingProductVisibility() {
+  const snapshot = await getDocs(collection(db, "products"));
   const migrated = [];
 
-  for (const product of products) {
-    if (Object.prototype.hasOwnProperty.call(product, "active")) {
-      migrated.push(product);
-      continue;
-    }
+  for (const item of snapshot.docs) {
+    const raw = item.data();
+    if (Object.prototype.hasOwnProperty.call(raw, "active")) continue;
 
-    const normalised = normaliseProduct({ ...product, active: true });
-    migrated.push(await saveCatalogProduct(normalised));
+    const product = normaliseProduct({ id: item.id, ...raw, active: true });
+    migrated.push(await saveCatalogProduct(product));
   }
 
   return migrated;

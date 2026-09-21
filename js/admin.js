@@ -4,7 +4,8 @@ import {
   deleteCatalogProduct,
   generateSku,
   loadAdminCatalog,
-  saveCatalogProduct
+  saveCatalogProduct,
+  migrateMissingProductVisibility
 } from "./catalog-store.js";
 import { deleteCategory, loadCategories, saveCategory, categoryId } from "./category-store.js";
 import { deleteImageFile, uploadImageFile, uploadImageUrl } from "./imagekit-store.js";
@@ -97,6 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   async function loadSharedCatalog() {
+    await migrateMissingProductVisibility();
     catalog = await loadAdminCatalog();
 
     if (!catalog.length) {

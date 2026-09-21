@@ -95,3 +95,15 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - Removing an existing category image clears Firestore and then deletes the old ImageKit file.
 - Admin cache was refreshed so the new workflow is loaded by GitHub Pages.
 - Status: completed after repository verification.
+
+
+## Step 13 — Most Sold Categories homepage slideshow
+- Added a separate Firestore-backed homepage showcase setting at `homepageSettings/mostSoldCategories`.
+- Admin now has a dedicated Most Sold Categories panel directly above Major categories, with support for up to 20 separate PNG/JPG/WebP images.
+- Selected images are staged locally and uploaded to ImageKit only when Save slideshow is pressed.
+- Removed saved images are deleted from ImageKit only after the Firestore slideshow settings save succeeds; failed saves clean up newly uploaded files.
+- Homepage hero logo position now uses the saved images as a random slideshow with automatic rotation, previous/next controls and slide dots. If no images are configured, the existing Gifty Hamper logo remains as the fallback.
+- Existing product/category/catalog behavior was left unchanged.
+- Added Firestore rules for public active slideshow reads and catalog-staff management.
+- Admin cache was refreshed.
+- Status: completed in GitHub. The new Firestore rule block must be published in Firebase before the first slideshow settings save.

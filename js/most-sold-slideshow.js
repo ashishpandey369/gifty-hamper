@@ -1,4 +1,4 @@
-import { loadMostSoldImages } from "./most-sold-store.js";
+import { loadPublicCatalog } from "./catalog-store.js";
 
 const INTERVAL_MS = 4000;
 let timer = null;
@@ -7,24 +7,34 @@ const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({
   "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
 }[char]));
 
-function render(target, images, index) {
-  const current = images[index];
+function productImage(product) {
+  return product?.images?.[0] || product?.image || "";
+}
+
+function render(target, products, index) {
+  const current = products[index];
   if (!current) {
     target.innerHTML = '<img src="assets/gifty-hampers.png" alt="Gifty Hamper" loading="eager">';
     return;
   }
 
-  const dots = images.map((_, dotIndex) =>
+  const image = productImage(current);
+  const dots = products.map((_, dotIndex) =>
     '<button type="button" class="most-sold-dot' + (dotIndex === index ? ' active' : '') +
     '" data-most-sold-index="' + dotIndex + '" aria-label="Show slide ' + (dotIndex + 1) + '"></button>'
   ).join("");
 
   target.innerHTML =
     '<div class="most-sold-slideshow-frame">' +
-      '<img class="most-sold-slide-image" src="' + escapeHtml(current.url) + '" alt="Gifty Hamper gift collection" loading="eager">' +
-      '<button type="button" class="most-sold-arrow most-sold-arrow-left" data-most-sold-prev aria-label="Previous image">‹</button>' +
-      '<button type="button" class="most-sold-arrow most-sold-arrow-right" data-most-sold-next aria-label="Next image">›</button>' +
-      '<div class="most-sold-dots" aria-label="Slideshow navigation">' + dots + '</div>' +
+      '<a class="most-sold-slide-link" href="shop.html?collection=most-sold" aria-label="View all most sold products">' +
+        (image
+          ? '<img class="most-sold-slide-image" src="' + escapeHtml(image) + '" alt="' + escapeHtml(current.name || "Most sold gift") + '" loading="eager">'
+          : '<div class="most-sold-slide-placeholder">🎁</div>') +
+        '<div class="most-sold-slide-caption"><strong>' + escapeHtml(current.name || "Most sold gift") + '</strong><span>View all most sold gifts →</span></div>' +
+      '</a>' +
+      '<button type="button" class="most-sold-arrow most-sold-arrow-left" data-most-sold-prev aria-label="Previous most sold product">‹</button>' +
+      '<button type="button" class="most-sold-arrow most-sold-arrow-right" data-most-sold-next aria-label="Next most sold product">›</button>' +
+      '<div class="most-sold-dots" aria-label="Most sold slideshow navigation">' + dots + '</div>' +
     '</div>';
 }
 
@@ -32,33 +42,33 @@ async function init() {
   const target = document.querySelector("#most-sold-slideshow");
   if (!target) return;
 
-  let images = [];
+  let products = [];
   try {
-    images = await loadMostSoldImages();
+    products = (await loadPublicCatalog()).filter(product => product.mostSold === true);
   } catch (error) {
     console.error("Most sold slideshow load error:", error);
   }
 
-  if (!images.length) {
+  if (!products.length) {
     target.innerHTML = '<img src="assets/gifty-hampers.png" alt="Gifty Hamper" loading="eager">';
     return;
   }
 
-  let index = Math.floor(Math.random() * images.length);
+  let index = Math.floor(Math.random() * products.length);
 
   const show = nextIndex => {
-    index = (nextIndex + images.length) % images.length;
-    render(target, images, index);
+    index = (nextIndex + products.length) % products.length;
+    render(target, products, index);
   };
 
   const randomNext = () => {
-    if (images.length < 2) return;
-    let next = Math.floor(Math.random() * images.length);
-    while (next === index) next = Math.floor(Math.random() * images.length);
+    if (products.length < 2) return;
+    let next = Math.floor(Math.random() * products.length);
+    while (next === index) next = Math.floor(Math.random() * products.length);
     show(next);
   };
 
-  render(target, images, index);
+  render(target, products, index);
 
   target.addEventListener("click", event => {
     const nextButton = event.target.closest("[data-most-sold-next]");
@@ -66,12 +76,18 @@ async function init() {
     const dot = event.target.closest("[data-most-sold-index]");
 
     if (nextButton) {
+      event.preventDefault();
+      event.stopPropagation();
       randomNext();
       resetTimer();
     } else if (prevButton) {
+      event.preventDefault();
+      event.stopPropagation();
       show(index - 1);
       resetTimer();
     } else if (dot) {
+      event.preventDefault();
+      event.stopPropagation();
       show(Number(dot.dataset.mostSoldIndex) || 0);
       resetTimer();
     }

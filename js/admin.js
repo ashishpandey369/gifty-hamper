@@ -1128,6 +1128,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       await loadSharedCategories();
       await loadSharedCatalog();
+      loadMostSoldManager();
     } catch (error) {
       console.error('Shared catalog initialization error:', error);
       alert('Unable to load the shared product catalog. Please check Firestore rules.');

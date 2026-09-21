@@ -153,10 +153,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCategoryManager();
   }
 
-  async function loadSharedHomepageSettings() {
-    await loadMostSoldManager();
-  }
-
   function renderCategoryEditorPreview() {
     const preview = $('#category-editor-preview');
     const removeButton = $('#category-editor-remove-image');

@@ -136,3 +136,11 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - The category view shows only categories represented by the selected Most Sold products.
 - Selecting one of those categories opens the shop with both the Most Sold collection and that category filter applied.
 - Status: completed in GitHub.
+
+
+## Step 17 — Restore legacy products to the public shop
+- Investigated the storefront catalog query: the shop intentionally reads products where `active == true`, while older product documents can predate the `active` field.
+- Added an admin-side migration that finds legacy product documents missing `active` and saves them with `active: true`, matching the existing normalisation behavior.
+- Refreshed the storefront catalog module cache.
+- Existing products explicitly marked inactive remain hidden as intended.
+- Status: completed in GitHub.

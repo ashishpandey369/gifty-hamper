@@ -107,3 +107,14 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - Added Firestore rules for public active slideshow reads and catalog-staff management.
 - Admin cache was refreshed.
 - Status: completed in GitHub. The new Firestore rule block must be published in Firebase before the first slideshow settings save.
+
+
+## Step 14 — Most Sold product selection instead of image uploads
+- Replaced the Most Sold image-upload workflow with product selection from the existing shared catalog.
+- Admin now lets staff select up to 20 active products for the homepage Most Sold slideshow; no additional photos are uploaded to ImageKit.
+- The selection is stored directly on each product as `mostSold: true/false`, using the existing catalog write permissions. This avoids introducing a new Firestore settings collection and removes the previous slideshow save-permission problem.
+- The homepage slideshow now reads the selected active products and uses each product's existing primary image.
+- Clicking the slideshow opens `shop.html?collection=most-sold`, which shows all currently selected Most Sold products.
+- Existing product images, ImageKit management, category management, product deletion, and normal catalog behavior remain unchanged.
+- Removed the unused image-based Most Sold settings store and its Firestore rule.
+- Status: completed in GitHub. No new image uploads are required for Most Sold.

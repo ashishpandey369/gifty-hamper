@@ -28,6 +28,12 @@ service cloud.firestore {
         );
     }
 
+    function ownerForCurrentAdmin() {
+      return get(
+        /databases/$(database)/documents/users/$(currentUser().data.get('ownerUid', ''))
+      );
+    }
+
     function isAdmin() {
       return signedIn()
         && currentUser().data.get('role', '') == 'admin'
@@ -35,6 +41,13 @@ service cloud.firestore {
         && (
           currentUser().data.get('expiresAt', null) == null
           || currentUser().data.get('expiresAt', request.time) > request.time
+        )
+        && currentUser().data.get('ownerUid', '') != ''
+        && ownerForCurrentAdmin().data.get('role', '') == 'owner'
+        && ownerForCurrentAdmin().data.get('active', false) == true
+        && (
+          ownerForCurrentAdmin().data.get('expiresAt', null) == null
+          || ownerForCurrentAdmin().data.get('expiresAt', request.time) > request.time
         );
     }
 

@@ -99,6 +99,14 @@
           <p id="staff-detail-status" class="admin-help staff-modal-status"></p>
         </div>
 
+        <div id="staff-password-section" class="staff-feature-section" hidden>
+          <p class="eyebrow">Password</p>
+          <h3>Account password</h3>
+          <p class="admin-help">The existing password cannot be viewed. Send a password-reset email to this member when they need a new password.</p>
+          <button id="reset-staff-password" type="button" class="admin-secondary">Send password reset email</button>
+          <p id="staff-password-status" class="admin-help staff-modal-status"></p>
+        </div>
+
         <div class="staff-modal-actions">
           <button type="button" class="admin-secondary" data-close-detail-modal>Close</button>
           <button id="save-staff-details" type="button" class="admin-primary" hidden>Save details</button>
@@ -140,6 +148,6 @@
   </main>
 
   <script type="module" src="js/admin-feature-guard.js?v=2"></script>
-  <script type="module" src="js/admin-staff.js?v=12"></script>
+  <script type="module" src="js/admin-staff.js?v=13"></script>
 </body>
 </html>

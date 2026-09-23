@@ -290,11 +290,17 @@
   .announcement-inner{
     width:max-content;
     min-width:max-content;
+    max-width:none;
     justify-content:flex-start;
+    flex-wrap:nowrap;
     gap:28px;
     padding-right:28px;
     animation:announcementBillboard 18s linear infinite;
     will-change:transform;
+  }
+  .announcement-inner > *{
+    flex:0 0 auto;
+    white-space:nowrap;
   }
   @keyframes announcementBillboard{
     from{transform:translateX(100vw)}

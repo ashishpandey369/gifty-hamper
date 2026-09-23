@@ -162,3 +162,12 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - Homepage slideshow randomly rotates through the complete Most Sold selection every 1.5 seconds.
 - Clicking the slideshow continues to open the Shop filtered to the complete Most Sold selection.
 - Status: completed in GitHub.
+
+
+## Step 20 — Owner validity controls Admin access
+- Admin dashboard access now requires the Owner linked through `ownerUid` to be active and unexpired.
+- Admins whose Owner validity has expired are signed out and shown a clear message to contact their Owner.
+- Expired Owners are signed out and shown a dedicated provider-renewal message.
+- The Owner expiry message provides the Web Developer / Provider WhatsApp contact: +91 8667298507 (Ashish).
+- Firestore security rules now enforce the Owner dependency for Admin permissions as well, so frontend checks are backed by database authorization.
+- Status: completed in GitHub. The updated `firestore.rules` must be published in Firebase Console for the server-side enforcement to take effect.

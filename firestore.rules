@@ -114,9 +114,9 @@ service cloud.firestore {
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.features is map
         && validFeatures(request.resource.data)
-        && request.resource.data.expiresAt > request.time + duration.value(29, 'd')
-        && request.resource.data.expiresAt <= request.time + duration.value(31, 'd')
-        && request.resource.data.validityDays == 30
+        && request.resource.data.expiresAt > request.time + duration.value(59, 'd')
+        && request.resource.data.expiresAt <= request.time + duration.value(61, 'd')
+        && request.resource.data.validityDays == 60
         && get(
           /databases/$(database)/documents/ownerStaff/$(request.auth.uid)
         ).data.get('adminCount', -1) < 5
@@ -306,9 +306,9 @@ service cloud.firestore {
         && request.resource.data.active == true
         && request.resource.data.features is map
         && validFeatures(request.resource.data)
-        && request.resource.data.expiresAt > request.time + duration.value(29, 'd')
-        && request.resource.data.expiresAt <= request.time + duration.value(31, 'd')
-        && request.resource.data.validityDays == 30
+        && request.resource.data.expiresAt > request.time + duration.value(59, 'd')
+        && request.resource.data.expiresAt <= request.time + duration.value(61, 'd')
+        && request.resource.data.validityDays == 60
         && get(
           /databases/$(database)/documents/ownerStaff/$(ownerUid)
         ).data.adminCount < 5

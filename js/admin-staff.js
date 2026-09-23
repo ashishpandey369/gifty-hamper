@@ -1,6 +1,7 @@
 import {
   auth,
   db,
+  sendPasswordResetEmail,
   doc,
   getDoc,
   onAuthStateChanged,
@@ -133,6 +134,18 @@ function openStaffDetails(user, viewerRole) {
   $("#staff-feature-section").hidden = !superAdmin;
   document.querySelector(".staff-notes-section").hidden = !superAdmin;
   $("#save-staff-details").hidden = !superAdmin;
+
+  const canResetPassword =
+    (viewerRole === "super_admin" && (role === "owner" || role === "admin")) ||
+    (viewerRole === "owner" && role === "admin" && user.ownerUid === currentManagerUid);
+
+  $("#staff-password-section").hidden = !canResetPassword;
+  $("#staff-password-status").textContent = "";
+  const resetPasswordButton = $("#reset-staff-password");
+  if (resetPasswordButton) {
+    resetPasswordButton.disabled = false;
+    resetPasswordButton.textContent = "Send password reset email";
+  }
   if (superAdmin) {
     const features = { ...defaultFeaturesForRole(role), ...(user.features && typeof user.features === "object" ? user.features : {}) };
     document.querySelectorAll("[data-feature-toggle]").forEach(input => {
@@ -159,6 +172,37 @@ function openStaffDetails(user, viewerRole) {
 function closeStaffDetails() {
   detailUser = null;
   $("#staff-detail-modal").hidden = true;
+}
+
+async function resetStaffPassword() {
+  if (!detailUser) return;
+
+  const role = detailUser.role || "admin";
+  const allowed =
+    (detailViewerRole === "super_admin" && (role === "owner" || role === "admin")) ||
+    (detailViewerRole === "owner" && role === "admin" && detailUser.ownerUid === currentManagerUid);
+
+  if (!allowed || !detailUser.email) return;
+
+  const button = $("#reset-staff-password");
+  const status = $("#staff-password-status");
+  button.disabled = true;
+  button.textContent = "Sending…";
+  status.textContent = "";
+
+  try {
+    await sendPasswordResetEmail(auth, detailUser.email);
+    status.textContent = "Password reset email sent to " + detailUser.email + ".";
+    button.textContent = "Reset email sent";
+  } catch (error) {
+    console.error("Password reset error:", error);
+    status.textContent =
+      error?.code === "auth/too-many-requests"
+        ? "Too many reset requests. Please wait and try again."
+        : (error?.message || "Unable to send the password reset email.");
+    button.disabled = false;
+    button.textContent = "Send password reset email";
+  }
 }
 
 async function saveStaffDetails() {
@@ -561,6 +605,7 @@ document.querySelectorAll("[data-close-detail-modal]").forEach(element => {
 });
 
 $("#save-staff-details")?.addEventListener("click", saveStaffDetails);
+$("#reset-staff-password")?.addEventListener("click", resetStaffPassword);
 
 onAuthStateChanged(auth, async (user) => {
   showDiagnostic(user ? "Firebase Authentication detected your signed-in account. Loading permissions…" : "Firebase Authentication is ready, but no signed-in account was detected.");

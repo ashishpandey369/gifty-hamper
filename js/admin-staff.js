@@ -722,6 +722,41 @@ async function createStaffAccount() {
   }
 
   button.disabled = true;
+  status.textContent = "Checking Owner Admin capacity…";
+
+  let ownerAdminUids = {};
+  if (ownerCreatingAdmin) {
+    const mirrorSnapshot = await withTimeout(
+      getDocs(collection(db, "ownerStaff", currentManagerUid, "admins"))
+    );
+    if (mirrorSnapshot.size >= 5) {
+      status.textContent = "This Owner already has the maximum of 5 Admins.";
+      button.disabled = false;
+      currentManagerAdminCount = mirrorSnapshot.size;
+      return;
+    }
+
+    mirrorSnapshot.docs.forEach(item => {
+      ownerAdminUids[item.id] = true;
+    });
+    currentManagerAdminCount = mirrorSnapshot.size;
+
+    // Reconcile the rule-enforced counter with the real Admin mirror
+    // before attempting the new atomic creation.
+    await withTimeout(
+      setDoc(
+        doc(db, "ownerStaff", currentManagerUid),
+        {
+          adminCount: currentManagerAdminCount,
+          adminUids: ownerAdminUids,
+          lastAdminOperation: { type: "sync", uid: "" },
+          counterSyncedAt: Timestamp.now()
+        },
+        { merge: true }
+      )
+    );
+  }
+
   status.textContent = "Creating Firebase account…";
 
   try {
@@ -751,13 +786,18 @@ async function createStaffAccount() {
       batch.set(doc(db, "users", credential.user.uid), profileData);
 
       if (staffRoleToCreate === "admin" && currentManagerRole === "owner") {
-        batch.set(doc(db, "ownerStaff", currentManagerUid, "admins", credential.user.uid), profileData);
+        const nextAdminUids = { ...ownerAdminUids, [credential.user.uid]: true };
+        batch.set(
+          doc(db, "ownerStaff", currentManagerUid, "admins", credential.user.uid),
+          profileData
+        );
         batch.set(
           doc(db, "ownerStaff", currentManagerUid),
           {
-            adminCount: increment(1),
-            ["adminUids." + credential.user.uid]: true,
-            lastAdminOperation: { type: "add", uid: credential.user.uid }
+            adminCount: currentManagerAdminCount + 1,
+            adminUids: nextAdminUids,
+            lastAdminOperation: { type: "add", uid: credential.user.uid },
+            counterSyncedAt: Timestamp.now()
           },
           { merge: true }
         );

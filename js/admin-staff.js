@@ -22,7 +22,8 @@ import {
   setDoc,
   deleteDoc,
   writeBatch,
-  Timestamp
+  Timestamp,
+  increment
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 const staffCreatorApp = initializeApp({
@@ -284,6 +285,41 @@ async function loadStaff(currentRole, currentUid) {
       id: item.id,
       ...item.data()
     }));
+
+    // Keep the Owner Admin-cap metadata synchronized with the real
+    // ownerStaff Admin mirrors. This is a Super Admin-only reconciliation
+    // used to initialize existing Owners before the rule-enforced counter
+    // becomes the source of truth for future Owner changes.
+    const owners = users.filter(item => item.role === "owner");
+    if (owners.length) {
+      const ownerCounts = await Promise.all(
+        owners.map(async owner => {
+          const adminSnapshot = await withTimeout(
+            getDocs(collection(db, "ownerStaff", owner.id, "admins"))
+          );
+          const adminUids = {};
+          adminSnapshot.docs.forEach(item => {
+            adminUids[item.id] = true;
+          });
+          return { ownerUid: owner.id, adminCount: adminSnapshot.size, adminUids };
+        })
+      );
+
+      const syncBatch = writeBatch(db);
+      ownerCounts.forEach(({ ownerUid, adminCount, adminUids }) => {
+        syncBatch.set(
+          doc(db, "ownerStaff", ownerUid),
+          {
+            adminCount,
+            adminUids,
+            lastAdminOperation: { type: "sync", uid: "" },
+            counterSyncedAt: Timestamp.now()
+          },
+          { merge: true }
+        );
+      });
+      if (ownerCounts.length) await withTimeout(syncBatch.commit());
+    }
   }
 
   const list = $("#staff-list");
@@ -517,11 +553,29 @@ async function loadStaff(currentRole, currentUid) {
         batch.delete(doc(db, "users", userId));
         if (currentRole === "owner") {
           batch.delete(doc(db, "ownerStaff", currentUid, "admins", userId));
+          batch.set(
+            doc(db, "ownerStaff", currentUid),
+            {
+              adminCount: increment(-1),
+              ["adminUids." + userId]: false,
+              lastAdminOperation: { type: "remove", uid: userId }
+            },
+            { merge: true }
+          );
         } else {
           const targetProfile = await withTimeout(getDoc(doc(db, "users", userId)));
           const targetOwnerUid = targetProfile.exists() ? targetProfile.data().ownerUid : null;
           if (targetOwnerUid) {
             batch.delete(doc(db, "ownerStaff", targetOwnerUid, "admins", userId));
+            batch.set(
+              doc(db, "ownerStaff", targetOwnerUid),
+              {
+                adminCount: increment(-1),
+                ["adminUids." + userId]: false,
+                lastAdminOperation: { type: "remove", uid: userId }
+              },
+              { merge: true }
+            );
           }
         }
         await batch.commit();
@@ -697,6 +751,27 @@ async function createStaffAccount() {
 
       if (staffRoleToCreate === "admin" && currentManagerRole === "owner") {
         batch.set(doc(db, "ownerStaff", currentManagerUid, "admins", credential.user.uid), profileData);
+        batch.set(
+          doc(db, "ownerStaff", currentManagerUid),
+          {
+            adminCount: increment(1),
+            ["adminUids." + credential.user.uid]: true,
+            lastAdminOperation: { type: "add", uid: credential.user.uid }
+          },
+          { merge: true }
+        );
+      } else if (staffRoleToCreate === "owner" && currentManagerRole === "super_admin") {
+        // Initialize the Owner's rule-enforced Admin counter immediately.
+        batch.set(
+          doc(db, "ownerStaff", credential.user.uid),
+          {
+            adminCount: 0,
+            adminUids: {},
+            lastAdminOperation: { type: "sync", uid: "" },
+            counterSyncedAt: Timestamp.now()
+          },
+          { merge: true }
+        );
       }
 
       await batch.commit();

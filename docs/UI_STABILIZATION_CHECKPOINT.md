@@ -245,3 +245,14 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - Owner cannot extend or modify Admin expiry.
 - Only Super Admin can use Extend/Expire controls to change Admin validity.
 - Firestore rules enforce the 60-day Owner-created Admin validity and the existing maximum of 5 Admins.
+
+
+## Step 29 — Final Owner Admin rules and legacy-counter fix
+- Firestore Rules now enforce Owner-created Admin validity at exactly 60 days.
+- Owner-created Admins remain limited to a maximum of 5 through the `ownerStaff/{ownerUid}` counter and UID map.
+- Legacy Owners whose `ownerStaff/{ownerUid}` counter document does not yet exist can create their first Admin; the same atomic batch creates the counter with `adminCount: 1`.
+- Subsequent Owner Admin creation requires the existing counter to be below 5 and increments it atomically with the user and Admin mirror.
+- Super Admin remains the only role that can change Owner/Admin `expiresAt`.
+- All post-batch existence checks use the supported `existsAfter()` function. No `getAfter(...).exists()` calls remain.
+- Product, SKU, category, sales, order and inventory rule behavior was preserved; the only catalog-rule syntax change is the required `existsAfter()` form for the existing product/SKU delete check.
+- Status: committed to GitHub. The rules still need to be published in Firebase Console before the live Firestore project uses this ruleset.

@@ -269,6 +269,7 @@ async function loadStaff(currentRole, currentUid) {
       });
     }
 
+    currentManagerAdminCount = adminSnapshot.size;
     users.push(
       ...adminSnapshot.docs.map(item => ({
         id: item.id,
@@ -276,6 +277,7 @@ async function loadStaff(currentRole, currentUid) {
       }))
     );
   } else {
+    currentManagerAdminCount = 0;
     const snapshot = await withTimeout(getDocs(collection(db, "users")));
 
     users = snapshot.docs.map(item => ({
@@ -300,7 +302,13 @@ async function loadStaff(currentRole, currentUid) {
     const active = user.active === true;
     const expiresAt = user.expiresAt?.toDate ? user.expiresAt.toDate() : null;
     const expired = expiresAt ? expiresAt.getTime() <= Date.now() : false;
-    const effectiveActive = active && !expired;
+    const linkedOwner = role === "admin" && user.ownerUid
+      ? users.find(item => item.id === user.ownerUid && item.role === "owner")
+      : null;
+    const ownerExpired = role === "admin"
+      ? (!linkedOwner || linkedOwner.active === false || !!(linkedOwner.expiresAt?.toDate && linkedOwner.expiresAt.toDate().getTime() <= Date.now()))
+      : false;
+    const effectiveActive = active && !expired && !ownerExpired;
 
     const canManage = currentRole === "super_admin"
       ? role === "owner" || role === "admin"
@@ -327,7 +335,7 @@ async function loadStaff(currentRole, currentUid) {
     return `<tr>
       <td><strong>${escapeHtml(user.email || "No email")}</strong>${ownerMarker}</td>
       <td><span class="staff-role">${escapeHtml(roleLabel(role))}</span></td>
-      <td><span class="status-pill ${effectiveActive ? "" : "draft"}">${expired ? "Expired" : (active ? "Active" : "Inactive")}</span></td>
+      <td><span class="status-pill ${effectiveActive ? "" : "draft"}">${expired ? "Expired" : (ownerExpired ? "Paused — Owner expired" : (active ? "Active" : "Inactive"))}</span></td>
       <td><span class="staff-validity ${expired ? "expired" : ""}" data-expiry="${expiresAt ? expiresAt.toISOString() : ""}">${expiresAt ? formatRemaining(expiresAt) : "No expiry"}</span></td>
       <td><code>${escapeHtml(user.id)}</code></td>
       <td><div class="staff-actions"><button type="button" class="admin-secondary" data-view-user="${escapeHtml(user.id)}">View</button>${canManage
@@ -588,8 +596,14 @@ let staffRoleToCreate = "admin";
 let staffCreateMode = "create";
 let currentManagerRole = "";
 let currentManagerUid = "";
+let currentManagerAdminCount = 0;
 
 function openStaffModal(role) {
+  if (role === "admin" && currentManagerRole === "owner" && currentManagerAdminCount >= 5) {
+    alert("This Owner already has 5 Admins. The maximum is 5 Admin accounts.");
+    return;
+  }
+
   staffCreateMode = "create";
   staffRoleToCreate = role;
   $("#staff-modal-title").textContent = role === "owner" ? "Add Owner" : "Add Admin";
@@ -598,6 +612,13 @@ function openStaffModal(role) {
   $("#new-staff-password").value = "";
   $("#new-staff-password-confirm").value = "";
   $("#new-staff-validity").value = "30";
+  $("#new-staff-validity").disabled = role === "admin" && currentManagerRole === "owner";
+  const validityLabel = $("#new-staff-validity")?.closest(".staff-modal-label");
+  if (validityLabel) validityLabel.hidden = role === "admin" && currentManagerRole === "owner";
+  $("#staff-modal-description").textContent =
+    role === "admin" && currentManagerRole === "owner"
+      ? "Owners can create up to 5 Admins. Each Owner-created Admin receives exactly 30 days of validity."
+      : "Set the email, initial password and how many days this account should remain active.";
   $("#staff-modal-status").textContent = "";
   $("#create-staff-account").disabled = false;
   $("#staff-modal").hidden = false;
@@ -619,7 +640,8 @@ async function createStaffAccount() {
   const email = $("#new-staff-email").value.trim().toLowerCase();
   const password = $("#new-staff-password").value;
   const confirmPassword = $("#new-staff-password-confirm").value;
-  const validityDays = Number($("#new-staff-validity").value);
+  const ownerCreatingAdmin = currentManagerRole === "owner" && staffRoleToCreate === "admin";
+  const validityDays = ownerCreatingAdmin ? 30 : Number($("#new-staff-validity").value);
   const status = $("#staff-modal-status");
   const button = $("#create-staff-account");
 
@@ -637,6 +659,10 @@ async function createStaffAccount() {
   }
   if (!Number.isInteger(validityDays) || validityDays < 1 || validityDays > 3650) {
     status.textContent = "Validity must be between 1 and 3650 days.";
+    return;
+  }
+  if (ownerCreatingAdmin && currentManagerAdminCount >= 5) {
+    status.textContent = "This Owner already has the maximum of 5 Admins.";
     return;
   }
 
@@ -658,6 +684,7 @@ async function createStaffAccount() {
         role: staffRoleToCreate,
         active: true,
         expiresAt: Timestamp.fromDate(expiresAt),
+        validityDays,
         createdAt: Timestamp.now(),
         features: defaultFeaturesForRole(staffRoleToCreate),
         ...(staffRoleToCreate === "admin" && currentManagerRole === "owner"
@@ -678,6 +705,7 @@ async function createStaffAccount() {
       throw profileError;
     }
 
+    if (ownerCreatingAdmin) currentManagerAdminCount += 1;
     status.textContent = "Account created successfully.";
     $("#new-staff-email").value = "";
     $("#new-staff-password").value = "";

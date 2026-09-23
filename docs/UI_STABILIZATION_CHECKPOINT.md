@@ -154,3 +154,11 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - Glass treatment is now a reflective shine/sweep over the sharp product image rather than a blurred/translucent panel.
 - Refreshed the slideshow script cache.
 - Status: completed in GitHub.
+
+
+## Step 19 — Unlimited Most Sold product selection
+- Removed the previous 20-product limit from the Most Sold admin selector.
+- Staff can now mark any number of existing catalog products as Most Sold.
+- Homepage slideshow randomly rotates through the complete Most Sold selection every 1.5 seconds.
+- Clicking the slideshow continues to open the Shop filtered to the complete Most Sold selection.
+- Status: completed in GitHub.

@@ -651,8 +651,46 @@ let staffCreateMode = "create";
 let currentManagerRole = "";
 let currentManagerUid = "";
 let currentManagerAdminCount = 0;
+let staffCreateOwners = [];
 
-function openStaffModal(role) {
+function isActiveOwnerProfile(user) {
+  if (!user || user.role !== "owner" || user.active !== true) return false;
+  const expiresAt = user.expiresAt?.toDate ? user.expiresAt.toDate() : null;
+  return !expiresAt || expiresAt.getTime() > Date.now();
+}
+
+function populateOwnerSelector(owners) {
+  const field = $("#new-staff-owner-field");
+  const select = $("#new-staff-owner");
+  if (!field || !select) return;
+
+  staffCreateOwners = owners.filter(isActiveOwnerProfile);
+  select.innerHTML = '<option value="">Choose an Owner</option>' +
+    staffCreateOwners
+      .sort((a, b) => String(a.email || "").localeCompare(String(b.email || "")))
+      .map(owner =>
+        '<option value="' + escapeHtml(owner.id) + '">' +
+        escapeHtml(owner.email || owner.id) +
+        '</option>'
+      )
+      .join("");
+}
+
+async function loadOwnerChoices() {
+  if (currentManagerRole !== "super_admin") {
+    populateOwnerSelector([]);
+    return;
+  }
+
+  const snapshot = await withTimeout(getDocs(collection(db, "users")));
+  populateOwnerSelector(
+    snapshot.docs
+      .map(item => ({ id: item.id, ...item.data() }))
+      .filter(item => item.role === "owner")
+  );
+}
+
+async function openStaffModal(role) {
   if (role === "admin" && currentManagerRole === "owner" && currentManagerAdminCount >= 5) {
     alert("This Owner already has 5 Admins. The maximum is 5 Admin accounts.");
     return;
@@ -669,11 +707,34 @@ function openStaffModal(role) {
   $("#new-staff-validity").disabled = role === "admin" && currentManagerRole === "owner";
   const validityLabel = $("#new-staff-validity")?.closest(".staff-modal-label");
   if (validityLabel) validityLabel.hidden = role === "admin" && currentManagerRole === "owner";
+
+  const ownerField = $("#new-staff-owner-field");
+  if (ownerField) ownerField.hidden = !(role === "admin" && currentManagerRole === "super_admin");
+  $("#new-staff-owner").value = "";
+
+  if (role === "admin" && currentManagerRole === "super_admin") {
+    $("#staff-modal-status").textContent = "Loading active Owners…";
+    try {
+      await loadOwnerChoices();
+      if (!staffCreateOwners.length) {
+        $("#staff-modal-status").textContent = "No active Owners are available. Create or activate an Owner first.";
+      }
+    } catch (error) {
+      console.error("Load Owner choices error:", error);
+      $("#staff-modal-status").textContent = error?.message || "Unable to load Owner accounts.";
+    }
+  }
+
   $("#staff-modal-description").textContent =
     role === "admin" && currentManagerRole === "owner"
       ? "Owners can create up to 5 Admins. Each Owner-created Admin receives exactly 60 days of validity."
-      : "Set the email, initial password and how many days this account should remain active.";
-  $("#staff-modal-status").textContent = "";
+      : role === "admin" && currentManagerRole === "super_admin"
+        ? "Choose the Owner who will manage this Admin. The Admin will be linked to that Owner and appear in the Owner's staff account."
+        : "Set the email, initial password and how many days this account should remain active.";
+  $("#staff-modal-status").textContent =
+    role === "admin" && currentManagerRole === "super_admin" && !staffCreateOwners.length
+      ? "No active Owners are available. Create or activate an Owner first."
+      : "";
   $("#create-staff-account").disabled = false;
   $("#staff-modal").hidden = false;
   setTimeout(() => $("#new-staff-email")?.focus(), 0);
@@ -695,6 +756,8 @@ async function createStaffAccount() {
   const password = $("#new-staff-password").value;
   const confirmPassword = $("#new-staff-password-confirm").value;
   const ownerCreatingAdmin = currentManagerRole === "owner" && staffRoleToCreate === "admin";
+  const superAdminCreatingAdmin = currentManagerRole === "super_admin" && staffRoleToCreate === "admin";
+  const selectedOwnerUid = superAdminCreatingAdmin ? $("#new-staff-owner").value.trim() : "";
   const validityDays = ownerCreatingAdmin ? 60 : Number($("#new-staff-validity").value);
   const status = $("#staff-modal-status");
   const button = $("#create-staff-account");
@@ -719,11 +782,52 @@ async function createStaffAccount() {
     status.textContent = "This Owner already has the maximum of 5 Admins.";
     return;
   }
+  if (superAdminCreatingAdmin && !selectedOwnerUid) {
+    status.textContent = "Choose an Owner for this Admin.";
+    return;
+  }
+
+  let selectedOwner = null;
+  let ownerAdminUids = {};
+  let selectedOwnerAdminCount = 0;
+
+  if (superAdminCreatingAdmin) {
+    selectedOwner = staffCreateOwners.find(owner => owner.id === selectedOwnerUid) || null;
+    if (!selectedOwner || !isActiveOwnerProfile(selectedOwner)) {
+      status.textContent = "Choose an active Owner account.";
+      return;
+    }
+
+    status.textContent = "Checking selected Owner capacity…";
+    const mirrorSnapshot = await withTimeout(
+      getDocs(collection(db, "ownerStaff", selectedOwnerUid, "admins"))
+    );
+    if (mirrorSnapshot.size >= 5) {
+      status.textContent = "This Owner already has the maximum of 5 Admins.";
+      return;
+    }
+
+    mirrorSnapshot.docs.forEach(item => {
+      ownerAdminUids[item.id] = true;
+    });
+    selectedOwnerAdminCount = mirrorSnapshot.size;
+
+    await withTimeout(
+      setDoc(
+        doc(db, "ownerStaff", selectedOwnerUid),
+        {
+          adminCount: selectedOwnerAdminCount,
+          adminUids: ownerAdminUids,
+          lastAdminOperation: { type: "sync", uid: "" }
+        },
+        { merge: true }
+      )
+    );
+  }
 
   button.disabled = true;
   status.textContent = "Checking Owner Admin capacity…";
 
-  let ownerAdminUids = {};
   if (ownerCreatingAdmin) {
     const mirrorSnapshot = await withTimeout(
       getDocs(collection(db, "ownerStaff", currentManagerUid, "admins"))
@@ -775,24 +879,29 @@ async function createStaffAccount() {
         validityDays,
         createdAt: Timestamp.now(),
         features: defaultFeaturesForRole(staffRoleToCreate),
-        ...(staffRoleToCreate === "admin" && currentManagerRole === "owner"
-          ? { ownerUid: currentManagerUid }
+        ...(staffRoleToCreate === "admin" && (currentManagerRole === "owner" || currentManagerRole === "super_admin")
+          ? { ownerUid: currentManagerRole === "owner" ? currentManagerUid : selectedOwnerUid }
           : {})
       };
 
       const batch = writeBatch(db);
       batch.set(doc(db, "users", credential.user.uid), profileData);
 
-      if (staffRoleToCreate === "admin" && currentManagerRole === "owner") {
+      if (staffRoleToCreate === "admin" && (currentManagerRole === "owner" || currentManagerRole === "super_admin")) {
+        const ownerUid = currentManagerRole === "owner" ? currentManagerUid : selectedOwnerUid;
+        const currentOwnerAdminCount = currentManagerRole === "owner"
+          ? currentManagerAdminCount
+          : selectedOwnerAdminCount;
         const nextAdminUids = { ...ownerAdminUids, [credential.user.uid]: true };
+
         batch.set(
-          doc(db, "ownerStaff", currentManagerUid, "admins", credential.user.uid),
+          doc(db, "ownerStaff", ownerUid, "admins", credential.user.uid),
           profileData
         );
         batch.set(
-          doc(db, "ownerStaff", currentManagerUid),
+          doc(db, "ownerStaff", ownerUid),
           {
-            adminCount: currentManagerAdminCount + 1,
+            adminCount: currentOwnerAdminCount + 1,
             adminUids: nextAdminUids,
             lastAdminOperation: { type: "add", uid: credential.user.uid }
           },
@@ -822,6 +931,7 @@ async function createStaffAccount() {
     $("#new-staff-email").value = "";
     $("#new-staff-password").value = "";
     $("#new-staff-password-confirm").value = "";
+    $("#new-staff-owner").value = "";
 
     setTimeout(async () => {
       closeStaffModal();

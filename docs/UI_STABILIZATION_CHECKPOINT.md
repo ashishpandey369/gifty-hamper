@@ -196,3 +196,21 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - Prevented the catalog page from starting Firestore catalog reads when the current Owner is expired/inactive, or when an Admin's linked Owner is expired/inactive. This avoids the misleading “Unable to load the shared product catalog” alert before the access screen appears.
 - Password reset behavior remains unchanged and continues to work for authorized Owner/Admin management.
 - Status: completed in GitHub.
+
+
+## Step 24 — Allow expired members to authenticate and receive renewal screen
+- Expired Owner/Admin Firebase accounts remain able to authenticate with their existing credentials instead of being rejected by the login-page flow.
+- After authentication, the login page checks the Firestore staff profile and linked Owner validity before redirecting to the admin panel.
+- Expired Owners receive the provider-renewal screen; expired Admins receive either the Owner-expired message or their own account-expired message as appropriate.
+- Expired members are not signed out by this flow.
+- Password reset behavior remains unchanged.
+- Status: completed in GitHub.
+
+## Step 25 — Super Admin validity controls
+- Super Admin staff management now has direct validity controls for every Owner/Admin profile: **Extend** and **Expire now**.
+- Extend asks for a whole number of days from 1 to 3650. If the existing expiry is still in the future, the new period is added after that expiry; if the account is already expired, the extension starts from the current time.
+- Extending an account also sets `active: true`, so an expired account can be restored immediately.
+- Expire now writes an expiry timestamp one second in the past, so the account becomes expired immediately even when its previous expiry date was in the future.
+- For Admin profiles, validity changes are written to both `users/{uid}` and the linked `ownerStaff/{ownerUid}/admins/{uid}` mirror so Owner staff views remain synchronized.
+- Existing Firestore rules already permit Super Admin validity updates; no new Firebase rule block is required for this control.
+- Status: completed in GitHub.

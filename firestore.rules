@@ -136,6 +136,14 @@ service cloud.firestore {
             /databases/$(database)/documents/users/$(request.resource.data.ownerUid)
           ).data.expiresAt > request.time
         )
+        && (
+          !exists(
+            /databases/$(database)/documents/ownerStaff/$(request.resource.data.ownerUid)
+          )
+          || get(
+            /databases/$(database)/documents/ownerStaff/$(request.resource.data.ownerUid)
+          ).data.get('adminCount', 0) < 5
+        )
         && request.resource.data.features is map
         && validFeatures(request.resource.data);
 
@@ -233,14 +241,34 @@ service cloud.firestore {
 
       // The real Admin /users write is already protected above. This mirror
       // must belong to the same Owner and contain the same staff identity.
-      allow create: if isOwner()
-        && request.auth.uid == ownerUid
-        && request.resource.data.role == 'admin'
-        && request.resource.data.ownerUid == ownerUid
-        && request.resource.data.active == true
-        && request.resource.data.features is map
-        && validFeatures(request.resource.data)
-        && validOwnerAdminValidity(request.resource.data);
+      allow create: if (
+        (
+          isOwner()
+          && request.auth.uid == ownerUid
+          && request.resource.data.role == 'admin'
+          && request.resource.data.ownerUid == ownerUid
+          && request.resource.data.active == true
+          && request.resource.data.features is map
+          && validFeatures(request.resource.data)
+          && validOwnerAdminValidity(request.resource.data)
+        )
+        || (
+          isSuperAdmin()
+          && request.resource.data.role == 'admin'
+          && request.resource.data.ownerUid == ownerUid
+          && request.resource.data.active == true
+          && request.resource.data.expiresAt is timestamp
+          && request.resource.data.validityDays is int
+          && request.resource.data.validityDays >= 1
+          && request.resource.data.validityDays <= 3650
+          && request.resource.data.features is map
+          && validFeatures(request.resource.data)
+          && (
+            !exists(/databases/$(database)/documents/users/$(ownerUid))
+            || get(/databases/$(database)/documents/users/$(ownerUid)).data.get('role', '') == 'owner'
+          )
+        )
+      );
 
       allow update: if isSuperAdmin()
         || (

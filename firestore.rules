@@ -108,7 +108,10 @@ service cloud.firestore {
         && request.resource.data.active == true
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.features is map
-        && validFeatures(request.resource.data);
+        && validFeatures(request.resource.data)
+        && request.resource.data.expiresAt > request.time + duration.value(29, 'd')
+        && request.resource.data.expiresAt <= request.time + duration.value(31, 'd')
+        && request.resource.data.validityDays == 30;
 
       // Super Admin may manage operational account fields and feature switches,
       // but cannot write the private-note collection through this profile.
@@ -128,7 +131,11 @@ service cloud.firestore {
         && resource.data.ownerUid == request.auth.uid
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['role', 'active']);
+            .hasOnly(['role', 'active'])
+        && (
+          request.resource.data.active == false
+          || resource.data.get('expiresAt', request.time + duration.value(1, 'ms')) > request.time
+        );
 
       allow delete: if isSuperAdmin()
         && resource.data.role in ['owner', 'admin'];
@@ -161,7 +168,10 @@ service cloud.firestore {
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.active == true
         && request.resource.data.features is map
-        && validFeatures(request.resource.data);
+        && validFeatures(request.resource.data)
+        && request.resource.data.expiresAt > request.time + duration.value(29, 'd')
+        && request.resource.data.expiresAt <= request.time + duration.value(31, 'd')
+        && request.resource.data.validityDays == 30;
 
       allow update, delete: if isSuperAdmin();
 

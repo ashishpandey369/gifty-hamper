@@ -136,14 +136,18 @@ service cloud.firestore {
             /databases/$(database)/documents/users/$(request.resource.data.ownerUid)
           ).data.expiresAt > request.time
         )
-        && (
-          !exists(
-            /databases/$(database)/documents/ownerStaff/$(request.resource.data.ownerUid)
-          )
-          || get(
-            /databases/$(database)/documents/ownerStaff/$(request.resource.data.ownerUid)
-          ).data.get('adminCount', 0) < 5
-        )
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(request.resource.data.ownerUid)
+        ).data.get('adminCount', 0) <= 5
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(request.resource.data.ownerUid)
+        ).data.get('adminUids', {}).size()
+            == getAfter(
+              /databases/$(database)/documents/ownerStaff/$(request.resource.data.ownerUid)
+            ).data.get('adminCount', 0)
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(request.resource.data.ownerUid)
+        ).data.get('adminUids', {}).get(userId, false) == true
         && request.resource.data.features is map
         && validFeatures(request.resource.data);
 

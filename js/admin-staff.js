@@ -313,8 +313,7 @@ async function loadStaff(currentRole, currentUid) {
           {
             adminCount,
             adminUids,
-            lastAdminOperation: { type: "sync", uid: "" },
-            counterSyncedAt: Timestamp.now()
+            lastAdminOperation: { type: "sync", uid: "" }
           },
           { merge: true }
         );
@@ -749,8 +748,7 @@ async function createStaffAccount() {
         {
           adminCount: currentManagerAdminCount,
           adminUids: ownerAdminUids,
-          lastAdminOperation: { type: "sync", uid: "" },
-          counterSyncedAt: Timestamp.now()
+          lastAdminOperation: { type: "sync", uid: "" }
         },
         { merge: true }
       )
@@ -796,8 +794,7 @@ async function createStaffAccount() {
           {
             adminCount: currentManagerAdminCount + 1,
             adminUids: nextAdminUids,
-            lastAdminOperation: { type: "add", uid: credential.user.uid },
-            counterSyncedAt: Timestamp.now()
+            lastAdminOperation: { type: "add", uid: credential.user.uid }
           },
           { merge: true }
         );
@@ -808,8 +805,7 @@ async function createStaffAccount() {
           {
             adminCount: 0,
             adminUids: {},
-            lastAdminOperation: { type: "sync", uid: "" },
-            counterSyncedAt: Timestamp.now()
+            lastAdminOperation: { type: "sync", uid: "" }
           },
           { merge: true }
         );

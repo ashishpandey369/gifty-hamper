@@ -246,10 +246,11 @@ service cloud.firestore {
         ).data.get('ownerUid', '') == ownerUid;
 
       // Owner can add/remove Admins atomically, but never exceed 5.
+      // The counter is bookkeeping; the real authorization comes from the
+      // authenticated Owner plus the post-batch Admin/mirror state.
       allow update: if isOwner()
         && featureEnabled('staff')
         && request.auth.uid == ownerUid
-        && resource.data.get('adminCount', -1) is int
         && request.resource.data.get('adminCount', -1) is int
         && request.resource.data.get('adminCount', -1) >= 0
         && request.resource.data.get('adminCount', -1) <= 5
@@ -258,51 +259,48 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly(['adminCount', 'adminUids', 'lastAdminOperation'])
         && request.resource.data.get('lastAdminOperation', {}) is map
-        && request.resource.data.lastAdminOperation.get('type', '') in ['add', 'remove']
+        && request.resource.data.lastAdminOperation.get('type', '') == 'add'
         && request.resource.data.lastAdminOperation.get('uid', '') is string
-        && (
-          (
-            request.resource.data.lastAdminOperation.type == 'add'
-            && request.resource.data.adminCount == resource.data.adminCount + 1
-            && request.resource.data.adminCount <= 5
-            && resource.data.adminUids.get(
-              request.resource.data.lastAdminOperation.uid, false
-            ) == false
-            && request.resource.data.adminUids.get(
-              request.resource.data.lastAdminOperation.uid, false
-            ) == true
-            && getAfter(
-              /databases/$(database)/documents/users/$(request.resource.data.lastAdminOperation.uid)
-            ).data.get('role', '') == 'admin'
-            && getAfter(
-              /databases/$(database)/documents/users/$(request.resource.data.lastAdminOperation.uid)
-            ).data.get('ownerUid', '') == ownerUid
-            && validOwnerAdminValidity(
-              getAfter(
-                /databases/$(database)/documents/users/$(request.resource.data.lastAdminOperation.uid)
-              ).data
-            )
-            && existsAfter(
-              /databases/$(database)/documents/ownerStaff/$(ownerUid)/admins/$(request.resource.data.lastAdminOperation.uid)
-            )
-          )
-          ||
-          (
-            request.resource.data.lastAdminOperation.type == 'remove'
-            && request.resource.data.adminCount == resource.data.adminCount - 1
-            && resource.data.adminUids.get(
-              request.resource.data.lastAdminOperation.uid, false
-            ) == true
-            && request.resource.data.adminUids.get(
-              request.resource.data.lastAdminOperation.uid, false
-            ) == false
-            && !existsAfter(
-              /databases/$(database)/documents/users/$(request.resource.data.lastAdminOperation.uid)
-            )
-            && !existsAfter(
-              /databases/$(database)/documents/ownerStaff/$(ownerUid)/admins/$(request.resource.data.lastAdminOperation.uid)
-            )
-          )
+        && request.resource.data.adminUids.get(
+          request.resource.data.lastAdminOperation.uid, false
+        ) == true
+        && getAfter(
+          /databases/$(database)/documents/users/$(request.resource.data.lastAdminOperation.uid)
+        ).data.get('role', '') == 'admin'
+        && getAfter(
+          /databases/$(database)/documents/users/$(request.resource.data.lastAdminOperation.uid)
+        ).data.get('ownerUid', '') == ownerUid
+        && validOwnerAdminValidity(
+          getAfter(
+            /databases/$(database)/documents/users/$(request.resource.data.lastAdminOperation.uid)
+          ).data
+        )
+        && existsAfter(
+          /databases/$(database)/documents/ownerStaff/$(ownerUid)/admins/$(request.resource.data.lastAdminOperation.uid)
+        );
+
+      // Owner removal is also atomic.
+      allow update: if isOwner()
+        && featureEnabled('staff')
+        && request.auth.uid == ownerUid
+        && request.resource.data.get('adminCount', -1) is int
+        && request.resource.data.get('adminCount', -1) >= 0
+        && request.resource.data.get('adminCount', -1) <= 5
+        && request.resource.data.get('adminUids', {}) is map
+        && request.resource.data.adminUids.size() == request.resource.data.adminCount
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['adminCount', 'adminUids', 'lastAdminOperation'])
+        && request.resource.data.get('lastAdminOperation', {}) is map
+        && request.resource.data.lastAdminOperation.get('type', '') == 'remove'
+        && request.resource.data.lastAdminOperation.get('uid', '') is string
+        && !request.resource.data.adminUids.get(
+          request.resource.data.lastAdminOperation.uid, false
+        )
+        && !existsAfter(
+          /databases/$(database)/documents/users/$(request.resource.data.lastAdminOperation.uid)
+        )
+        && !existsAfter(
+          /databases/$(database)/documents/ownerStaff/$(ownerUid)/admins/$(request.resource.data.lastAdminOperation.uid)
         );
     }
 

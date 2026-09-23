@@ -65,7 +65,7 @@ async function enforceAccess(user) {
 
   if (!["super_admin", "owner", "admin"].includes(role) || !active) {
     await signOut(auth);
-    window.location.replace("admin-login.html?expired=1");
+    window.location.replace("admin-login.html?expired=1&reason=" + (role === "admin" ? "owner-expired" : "account-expired"));
     return;
   }
 

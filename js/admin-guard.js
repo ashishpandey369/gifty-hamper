@@ -50,9 +50,9 @@ onAuthStateChanged(auth, async (user) => {
       ownerExpired = !ownerProfile || ownerProfile.role !== "owner" || ownerProfile.active === false || (ownerExpiry && ownerExpiry.getTime() <= Date.now());
     }
 
+    // Access blocking is handled by admin-feature-guard.js so expired users
+    // stay signed in and receive the correct Owner/Admin access message.
     if (claimRole !== "super_admin" && (!profile || !profileRole || !active || ownerExpired)) {
-      await signOut(auth);
-      window.location.replace("admin-login.html?expired=1");
       return;
     }
 
@@ -104,8 +104,8 @@ onAuthStateChanged(auth, async (user) => {
   } catch (error) {
     console.error("Unable to read Firebase admin profile:", error);
     document.documentElement.classList.remove("admin-auth-checking");
-    await signOut(auth);
-    window.location.replace("admin-login.html?access_error=1");
+    // Do not sign the user out here. The feature guard owns access blocking
+    // and will show the appropriate access screen.
     return;
   }
 

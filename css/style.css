@@ -283,3 +283,21 @@
 }
 @media(max-width:760px){.header-actions .icon-button[data-action="search"]{width:36px!important;height:36px!important;min-width:36px;font-size:1rem!important}}
 .product-image .product-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}.product-image .product-photo~span{z-index:2;background:rgba(255,255,255,.78);padding:5px 8px;border-radius:999px;opacity:1}.product-image .product-photo~b{position:relative;z-index:2}
+
+/* Mobile announcement ribbon — slow billboard motion only */
+@media (max-width:760px){
+  .announcement-bar{overflow:hidden}
+  .announcement-inner{
+    width:max-content;
+    min-width:max-content;
+    justify-content:flex-start;
+    gap:28px;
+    padding-right:28px;
+    animation:announcementBillboard 18s linear infinite;
+    will-change:transform;
+  }
+  @keyframes announcementBillboard{
+    from{transform:translateX(100vw)}
+    to{transform:translateX(-100%)}
+  }
+}

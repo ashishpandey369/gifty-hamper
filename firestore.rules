@@ -210,7 +210,7 @@ service cloud.firestore {
         && request.resource.data.get('adminCount', -1) == 1
         && request.resource.data.get('adminUids', {}) is map
         && request.resource.data.adminUids.size() == 1
-        && request.resource.data.get('lastAdminOperation', {}).get('type', '') == 'add';
+        && request.resource.data.lastAdminOperation.type == 'add';
 
       // Owner can add an Admin, maximum 5.
       allow update: if isOwner()
@@ -223,8 +223,8 @@ service cloud.firestore {
         && request.resource.data.adminUids.size() == request.resource.data.adminCount
         && request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly(['adminCount', 'adminUids', 'lastAdminOperation'])
-        && request.resource.data.get('lastAdminOperation', {}).get('type', '') in ['add', 'remove']
-        && request.resource.data.get('lastAdminOperation', {}).get('uid', '') is string;
+        && request.resource.data.lastAdminOperation.type in ['add', 'remove']
+        && request.resource.data.lastAdminOperation.uid is string;
 
     }
 

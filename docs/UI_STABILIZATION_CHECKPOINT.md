@@ -144,3 +144,13 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - Refreshed the storefront catalog module cache.
 - Existing products explicitly marked inactive remain hidden as intended.
 - Status: completed in GitHub.
+
+
+## Step 18 — Final glass slideshow visual refinement
+- Most Sold slides remain on a 1.5-second interval.
+- Removed the previous white/translucent panel overlay from the product image.
+- Removed previous/next arrow buttons from the hero slideshow.
+- Increased the product title text slightly and kept it directly over the image with a shadow instead of a banner.
+- Glass treatment is now a reflective shine/sweep over the sharp product image rather than a blurred/translucent panel.
+- Refreshed the slideshow script cache.
+- Status: completed in GitHub.

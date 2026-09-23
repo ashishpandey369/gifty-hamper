@@ -1,7 +1,9 @@
 /* Gifty Hamper marketplace-style home */
 .marketplace-body{background:#fffdfb;color:#292635}
 .marketplace-header{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.97);border-bottom:1px solid #ece8ee;backdrop-filter:blur(14px)}
-.marketplace-header-inner{min-height:76px;grid-template-columns:180px minmax(280px,1fr) auto;gap:22px;position:relative}
+.marketplace-header-inner{min-height:128px!important;grid-template-columns:180px minmax(280px,1fr);gap:22px;position:relative}
+.marketplace-header-actions{position:absolute;left:0;right:0;bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;z-index:4}
+.marketplace-header-actions .marketplace-cart-button{margin-left:auto}
 .marketplace-brand .brand-logo{height:58px;max-width:180px}
 .marketplace-header-search{height:48px;display:flex;align-items:center;background:#f5f3f7;border:1px solid #e2dfe8;border-radius:10px;overflow:hidden}
 .marketplace-header-search>span{padding-left:17px;color:#777487;font-size:1.4rem}
@@ -67,7 +69,8 @@
 
 @media(max-width:760px){
   .marketplace-header{position:sticky;top:0}
-  .marketplace-header-inner{min-height:60px;grid-template-columns:auto auto;justify-content:space-between;gap:12px;padding:0 12px;position:relative}
+  .marketplace-header-inner{min-height:60px!important;grid-template-columns:auto auto;justify-content:space-between;gap:12px;padding:0 12px;position:relative}
+  .marketplace-header-actions{position:absolute;left:auto;right:58px;bottom:auto;top:50%;width:auto;transform:translateY(-50%);justify-content:flex-end}
   .marketplace-brand .brand-logo{height:47px;max-width:145px}
   .marketplace-header-search{display:none}
   .marketplace-header-actions .location-button{display:none}

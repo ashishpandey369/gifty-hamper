@@ -166,8 +166,15 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 
 ## Step 20 — Owner validity controls Admin access
 - Admin dashboard access now requires the Owner linked through `ownerUid` to be active and unexpired.
-- Admins whose Owner validity has expired are signed out and shown a clear message to contact their Owner.
-- Expired Owners are signed out and shown a dedicated provider-renewal message.
+- Admins whose Owner validity has expired are blocked from the dashboard and shown a clear message to contact their Owner.
+- Expired Owners are blocked from the dashboard and shown a dedicated provider-renewal message.
 - The Owner expiry message provides the Web Developer / Provider WhatsApp contact: +91 8667298507 (Ashish).
 - Firestore security rules now enforce the Owner dependency for Admin permissions as well, so frontend checks are backed by database authorization.
 - Status: completed in GitHub. The updated `firestore.rules` must be published in Firebase Console for the server-side enforcement to take effect.
+
+## Step 21 — Block expired access without logging out
+- Expired/inactive Owners and Admins are no longer signed out or redirected to the login page.
+- The current admin page is replaced with a blank, non-navigable access-block screen containing the appropriate renewal/contact message.
+- An Admin whose own account expires receives the Owner-contact message; an Admin whose linked Owner expires receives the Owner-expired message; an expired Owner receives the provider-renewal message and WhatsApp contact.
+- This is a frontend access block only; Firestore rules continue to enforce the Owner/Admin validity dependency server-side.
+- Status: completed in GitHub.

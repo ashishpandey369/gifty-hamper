@@ -17,6 +17,20 @@ const setMessage = (text, type = "") => {
   message.className = "admin-login-message " + type;
 };
 
+const params = new URLSearchParams(window.location.search);
+const reason = params.get("reason");
+if (reason === "owner-expired") {
+  setMessage(
+    "Your Owner account's validity has expired. Please contact your Owner to renew access.",
+    "error"
+  );
+} else if (reason === "account-expired") {
+  setMessage(
+    "Your admin account is inactive or its validity has expired. Please contact your Owner.",
+    "error"
+  );
+}
+
 onAuthStateChanged(auth, (user) => {
   if (user) {
     window.location.replace("admin.html");

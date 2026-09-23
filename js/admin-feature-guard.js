@@ -3,8 +3,7 @@ import {
   db,
   doc,
   getDoc,
-  onAuthStateChanged,
-  signOut
+  onAuthStateChanged
 } from "./firebase-auth.js";
 
 const FEATURE_DEFAULTS = {
@@ -60,7 +59,7 @@ function showAccessBlocked(reason) {
     <main style="min-height:100vh;display:grid;place-items:center;padding:24px;background:#fbf7fa;font-family:Arial,sans-serif;">
       <section style="width:min(560px,100%);background:#fff;border:1px solid #eadde5;border-radius:20px;padding:34px;box-shadow:0 20px 60px rgba(36,29,43,.08);text-align:center;">
         <p style="font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:#8c8177;">Gifty Hamper</p>
-        <h1 style="margin:8px 0 10px;">Admin access unavailable</h1>
+        <h1 style="margin:8px 0 10px;">${ownerAccountExpired ? "Owner access unavailable" : "Admin access unavailable"}</h1>
         <p style="color:#6f6877;line-height:1.6;">
           ${ownerExpired
             ? "Your Owner's validity has expired. Please contact your Owner to renew access."

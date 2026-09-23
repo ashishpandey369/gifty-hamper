@@ -130,6 +130,12 @@
         <label class="staff-modal-label">Confirm password
           <input id="new-staff-password-confirm" type="password" autocomplete="new-password" placeholder="Re-enter password">
         </label>
+        <label id="new-staff-owner-field" class="staff-modal-label" hidden>Owner account
+          <select id="new-staff-owner">
+            <option value="">Choose an Owner</option>
+          </select>
+          <small class="admin-help">Every Admin must belong to an active Owner. The Admin will also appear inside that Owner's staff account.</small>
+        </label>
         <label class="staff-modal-label">Account validity (days)
           <input id="new-staff-validity" type="number" min="1" max="3650" step="1" value="60">
           <small class="admin-help">After this period, the account will be treated as expired and access will be blocked.</small>

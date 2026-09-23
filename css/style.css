@@ -302,6 +302,9 @@
     flex:0 0 auto;
     white-space:nowrap;
   }
+  .announcement-inner span{
+    display:inline;
+  }
   @keyframes announcementBillboard{
     from{transform:translateX(100vw)}
     to{transform:translateX(-100%)}

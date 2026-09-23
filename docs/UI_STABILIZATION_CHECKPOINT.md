@@ -256,3 +256,14 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - All post-batch existence checks use the supported `existsAfter()` function. No `getAfter(...).exists()` calls remain.
 - Product, SKU, category, sales, order and inventory rule behavior was preserved; the only catalog-rule syntax change is the required `existsAfter()` form for the existing product/SKU delete check.
 - Status: committed to GitHub. The rules still need to be published in Firebase Console before the live Firestore project uses this ruleset.
+
+
+## Step 30 — Simplified staff batch authorization
+- Reworked only the staff-management portion of firestore.rules after repeated Owner Add Admin permission failures.
+- Owner Admin creation now authorizes the three writes independently: /users/{adminUid}, /ownerStaff/{ownerUid}/admins/{adminUid}, and /ownerStaff/{ownerUid}.
+- Removed the fragile getAfter() dependency chain from the staff create/delete bookkeeping rules, reducing Firestore batched-write access calls and avoiding rejection caused by legacy counter shapes.
+- Owner-created Admins remain exactly 60 days and the maximum remains 5.
+- Super Admin-created Admin profiles now require a valid active, unexpired Owner UID, preventing creation of an Admin that can never pass the linked-Owner login check.
+- Product, SKU, category, sales, order and inventory rules were left outside this staff-only change.
+- Rules commit: c0fa5408fbac19bc933d8edaf0d5ba9d8bc30d0a.
+- Status: committed to GitHub; this exact ruleset must be published in Firebase Console before live testing.

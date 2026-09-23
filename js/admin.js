@@ -84,7 +84,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let categoryEditorOriginalImageFileId = '';
   let categoryEditorPendingImage = null;
   let categoryEditorPendingObjectUrl = '';
-  const MAX_MOST_SOLD_PRODUCTS = 20;
   let mostSoldSelectedIds = new Set();
   let mostSoldSearch = '';
 
@@ -193,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectedProducts = catalog
       .filter(product => mostSoldSelectedIds.has(product.id));
 
-    count.textContent = mostSoldSelectedIds.size + ' / ' + MAX_MOST_SOLD_PRODUCTS + ' selected';
+    count.textContent = mostSoldSelectedIds.size + ' selected';
 
     const query = mostSoldSearch.trim().toLowerCase();
     const products = catalog
@@ -768,11 +767,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!input) return;
 
     if (input.checked) {
-      if (mostSoldSelectedIds.size >= MAX_MOST_SOLD_PRODUCTS && !mostSoldSelectedIds.has(input.dataset.mostSoldProduct)) {
-        input.checked = false;
-        alert('You can select up to ' + MAX_MOST_SOLD_PRODUCTS + ' products.');
-        return;
-      }
       mostSoldSelectedIds.add(input.dataset.mostSoldProduct);
     } else {
       mostSoldSelectedIds.delete(input.dataset.mostSoldProduct);

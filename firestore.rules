@@ -211,9 +211,9 @@ service cloud.firestore {
         && getAfter(
           /databases/$(database)/documents/ownerStaff/$(resource.data.ownerUid)
         ).data.lastAdminOperation.get('uid', '') == userId
-        && !getAfter(
+        && !existsAfter(
           /databases/$(database)/documents/ownerStaff/$(resource.data.ownerUid)/admins/$(userId)
-        ).exists();
+);
 
       allow delete: if isOwner()
         && featureEnabled('staff')
@@ -236,9 +236,9 @@ service cloud.firestore {
         && getAfter(
           /databases/$(database)/documents/ownerStaff/$(request.auth.uid)
         ).data.lastAdminOperation.get('uid', '') == userId
-        && !getAfter(
+        && !existsAfter(
           /databases/$(database)/documents/ownerStaff/$(request.auth.uid)/admins/$(userId)
-        ).exists();
+);
     }
 
     // Private notes are deliberately separate from /users so the member
@@ -437,9 +437,9 @@ service cloud.firestore {
         && getAfter(
           /databases/$(database)/documents/ownerStaff/$(ownerUid)
         ).data.lastAdminOperation.get('uid', '') == adminUid
-        && !getAfter(
+        && !existsAfter(
           /databases/$(database)/documents/users/$(adminUid)
-        ).exists();
+);
     }
 
     // ------------------------------------------------------------
@@ -528,9 +528,9 @@ service cloud.firestore {
           || !exists(
             /databases/$(database)/documents/skus/$(resource.data.sku)
           )
-          || !getAfter(
+          || !existsAfter(
             /databases/$(database)/documents/skus/$(resource.data.sku)
-          ).exists()
+)
         );
     }
 

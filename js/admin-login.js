@@ -21,9 +21,16 @@ const params = new URLSearchParams(window.location.search);
 const reason = params.get("reason");
 if (reason === "owner-expired") {
   setMessage(
-    "Your Owner account's validity has expired. Please contact your Owner to renew access.",
+    "Your Owner's validity has expired. Please contact your Owner to renew access.",
     "error"
   );
+} else if (reason === "owner-account-expired") {
+  setMessage(
+    "Your Owner account validity has expired. Kindly contact the Web Developer / Provider to renew your service.",
+    "error"
+  );
+  const providerContact = document.querySelector("#provider-contact");
+  if (providerContact) providerContact.hidden = false;
 } else if (reason === "account-expired") {
   setMessage(
     "Your admin account is inactive or its validity has expired. Please contact your Owner.",

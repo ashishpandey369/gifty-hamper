@@ -1141,10 +1141,30 @@ document.addEventListener('DOMContentLoaded', () => {
       const profileSnapshot = await getDoc(doc(db, 'users', user.uid));
       const profile = profileSnapshot.exists() ? profileSnapshot.data() : null;
       const role = user.uid && profile?.role ? profile.role : 'admin';
+      const expiresAt = profile?.expiresAt?.toDate ? profile.expiresAt.toDate() : null;
+      const ownExpired = profile?.active === false || (expiresAt && expiresAt.getTime() <= Date.now());
 
       if (!['admin', 'owner', 'super_admin'].includes(role)) {
         alert('Your account does not have catalog access.');
         return;
+      }
+
+      // Do not start catalog reads for an expired/inactive account.
+      // admin-feature-guard.js will replace the page with the correct access message.
+      if (role !== 'super_admin' && ownExpired) return;
+
+      if (role === 'admin') {
+        const ownerSnapshot = profile?.ownerUid
+          ? await getDoc(doc(db, 'users', profile.ownerUid))
+          : null;
+        const owner = ownerSnapshot?.exists() ? ownerSnapshot.data() : null;
+        const ownerExpiry = owner?.expiresAt?.toDate ? owner.expiresAt.toDate() : null;
+        const ownerExpired = !owner
+          || owner.role !== 'owner'
+          || owner.active === false
+          || (ownerExpiry && ownerExpiry.getTime() <= Date.now());
+
+        if (ownerExpired) return;
       }
 
       await loadSharedCategories();

@@ -309,9 +309,6 @@ service cloud.firestore {
     match /ownerStaff/{ownerUid}/admins/{adminUid} {
       allow read: if isSuperAdmin()
         || (
-          isOwner    match /ownerStaff/{ownerUid}/admins/{adminUid} {
-      allow read: if isSuperAdmin()
-        || (
           isOwner()
           && featureEnabled('staff')
           && request.auth.uid == ownerUid
@@ -358,8 +355,6 @@ service cloud.firestore {
           /databases/$(database)/documents/users/$(adminUid)
         );
     }
-
-
 
     // ------------------------------------------------------------
     // SKU RESERVATIONS / CATALOG

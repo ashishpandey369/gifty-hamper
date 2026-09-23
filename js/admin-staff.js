@@ -307,10 +307,9 @@ async function loadStaff(currentRole, currentUid) {
       : role === "admin" && user.id !== currentUid;
 
     const canDelete = canManage && user.id !== currentUid;
-    const canExtend =
+    const canManageValidity =
       currentRole === "super_admin" &&
-      (role === "owner" || role === "admin") &&
-      expired;
+      (role === "owner" || role === "admin");
 
     const saleButton = role === "admin"
       ? '<a class="admin-secondary staff-sale-button" href="admin-sale.html">Sale</a>'
@@ -335,11 +334,12 @@ async function loadStaff(currentRole, currentUid) {
         ? `<div class="staff-actions">
             <select data-role-for="${escapeHtml(user.id)}">${roleOptions}</select>
             <button type="button" class="admin-secondary" data-save-user="${escapeHtml(user.id)}">Save</button>
-            ${expired
-              ? (canExtend
-                  ? `<button type="button" class="admin-secondary" data-extend-user="${escapeHtml(user.id)}">Extend</button>`
-                  : "")
-              : `<button type="button" class="admin-secondary" data-toggle-user="${escapeHtml(user.id)}">${effectiveActive ? "Deactivate" : "Activate"}</button>`}
+            ${canManageValidity
+              ? `<button type="button" class="admin-secondary" data-extend-user="${escapeHtml(user.id)}">Extend</button>
+                 <button type="button" class="admin-secondary danger" data-expire-user="${escapeHtml(user.id)}">${expired ? "Expired" : "Expire now"}</button>`
+              : (expired
+                ? ""
+                : `<button type="button" class="admin-secondary" data-toggle-user="${escapeHtml(user.id)}">${effectiveActive ? "Deactivate" : "Activate"}</button>`)}
             ${canDelete ? `<button type="button" class="admin-secondary danger" data-delete-user="${escapeHtml(user.id)}">Delete</button>` : ""}
             ${saleButton}
           </div>`
@@ -382,6 +382,115 @@ async function loadStaff(currentRole, currentUid) {
     });
   });
 
+  list.querySelectorAll("[data-extend-user]").forEach(button => {
+    button.addEventListener("click", async () => {
+      if (currentRole !== "super_admin") return;
+
+      const userId = button.dataset.extendUser;
+      const user = users.find(item => item.id === userId);
+      if (!user || !["owner", "admin"].includes(user.role)) return;
+
+      const input = window.prompt(
+        "Extend " + (user.email || "this account") + " by how many days?",
+        "30"
+      );
+      if (input === null) return;
+
+      const days = Number(input);
+      if (!Number.isInteger(days) || days < 1 || days > 3650) {
+        alert("Enter a whole number of days between 1 and 3650.");
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Extending…";
+
+      try {
+        const now = Date.now();
+        const currentExpiry = user.expiresAt?.toDate ? user.expiresAt.toDate().getTime() : 0;
+        const base = Math.max(currentExpiry, now);
+        const newExpiry = new Date(base + days * 86400000);
+        const updates = {
+          active: true,
+          expiresAt: Timestamp.fromDate(newExpiry)
+        };
+
+        const batch = writeBatch(db);
+        batch.update(doc(db, "users", userId), updates);
+
+        if (user.role === "admin" && user.ownerUid) {
+          batch.update(
+            doc(db, "ownerStaff", user.ownerUid, "admins", userId),
+            updates
+          );
+        }
+
+        await batch.commit();
+        alert(
+          (user.email || "Staff account") +
+          " extended until " +
+          newExpiry.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) +
+          "."
+        );
+        await loadStaff(currentRole, currentUid);
+      } catch (error) {
+        console.error("Extend staff validity error:", error);
+        alert("Unable to extend this account validity. Check the Firebase rules.");
+      } finally {
+        button.disabled = false;
+        button.textContent = "Extend";
+      }
+    });
+  });
+
+  list.querySelectorAll("[data-expire-user]").forEach(button => {
+    button.addEventListener("click", async () => {
+      if (currentRole !== "super_admin") return;
+
+      const userId = button.dataset.expireUser;
+      const user = users.find(item => item.id === userId);
+      if (!user || !["owner", "admin"].includes(user.role)) return;
+
+      if (!confirm(
+        "Expire " + (user.email || "this account") +
+        " immediately? They will see the renewal/access screen even if their current expiry date is still in the future."
+      )) {
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Expiring…";
+
+      try {
+        // Store an expiry one second in the past so this account is
+        // immediately expired regardless of its previous future date.
+        const updates = {
+          active: true,
+          expiresAt: Timestamp.fromMillis(Date.now() - 1000)
+        };
+
+        const batch = writeBatch(db);
+        batch.update(doc(db, "users", userId), updates);
+
+        if (user.role === "admin" && user.ownerUid) {
+          batch.update(
+            doc(db, "ownerStaff", user.ownerUid, "admins", userId),
+            updates
+          );
+        }
+
+        await batch.commit();
+        alert((user.email || "Staff account") + " is now expired.");
+        await loadStaff(currentRole, currentUid);
+      } catch (error) {
+        console.error("Expire staff validity error:", error);
+        alert("Unable to expire this account. Check the Firebase rules.");
+      } finally {
+        button.disabled = false;
+        button.textContent = "Expire now";
+      }
+    });
+  });
   list.querySelectorAll("[data-delete-user]").forEach(button => {
     button.addEventListener("click", async () => {
       const userId = button.dataset.deleteUser;

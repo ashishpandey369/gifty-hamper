@@ -288,3 +288,11 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - Final rules commit: `28129312da56d09737a2e2b6369fe652724a3025`.
 - Final staff-flow commit: `48fd1a15b077ec4cfe3751c9946dbaad4cdab0c8`.
 
+## Step 33 — Super Admin Owner selection for Admin creation
+- Super Admin Admin creation now requires selecting an active Owner.
+- The selected Owner is written to the new Admin profile as `ownerUid`.
+- The same Admin is atomically mirrored under `ownerStaff/{ownerUid}/admins/{adminUid}`.
+- The Owner's `adminCount` and `adminUids` are updated in the same batch.
+- The Super Admin creation path respects the same 5-Admin-per-Owner capacity.
+- Existing Owner-created Admin behavior remains unchanged, including its exact 60-day validity.
+- Firestore rules now authorize Super Admin Admin mirrors only when the mirror points to the selected Owner.

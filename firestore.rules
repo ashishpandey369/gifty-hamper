@@ -530,7 +530,7 @@ service cloud.firestore {
           )
           || !existsAfter(
             /databases/$(database)/documents/skus/$(resource.data.sku)
-)
+          )
         );
     }
 

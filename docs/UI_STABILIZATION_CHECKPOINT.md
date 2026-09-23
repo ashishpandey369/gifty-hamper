@@ -214,3 +214,16 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - For Admin profiles, validity changes are written to both `users/{uid}` and the linked `ownerStaff/{ownerUid}/admins/{uid}` mirror so Owner staff views remain synchronized.
 - Existing Firestore rules already permit Super Admin validity updates; no new Firebase rule block is required for this control.
 - Status: completed in GitHub.
+
+
+## Step 26 — Owner Admin limits and inherited Owner validity
+- Owner-created Admin accounts are limited to a maximum of 5 from the Staff page.
+- Owner-created Admin validity is fixed at 30 days; the Owner no longer chooses a validity period when creating an Admin.
+- Owner cannot renew an Admin. The Owner can still deactivate an Admin, but an Admin whose own validity has expired cannot be reactivated by the Owner.
+- Admins keep their own `expiresAt` validity. When the linked Owner expires, the Admin becomes operationally unavailable through the existing Owner-dependency access guard without changing the Admin's own expiry timestamp.
+- When the Super Admin renews the Owner, Admins whose own validity is still alive automatically regain access. Admins whose own validity has also expired remain expired.
+- Super Admin continues to be able to manage Owner/Admin validity directly through the Staff panel.
+- The Super Admin staff view now labels an Admin with a valid personal expiry but an expired Owner as “Paused — Owner expired”, making the inherited access dependency visible.
+- Firestore rules now enforce the Owner-created Admin 30-day validity window and prevent an Owner from reactivating an Admin after that Admin's own validity has expired.
+- The 5-Admin cap is enforced in the Owner Staff UI; Firestore Security Rules do not have a direct document-count primitive for enforcing a collection cardinality limit, so the current implementation keeps the limit at the application layer.
+- Status: completed in GitHub. The updated `firestore.rules` must be published in Firebase Console for the server-side 30-day/renewal restrictions to take effect.

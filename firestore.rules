@@ -122,9 +122,18 @@ service cloud.firestore {
         ).data.get('adminCount', -1) < 5
         && getAfter(
           /databases/$(database)/documents/ownerStaff/$(request.auth.uid)
-        ).data.get('adminCount', -1) == get(
+        ).data.adminCount == get(
           /databases/$(database)/documents/ownerStaff/$(request.auth.uid)
-        ).data.get('adminCount', -1) + 1
+        ).data.adminCount + 1
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(request.auth.uid)
+        ).data.adminUids.get(userId, false) == true
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(request.auth.uid)
+        ).data.lastAdminOperation.get('type', '') == 'add'
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(request.auth.uid)
+        ).data.lastAdminOperation.get('uid', '') == userId
         && getAfter(
           /databases/$(database)/documents/ownerStaff/$(request.auth.uid)/admins/$(userId)
         ).data.ownerUid == request.auth.uid;
@@ -154,7 +163,31 @@ service cloud.firestore {
         );
 
       allow delete: if isSuperAdmin()
-        && resource.data.role in ['owner', 'admin'];
+        && resource.data.role == 'owner';
+
+      allow delete: if isSuperAdmin()
+        && resource.data.role == 'admin'
+        && resource.data.ownerUid != ''
+        && get(
+          /databases/$(database)/documents/ownerStaff/$(resource.data.ownerUid)
+        ).data.adminCount > 0
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(resource.data.ownerUid)
+        ).data.adminCount == get(
+          /databases/$(database)/documents/ownerStaff/$(resource.data.ownerUid)
+        ).data.adminCount - 1
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(resource.data.ownerUid)
+        ).data.adminUids.get(userId, false) == false
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(resource.data.ownerUid)
+        ).data.lastAdminOperation.get('type', '') == 'remove'
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(resource.data.ownerUid)
+        ).data.lastAdminOperation.get('uid', '') == userId
+        && !getAfter(
+          /databases/$(database)/documents/ownerStaff/$(resource.data.ownerUid)/admins/$(userId)
+        ).exists();
 
       allow delete: if isOwner()
         && featureEnabled('staff')
@@ -162,12 +195,21 @@ service cloud.firestore {
         && resource.data.ownerUid == request.auth.uid
         && get(
           /databases/$(database)/documents/ownerStaff/$(request.auth.uid)
-        ).data.get('adminCount', -1) > 0
+        ).data.adminCount > 0
         && getAfter(
           /databases/$(database)/documents/ownerStaff/$(request.auth.uid)
-        ).data.get('adminCount', -1) == get(
+        ).data.adminCount == get(
           /databases/$(database)/documents/ownerStaff/$(request.auth.uid)
-        ).data.get('adminCount', -1) - 1
+        ).data.adminCount - 1
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(request.auth.uid)
+        ).data.adminUids.get(userId, false) == false
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(request.auth.uid)
+        ).data.lastAdminOperation.get('type', '') == 'remove'
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(request.auth.uid)
+        ).data.lastAdminOperation.get('uid', '') == userId
         && !getAfter(
           /databases/$(database)/documents/ownerStaff/$(request.auth.uid)/admins/$(userId)
         ).exists();
@@ -180,12 +222,14 @@ service cloud.firestore {
       allow create, update, delete: if isSuperAdmin();
     }
 
-    // Owner-level Admin counter. The counter is maintained only through
-    // atomic Owner Admin create/delete batches and by Super Admin sync.
+    // Owner-level Admin counter. The Admin UID map and count are
+    // changed only as part of the same create/delete batch as the
+    // corresponding user and ownerStaff Admin documents.
     match /ownerStaff/{ownerUid} {
       allow get: if isSuperAdmin()
         || (isOwner() && request.auth.uid == ownerUid);
 
+      // Super Admin may initialize/reconcile the counter for existing Owners.
       allow create, delete: if isSuperAdmin();
 
       allow update: if isSuperAdmin()
@@ -194,24 +238,53 @@ service cloud.firestore {
           && featureEnabled('staff')
           && request.auth.uid == ownerUid
           && resource.data.get('adminCount', -1) is int
+          && resource.data.get('adminUids', {}) is map
           && request.resource.data.get('adminCount', -1) is int
-          && request.resource.data.get('adminCount', -1) >= 0
-          && request.resource.data.get('adminCount', -1) <= 5
+          && request.resource.data.get('adminUids', {}) is map
+          && request.resource.data.adminCount >= 0
+          && request.resource.data.adminCount <= 5
+          && request.resource.data.adminUids.size() == request.resource.data.adminCount
           && request.resource.data.diff(resource.data).affectedKeys()
-              .hasOnly(['adminCount'])
+              .hasOnly(['adminCount', 'adminUids', 'lastAdminOperation'])
+          && request.resource.data.get('lastAdminOperation', {}) is map
+          && request.resource.data.lastAdminOperation.get('type', '') in ['add', 'remove']
+          && request.resource.data.lastAdminOperation.get('uid', '') is string
           && (
             (
-              request.resource.data.adminCount == resource.data.adminCount + 1
-              && request.resource.data.adminCount <= 5
-              && existsAfter(
-                /databases/$(database)/documents/ownerStaff/$(ownerUid)/admins/$(request.auth.uid))
+              request.resource.data.lastAdminOperation.type == 'add'
+              && request.resource.data.adminCount == resource.data.adminCount + 1
+              && request.resource.data.adminUids.get(
+                request.resource.data.lastAdminOperation.uid, false
+              ) == true
+              && resource.data.adminUids.get(
+                request.resource.data.lastAdminOperation.uid, false
+              ) == false
+              && getAfter(
+                /databases/$(database)/documents/users/$(request.resource.data.lastAdminOperation.uid)
+              ).data.get('role', '') == 'admin'
+              && getAfter(
+                /databases/$(database)/documents/users/$(request.resource.data.lastAdminOperation.uid)
+              ).data.get('ownerUid', '') == ownerUid
+              && getAfter(
+                /databases/$(database)/documents/ownerStaff/$(ownerUid)/admins/$(request.resource.data.lastAdminOperation.uid)
+              ).exists()
             )
             ||
             (
-              request.resource.data.adminCount == resource.data.adminCount - 1
-              && request.resource.data.adminCount >= 0
-              && !existsAfter(
-                /databases/$(database)/documents/ownerStaff/$(ownerUid)/admins/$(request.auth.uid))
+              request.resource.data.lastAdminOperation.type == 'remove'
+              && request.resource.data.adminCount == resource.data.adminCount - 1
+              && request.resource.data.adminUids.get(
+                request.resource.data.lastAdminOperation.uid, false
+              ) == false
+              && resource.data.adminUids.get(
+                request.resource.data.lastAdminOperation.uid, false
+              ) == true
+              && !getAfter(
+                /databases/$(database)/documents/users/$(request.resource.data.lastAdminOperation.uid)
+              ).exists()
+              && !getAfter(
+                /databases/$(database)/documents/ownerStaff/$(ownerUid)/admins/$(request.resource.data.lastAdminOperation.uid)
+              ).exists()
             )
           )
         );
@@ -238,24 +311,58 @@ service cloud.firestore {
         && request.resource.data.validityDays == 30
         && get(
           /databases/$(database)/documents/ownerStaff/$(ownerUid)
-        ).data.get('adminCount', -1) < 5
+        ).data.adminCount < 5
         && getAfter(
           /databases/$(database)/documents/ownerStaff/$(ownerUid)
-        ).data.get('adminCount', -1) == get(
+        ).data.adminCount == get(
           /databases/$(database)/documents/ownerStaff/$(ownerUid)
-        ).data.get('adminCount', -1) + 1
+        ).data.adminCount + 1
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(ownerUid)
+        ).data.adminUids.get(adminUid, false) == true
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(ownerUid)
+        ).data.lastAdminOperation.get('type', '') == 'add'
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(ownerUid)
+        ).data.lastAdminOperation.get('uid', '') == adminUid
         && getAfter(
           /databases/$(database)/documents/users/$(adminUid)
         ).data.ownerUid == ownerUid;
 
       allow update, delete: if isSuperAdmin();
 
-      allow update, delete: if isOwner()
+      allow update: if isOwner()
         && featureEnabled('staff')
         && request.auth.uid == ownerUid
         && resource.data.ownerUid == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly(['role', 'active']);
+
+      allow delete: if isOwner()
+        && featureEnabled('staff')
+        && request.auth.uid == ownerUid
+        && resource.data.ownerUid == request.auth.uid
+        && get(
+          /databases/$(database)/documents/ownerStaff/$(ownerUid)
+        ).data.adminCount > 0
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(ownerUid)
+        ).data.adminCount == get(
+          /databases/$(database)/documents/ownerStaff/$(ownerUid)
+        ).data.adminCount - 1
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(ownerUid)
+        ).data.adminUids.get(adminUid, false) == false
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(ownerUid)
+        ).data.lastAdminOperation.get('type', '') == 'remove'
+        && getAfter(
+          /databases/$(database)/documents/ownerStaff/$(ownerUid)
+        ).data.lastAdminOperation.get('uid', '') == adminUid
+        && !getAfter(
+          /databases/$(database)/documents/users/$(adminUid)
+        ).exists();
     }
 
     // ------------------------------------------------------------

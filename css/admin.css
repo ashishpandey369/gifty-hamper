@@ -81,3 +81,6 @@ body.category-editor-open{overflow:hidden}
   .most-sold-save-row .admin-primary{width:100%}
 }
 
+
+/* Respect the native hidden attribute for access/loading notices. */
+.admin-notice[hidden]{display:none!important}

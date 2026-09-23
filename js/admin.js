@@ -1113,20 +1113,6 @@ document.addEventListener('DOMContentLoaded', () => {
     URL.revokeObjectURL(link.href);
   });
 
-  $('#reset-catalog').addEventListener('click', () => {
-    if (!confirm('Reset the catalog to the original demo products?')) return;
-    catalog = defaults();
-    Promise.all(catalog.map(saveCatalogProduct))
-      .then(() => {
-        render();
-        resetForm();
-      })
-      .catch(error => {
-        console.error('Reset catalog error:', error);
-        alert('Unable to reset the shared catalog.');
-      });
-  });
-
   fillOccasions();
   renderCategoryManager();
   renderMostSoldManager();

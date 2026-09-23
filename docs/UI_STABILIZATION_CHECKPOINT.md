@@ -188,3 +188,11 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - The reset control does not expose or store the existing password; the staff member chooses the new password through Firebase's reset flow.
 - Existing Owner/Admin creation, validity, role, feature, and Owner dependency controls remain unchanged.
 - Status: completed in GitHub.
+
+
+## Step 23 — Correct Owner expiry screen and suppress expired catalog alerts
+- Updated the shared admin access screen so an expired Owner sees “Owner access unavailable” instead of the generic Admin heading.
+- Removed the secondary admin guard's logout/redirect behavior for expired or inactive accounts so it no longer races the access-block screen.
+- Prevented the catalog page from starting Firestore catalog reads when the current Owner is expired/inactive, or when an Admin's linked Owner is expired/inactive. This avoids the misleading “Unable to load the shared product catalog” alert before the access screen appears.
+- Password reset behavior remains unchanged and continues to work for authorized Owner/Admin management.
+- Status: completed in GitHub.

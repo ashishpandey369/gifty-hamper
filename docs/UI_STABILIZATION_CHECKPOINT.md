@@ -258,6 +258,19 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - Status: committed to GitHub. The rules still need to be published in Firebase Console before the live Firestore project uses this ruleset.
 
 
+
+## Step 31 — Owner Admin creation authorization hardening
+
+- Removed the Owner-only `staff` feature flag from Owner staff-management writes. The Owner staff page already requires an active Owner, and this prevents an old/explicit `features.staff: false` value from blocking Admin creation.
+- Hardened `ownerStaff` counter field access with safe map `.get()` calls.
+- Owner Admin creation now reconciles `ownerStaff/{ownerUid}` from the real Admin mirror before creating a new account.
+- The creation batch writes an explicit `adminCount` and complete `adminUids` map instead of relying on an increment transform, making the rule evaluation deterministic.
+- The existing 5-Admin cap and exact 60-day Owner-created Admin validity remain enforced by Firestore rules.
+- Unrelated product, SKU, category, sales, order, and inventory rules were not changed.
+- Rules commit: `ade4fa2c29377fff97b0d2bc16f14d63b302d0c7`.
+- Staff flow commit: `1b7ca2c78611d1e82f32c62903e4a6127d767939`.
+- The updated rules still must be published in Firebase Console before the live database uses them.
+
 ## Step 30 — Simplified staff batch authorization
 - Reworked only the staff-management portion of firestore.rules after repeated Owner Add Admin permission failures.
 - Owner Admin creation now authorizes the three writes independently: /users/{adminUid}, /ownerStaff/{ownerUid}/admins/{adminUid}, and /ownerStaff/{ownerUid}.

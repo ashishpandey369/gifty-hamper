@@ -280,3 +280,11 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - Product, SKU, category, sales, order and inventory rules were left outside this staff-only change.
 - Rules commit: c0fa5408fbac19bc933d8edaf0d5ba9d8bc30d0a.
 - Status: committed to GitHub; this exact ruleset must be published in Firebase Console before live testing.
+
+## Step 32 — Final Owner counter-rule alignment
+
+- Removed the remaining Owner `featureEnabled('staff')` gate from the `ownerStaff/{ownerUid}` counter update. Owner staff management is now authorized by active Owner identity; the Owner staff page itself already restricts access to active Owners.
+- Removed the temporary `counterSyncedAt` field from Owner counter writes because the counter update rule intentionally allows only `adminCount`, `adminUids`, and `lastAdminOperation` changes.
+- Final rules commit: `28129312da56d09737a2e2b6369fe652724a3025`.
+- Final staff-flow commit: `48fd1a15b077ec4cfe3751c9946dbaad4cdab0c8`.
+

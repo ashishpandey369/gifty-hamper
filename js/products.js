@@ -162,7 +162,7 @@ function applyBudgetFromUrl() {
   if (eyebrow && labels[key]) eyebrow.textContent = 'Budget collection';
 }
 
-function renderCatalog() {
+function renderCatalog(urlCollection = new URLSearchParams(window.location.search).get('collection')) {
   const grid = document.querySelector('#catalog-products');
   if (!grid) return;
 

@@ -30,10 +30,8 @@ function render(target, products, index) {
         (image
           ? '<img class="most-sold-slide-image" src="' + escapeHtml(image) + '" alt="' + escapeHtml(current.name || "Most sold gift") + '" loading="eager">'
           : '<div class="most-sold-slide-placeholder">🎁</div>') +
-        '<div class="most-sold-slide-caption"><strong>' + escapeHtml(current.name || "Most sold gift") + '</strong><span>View Most Sold categories →</span></div>' +
+        '<div class="most-sold-slide-title">' + escapeHtml(current.name || "Most sold gift") + '</div>' +
       '</a>' +
-      '<button type="button" class="most-sold-arrow most-sold-arrow-left" data-most-sold-prev aria-label="Previous most sold product">‹</button>' +
-      '<button type="button" class="most-sold-arrow most-sold-arrow-right" data-most-sold-next aria-label="Next most sold product">›</button>' +
       '<div class="most-sold-dots" aria-label="Most sold slideshow navigation">' + dots + '</div>' +
     '</div>';
 }

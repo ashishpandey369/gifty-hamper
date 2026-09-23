@@ -26,7 +26,7 @@ function render(target, products, index) {
 
   target.innerHTML =
     '<div class="most-sold-slideshow-frame">' +
-      '<a class="most-sold-slide-link" href="categories.html?collection=most-sold" aria-label="View Most Sold categories">' +
+      '<a class="most-sold-slide-link" href="shop.html?collection=most-sold" aria-label="View Most Sold products">' +
         (image
           ? '<img class="most-sold-slide-image" src="' + escapeHtml(image) + '" alt="' + escapeHtml(current.name || "Most sold gift") + '" loading="eager">'
           : '<div class="most-sold-slide-placeholder">🎁</div>') +

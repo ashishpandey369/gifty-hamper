@@ -666,13 +666,13 @@ function openStaffModal(role) {
   $("#new-staff-email").value = "";
   $("#new-staff-password").value = "";
   $("#new-staff-password-confirm").value = "";
-  $("#new-staff-validity").value = "30";
+  $("#new-staff-validity").value = "60";
   $("#new-staff-validity").disabled = role === "admin" && currentManagerRole === "owner";
   const validityLabel = $("#new-staff-validity")?.closest(".staff-modal-label");
   if (validityLabel) validityLabel.hidden = role === "admin" && currentManagerRole === "owner";
   $("#staff-modal-description").textContent =
     role === "admin" && currentManagerRole === "owner"
-      ? "Owners can create up to 5 Admins. Each Owner-created Admin receives exactly 30 days of validity."
+      ? "Owners can create up to 5 Admins. Each Owner-created Admin receives exactly 60 days of validity."
       : "Set the email, initial password and how many days this account should remain active.";
   $("#staff-modal-status").textContent = "";
   $("#create-staff-account").disabled = false;
@@ -696,7 +696,7 @@ async function createStaffAccount() {
   const password = $("#new-staff-password").value;
   const confirmPassword = $("#new-staff-password-confirm").value;
   const ownerCreatingAdmin = currentManagerRole === "owner" && staffRoleToCreate === "admin";
-  const validityDays = ownerCreatingAdmin ? 30 : Number($("#new-staff-validity").value);
+  const validityDays = ownerCreatingAdmin ? 60 : Number($("#new-staff-validity").value);
   const status = $("#staff-modal-status");
   const button = $("#create-staff-account");
 

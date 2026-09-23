@@ -142,7 +142,6 @@ service cloud.firestore {
       // Owner can create only Admins under their own account.
       // Owner-created Admins are always exactly 60 days.
       allow create: if isOwner()
-        && featureEnabled('staff')
         && request.auth.uid == request.resource.data.ownerUid
         && request.resource.data.role == 'admin'
         && request.resource.data.active == true
@@ -167,7 +166,6 @@ service cloud.firestore {
 
       // Owner can only change role/status of their own Admins.
       allow update: if isOwner()
-        && featureEnabled('staff')
         && resource.data.role == 'admin'
         && request.resource.data.role == 'admin'
         && resource.data.ownerUid == request.auth.uid
@@ -183,7 +181,6 @@ service cloud.firestore {
 
       // Owner may delete only their own Admin.
       allow delete: if isOwner()
-        && featureEnabled('staff')
         && resource.data.role == 'admin'
         && resource.data.ownerUid == request.auth.uid;
     }
@@ -205,12 +202,12 @@ service cloud.firestore {
 
       // Owner can create the counter for Admin #1.
       allow create: if isOwner()
-        && featureEnabled('staff')
         && request.auth.uid == ownerUid
         && request.resource.data.get('adminCount', -1) == 1
         && request.resource.data.get('adminUids', {}) is map
         && request.resource.data.adminUids.size() == 1
-        && request.resource.data.lastAdminOperation.type == 'add';
+        && request.resource.data.get('lastAdminOperation', {}).get('type', '') == 'add'
+        && request.resource.data.get('lastAdminOperation', {}).get('uid', '') is string;
 
       // Owner can add an Admin, maximum 5.
       allow update: if isOwner()
@@ -223,8 +220,8 @@ service cloud.firestore {
         && request.resource.data.adminUids.size() == request.resource.data.adminCount
         && request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly(['adminCount', 'adminUids', 'lastAdminOperation'])
-        && request.resource.data.lastAdminOperation.type in ['add', 'remove']
-        && request.resource.data.lastAdminOperation.uid is string;
+        && request.resource.data.get('lastAdminOperation', {}).get('type', '') in ['add', 'remove', 'sync']
+        && request.resource.data.get('lastAdminOperation', {}).get('uid', '') is string;
 
     }
 
@@ -232,14 +229,12 @@ service cloud.firestore {
       allow read: if isSuperAdmin()
         || (
           isOwner()
-          && featureEnabled('staff')
           && request.auth.uid == ownerUid
         );
 
       // The real Admin /users write is already protected above. This mirror
       // must belong to the same Owner and contain the same staff identity.
       allow create: if isOwner()
-        && featureEnabled('staff')
         && request.auth.uid == ownerUid
         && request.resource.data.role == 'admin'
         && request.resource.data.ownerUid == ownerUid
@@ -251,7 +246,6 @@ service cloud.firestore {
       allow update: if isSuperAdmin()
         || (
           isOwner()
-          && featureEnabled('staff')
           && request.auth.uid == ownerUid
           && resource.data.ownerUid == ownerUid
           && request.resource.data.diff(resource.data).affectedKeys()
@@ -261,7 +255,6 @@ service cloud.firestore {
       allow delete: if isSuperAdmin()
         || (
           isOwner()
-          && featureEnabled('staff')
           && request.auth.uid == ownerUid
           && resource.data.ownerUid == ownerUid
         );

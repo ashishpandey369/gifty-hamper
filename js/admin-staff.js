@@ -336,7 +336,7 @@ async function loadStaff(currentRole, currentUid) {
             <button type="button" class="admin-secondary" data-save-user="${escapeHtml(user.id)}">Save</button>
             ${canManageValidity
               ? `<button type="button" class="admin-secondary" data-extend-user="${escapeHtml(user.id)}">Extend</button>
-                 <button type="button" class="admin-secondary danger" data-expire-user="${escapeHtml(user.id)}">${expired ? "Expired" : "Expire now"}</button>`
+                 <button type="button" class="admin-secondary danger" data-expire-user="${escapeHtml(user.id)}">Expire now</button>`
               : (expired
                 ? ""
                 : `<button type="button" class="admin-secondary" data-toggle-user="${escapeHtml(user.id)}">${effectiveActive ? "Deactivate" : "Activate"}</button>`)}

@@ -23,7 +23,8 @@ import {
   deleteDoc,
   writeBatch,
   Timestamp,
-  increment
+  increment,
+  deleteField
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 const staffCreatorApp = initializeApp({
@@ -557,7 +558,7 @@ async function loadStaff(currentRole, currentUid) {
             doc(db, "ownerStaff", currentUid),
             {
               adminCount: increment(-1),
-              ["adminUids." + userId]: false,
+              ["adminUids." + userId]: deleteField(),
               lastAdminOperation: { type: "remove", uid: userId }
             },
             { merge: true }

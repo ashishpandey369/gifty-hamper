@@ -98,7 +98,7 @@ service cloud.firestore {
 
     match /users/{userId} {
       // A user can read only their own profile. Super Admin can read the
-      // complete staff directory. Private notes are stored separately.
+      // complete staff directory. Owners can read their own Admin profiles.
       allow get: if isSuperAdmin()
         || (signedIn() && request.auth.uid == userId)
         || (
@@ -109,20 +109,43 @@ service cloud.firestore {
 
       allow list: if isSuperAdmin();
 
-      // Super Admin creates Owners/Admins with explicit feature defaults.
+      // Super Admin creates Owners. Super Admin-created Admins must have an
+      // Owner UID so that Admin login/access has an unambiguous Owner.
       allow create: if isSuperAdmin()
-        && request.resource.data.role in ['owner', 'admin']
+        && request.resource.data.role == 'owner'
         && request.resource.data.active == true
         && request.resource.data.features is map
         && validFeatures(request.resource.data);
 
-      // Owner can create only Admins under their own account.
-      // The first Admin may initialize the ownerStaff counter in the same batch.
-      allow create: if isOwner()
-        && featureEnabled('staff')
+      allow create: if isSuperAdmin()
         && request.resource.data.role == 'admin'
         && request.resource.data.active == true
-        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid is string
+        && request.resource.data.ownerUid != ''
+        && get(
+          /databases/$(database)/documents/users/$(request.resource.data.ownerUid)
+        ).data.role == 'owner'
+        && get(
+          /databases/$(database)/documents/users/$(request.resource.data.ownerUid)
+        ).data.active == true
+        && (
+          get(
+            /databases/$(database)/documents/users/$(request.resource.data.ownerUid)
+          ).data.expiresAt == null
+          || get(
+            /databases/$(database)/documents/users/$(request.resource.data.ownerUid)
+          ).data.expiresAt > request.time
+        )
+        && request.resource.data.features is map
+        && validFeatures(request.resource.data);
+
+      // Owner can create only Admins under their own account.
+      // Owner-created Admins are always exactly 60 days.
+      allow create: if isOwner()
+        && featureEnabled('staff')
+        && request.auth.uid == request.resource.data.ownerUid
+        && request.resource.data.role == 'admin'
+        && request.resource.data.active == true
         && request.resource.data.features is map
         && validFeatures(request.resource.data)
         && validOwnerAdminValidity(request.resource.data)
@@ -130,14 +153,11 @@ service cloud.firestore {
           !exists(
             /databases/$(database)/documents/ownerStaff/$(request.auth.uid)
           )
-          ||
-          get(
+          || get(
             /databases/$(database)/documents/ownerStaff/$(request.auth.uid)
-          ).data.get('adminCount', -1) < 5
+          ).data.get('adminCount', 0) < 5
         );
 
-      // Super Admin may manage operational account fields and feature switches,
-      // but cannot write the private-note collection through this profile.
       allow update: if isSuperAdmin()
         && resource.data.role in ['owner', 'admin']
         && request.resource.data.role in ['owner', 'admin']
@@ -145,8 +165,7 @@ service cloud.firestore {
             .hasOnly(['role', 'active', 'expiresAt', 'ownerUid', 'features'])
         && validFeatures(request.resource.data);
 
-      // Owner may manage only their own Admins' role/status. They cannot
-      // change features, expiry, ownership, or any other protected field.
+      // Owner can only change role/status of their own Admins.
       allow update: if isOwner()
         && featureEnabled('staff')
         && resource.data.role == 'admin'
@@ -154,154 +173,59 @@ service cloud.firestore {
         && resource.data.ownerUid == request.auth.uid
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['role', 'active'])
-        && (
-          request.resource.data.active == false
-          || resource.data.get('expiresAt', request.time + duration.value(1, 'ms')) > request.time
-        );
+            .hasOnly(['role', 'active']);
 
       allow delete: if isSuperAdmin()
         && resource.data.role == 'owner';
 
       allow delete: if isSuperAdmin()
-        && resource.data.role == 'admin'
-        && resource.data.ownerUid != ''
-        && get(
-          /databases/$(database)/documents/ownerStaff/$(resource.data.ownerUid)
-        ).data.get('adminCount', 0) > 0
-        && getAfter(
-          /databases/$(database)/documents/ownerStaff/$(resource.data.ownerUid)
-        ).data.get('adminCount', 0)
-          == get(
-            /databases/$(database)/documents/ownerStaff/$(resource.data.ownerUid)
-          ).data.get('adminCount', 0) - 1
-        && !existsAfter(
-          /databases/$(database)/documents/ownerStaff/$(resource.data.ownerUid)/admins/$(userId)
-        );
+        && resource.data.role == 'admin';
 
+      // Owner may delete only their own Admin.
       allow delete: if isOwner()
         && featureEnabled('staff')
         && resource.data.role == 'admin'
-        && resource.data.ownerUid == request.auth.uid
-        && get(
-          /databases/$(database)/documents/ownerStaff/$(request.auth.uid)
-        ).data.get('adminCount', 0) > 0
-        && getAfter(
-          /databases/$(database)/documents/ownerStaff/$(request.auth.uid)
-        ).data.get('adminCount', 0)
-          == get(
-            /databases/$(database)/documents/ownerStaff/$(request.auth.uid)
-          ).data.get('adminCount', 0) - 1
-        && !existsAfter(
-          /databases/$(database)/documents/ownerStaff/$(request.auth.uid)/admins/$(userId)
-        );
+        && resource.data.ownerUid == request.auth.uid;
     }
 
-    // Private notes are deliberately separate from /users so the member
-    // cannot read their own Super Admin notes.
     match /staffNotes/{userId} {
       allow get, list: if isSuperAdmin();
       allow create, update, delete: if isSuperAdmin();
     }
 
-    // Owner-level Admin counter. The Admin UID map and count are
-    // changed only as part of the same create/delete batch as the
-    // corresponding user and ownerStaff Admin documents.
-    // Owner-level Admin counter.
-    // This document is maintained only by the same atomic batch that
-    // creates/deletes the corresponding Admin user and mirror document.
+    // Owner-level Admin bookkeeping. This collection is not used to grant
+    // access; it mirrors the real /users Admin records for the Owner UI.
+    // Keeping these writes simple avoids rejecting a valid atomic batch because
+    // of getAfter access-call limits or legacy counter shapes.
     match /ownerStaff/{ownerUid} {
       allow get: if isSuperAdmin()
         || (isOwner() && request.auth.uid == ownerUid);
 
-      // Super Admin may initialize or reconcile the counter.
       allow create, update, delete: if isSuperAdmin();
 
-      // Owner can initialize the counter when creating Admin #1.
+      // Owner can create the counter for Admin #1.
       allow create: if isOwner()
         && featureEnabled('staff')
         && request.auth.uid == ownerUid
         && request.resource.data.get('adminCount', -1) == 1
         && request.resource.data.get('adminUids', {}) is map
         && request.resource.data.adminUids.size() == 1
-        && request.resource.data.get('lastAdminOperation', {}) is map
-        && request.resource.data.lastAdminOperation.get('type', '') == 'add'
-        && request.resource.data.lastAdminOperation.get('uid', '') is string
-        && request.resource.data.adminUids.get(
-          request.resource.data.lastAdminOperation.uid, false
-        ) == true
-        && getAfter(
-          /databases/$(database)/documents/users/$(request.resource.data.lastAdminOperation.uid)
-        ).data.get('role', '') == 'admin'
-        && getAfter(
-          /databases/$(database)/documents/users/$(request.resource.data.lastAdminOperation.uid)
-        ).data.get('ownerUid', '') == ownerUid
-        && validOwnerAdminValidity(
-          getAfter(
-            /databases/$(database)/documents/users/$(request.resource.data.lastAdminOperation.uid)
-          ).data
-        )
-        && getAfter(
-          /databases/$(database)/documents/ownerStaff/$(ownerUid)/admins/$(request.resource.data.lastAdminOperation.uid)
-        ).data.get('ownerUid', '') == ownerUid;
+        && request.resource.data.get('lastAdminOperation', {}).get('type', '') == 'add';
 
-      // Owner can add/remove Admins atomically, but never exceed 5.
-      // The counter is bookkeeping; the real authorization comes from the
-      // authenticated Owner plus the post-batch Admin/mirror state.
+      // Owner can add an Admin, maximum 5.
       allow update: if isOwner()
         && featureEnabled('staff')
         && request.auth.uid == ownerUid
         && request.resource.data.get('adminCount', -1) is int
-        && request.resource.data.get('adminCount', -1) >= 0
-        && request.resource.data.get('adminCount', -1) <= 5
+        && request.resource.data.adminCount >= 0
+        && request.resource.data.adminCount <= 5
         && request.resource.data.get('adminUids', {}) is map
         && request.resource.data.adminUids.size() == request.resource.data.adminCount
         && request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly(['adminCount', 'adminUids', 'lastAdminOperation'])
-        && request.resource.data.get('lastAdminOperation', {}) is map
-        && request.resource.data.lastAdminOperation.get('type', '') == 'add'
-        && request.resource.data.lastAdminOperation.get('uid', '') is string
-        && request.resource.data.adminUids.get(
-          request.resource.data.lastAdminOperation.uid, false
-        ) == true
-        && getAfter(
-          /databases/$(database)/documents/users/$(request.resource.data.lastAdminOperation.uid)
-        ).data.get('role', '') == 'admin'
-        && getAfter(
-          /databases/$(database)/documents/users/$(request.resource.data.lastAdminOperation.uid)
-        ).data.get('ownerUid', '') == ownerUid
-        && validOwnerAdminValidity(
-          getAfter(
-            /databases/$(database)/documents/users/$(request.resource.data.lastAdminOperation.uid)
-          ).data
-        )
-        && existsAfter(
-          /databases/$(database)/documents/ownerStaff/$(ownerUid)/admins/$(request.resource.data.lastAdminOperation.uid)
-        );
+        && request.resource.data.get('lastAdminOperation', {}).get('type', '') in ['add', 'remove']
+        && request.resource.data.get('lastAdminOperation', {}).get('uid', '') is string;
 
-      // Owner removal is also atomic.
-      allow update: if isOwner()
-        && featureEnabled('staff')
-        && request.auth.uid == ownerUid
-        && request.resource.data.get('adminCount', -1) is int
-        && request.resource.data.get('adminCount', -1) >= 0
-        && request.resource.data.get('adminCount', -1) <= 5
-        && request.resource.data.get('adminUids', {}) is map
-        && request.resource.data.adminUids.size() == request.resource.data.adminCount
-        && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['adminCount', 'adminUids', 'lastAdminOperation'])
-        && request.resource.data.get('lastAdminOperation', {}) is map
-        && request.resource.data.lastAdminOperation.get('type', '') == 'remove'
-        && request.resource.data.lastAdminOperation.get('uid', '') is string
-        && !request.resource.data.adminUids.get(
-          request.resource.data.lastAdminOperation.uid, false
-        )
-        && !existsAfter(
-          /databases/$(database)/documents/users/$(request.resource.data.lastAdminOperation.uid)
-        )
-        && !existsAfter(
-          /databases/$(database)/documents/ownerStaff/$(ownerUid)/admins/$(request.resource.data.lastAdminOperation.uid)
-        );
     }
 
     match /ownerStaff/{ownerUid}/admins/{adminUid} {
@@ -312,45 +236,34 @@ service cloud.firestore {
           && request.auth.uid == ownerUid
         );
 
-      // Owner creates the mirror in the same batch as the user and counter.
+      // The real Admin /users write is already protected above. This mirror
+      // must belong to the same Owner and contain the same staff identity.
       allow create: if isOwner()
         && featureEnabled('staff')
         && request.auth.uid == ownerUid
         && request.resource.data.role == 'admin'
-        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == ownerUid
         && request.resource.data.active == true
         && request.resource.data.features is map
         && validFeatures(request.resource.data)
-        && validOwnerAdminValidity(request.resource.data)
-        && getAfter(
-          /databases/$(database)/documents/users/$(adminUid)
-        ).data.ownerUid == ownerUid;
+        && validOwnerAdminValidity(request.resource.data);
 
-      allow update, delete: if isSuperAdmin();
+      allow update: if isSuperAdmin()
+        || (
+          isOwner()
+          && featureEnabled('staff')
+          && request.auth.uid == ownerUid
+          && resource.data.ownerUid == ownerUid
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['role', 'active'])
+        );
 
-      allow update: if isOwner()
-        && featureEnabled('staff')
-        && request.auth.uid == ownerUid
-        && resource.data.ownerUid == request.auth.uid
-        && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['role', 'active']);
-
-      // Owner deletion must be part of the same batch as user/counter deletion.
-      allow delete: if isOwner()
-        && featureEnabled('staff')
-        && request.auth.uid == ownerUid
-        && resource.data.ownerUid == request.auth.uid
-        && get(
-          /databases/$(database)/documents/ownerStaff/$(ownerUid)
-        ).data.get('adminCount', 0) > 0
-        && getAfter(
-          /databases/$(database)/documents/ownerStaff/$(ownerUid)
-        ).data.get('adminCount', 0)
-          == get(
-            /databases/$(database)/documents/ownerStaff/$(ownerUid)
-          ).data.get('adminCount', 0) - 1
-        && !existsAfter(
-          /databases/$(database)/documents/users/$(adminUid)
+      allow delete: if isSuperAdmin()
+        || (
+          isOwner()
+          && featureEnabled('staff')
+          && request.auth.uid == ownerUid
+          && resource.data.ownerUid == ownerUid
         );
     }
 

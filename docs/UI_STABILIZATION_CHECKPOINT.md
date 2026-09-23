@@ -225,7 +225,7 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - Super Admin continues to be able to manage Owner/Admin validity directly through the Staff panel.
 - The Super Admin staff view now labels an Admin with a valid personal expiry but an expired Owner as “Paused — Owner expired”, making the inherited access dependency visible.
 - Firestore rules now enforce the Owner-created Admin 30-day validity window and prevent an Owner from reactivating an Admin after that Admin's own validity has expired.
-- The 5-Admin cap is enforced in the Owner Staff UI; Firestore Security Rules do not have a direct document-count primitive for enforcing a collection cardinality limit, so the current implementation keeps the limit at the application layer.
+- The 5-Admin cap is enforced server-side through the ownerStaff/{ownerUid} counter, adminUids map, and getAfter() atomic-write checks; the Owner UI also blocks the fifth account and above for a clear user experience.
 - Status: completed in GitHub. The updated `firestore.rules` must be published in Firebase Console for the server-side 30-day/renewal restrictions to take effect.
 
 ## Step 27 — Rule-backed 5-Admin cap and Owner renewal access fix

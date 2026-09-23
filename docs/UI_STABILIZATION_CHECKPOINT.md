@@ -237,3 +237,11 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - Fixed the renewal access issue where an Admin could not re-check its linked Owner after the Owner was renewed: Admins can now read only their linked Owner profile, allowing the existing frontend dependency check to see the renewed Owner state.
 - Cache versions were refreshed for the login/access-guard pages.
 - Status: completed in GitHub. The updated `firestore.rules` must still be published in Firebase Console before the rule-backed cap and linked-Owner read permission take effect.
+
+
+### Step 28 — Owner Admin validity set to 60 days
+- Owner-created Admin accounts now receive exactly 60 days by default.
+- The Owner create-admin screen no longer exposes the validity-days field.
+- Owner cannot extend or modify Admin expiry.
+- Only Super Admin can use Extend/Expire controls to change Admin validity.
+- Firestore rules enforce the 60-day Owner-created Admin validity and the existing maximum of 5 Admins.

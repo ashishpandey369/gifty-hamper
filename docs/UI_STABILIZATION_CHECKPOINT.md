@@ -178,3 +178,13 @@ Stabilize the mobile homepage/shop experience without introducing duplicate navi
 - An Admin whose own account expires receives the Owner-contact message; an Admin whose linked Owner expires receives the Owner-expired message; an expired Owner receives the provider-renewal message and WhatsApp contact.
 - This is a frontend access block only; Firestore rules continue to enforce the Owner/Admin validity dependency server-side.
 - Status: completed in GitHub.
+
+
+## Step 22 — Staff password reset workflow
+- Staff account creation continues to use the password entered by the Super Admin or Owner; the password is never stored in Firestore.
+- After creation, the entered password is intentionally not persisted for later retrieval.
+- Super Admin can open any Owner/Admin profile and send a Firebase password-reset email.
+- Owner can open only their own linked Admin profiles and send a Firebase password-reset email.
+- The reset control does not expose or store the existing password; the staff member chooses the new password through Firebase's reset flow.
+- Existing Owner/Admin creation, validity, role, feature, and Owner dependency controls remain unchanged.
+- Status: completed in GitHub.

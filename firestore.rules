@@ -211,7 +211,6 @@ service cloud.firestore {
 
       // Owner can add an Admin, maximum 5.
       allow update: if isOwner()
-        && featureEnabled('staff')
         && request.auth.uid == ownerUid
         && request.resource.data.get('adminCount', -1) is int
         && request.resource.data.adminCount >= 0

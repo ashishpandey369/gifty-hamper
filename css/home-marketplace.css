@@ -230,3 +230,19 @@
   .most-sold-slide-title{bottom:9px;max-width:88%;font-size:.82rem}
 }
 
+
+
+/* Typography correction: final 15% scale for category/occasion labels that had later responsive overrides. */
+.category-chip strong{font-size:1.0646rem}
+.category-chip small{font-size:.8517rem}
+.quick-link-grid strong{font-size:.874rem}
+.quick-link-grid small{font-size:.9125rem}
+.occasion-market-grid span{font-size:.989rem}
+
+@media(max-width:760px){
+  .category-chip strong{font-size:.713rem}
+  .category-chip small{font-size:.575rem}
+  .quick-link-grid strong{font-size:.6785rem}
+  .quick-link-grid small{font-size:.6996rem}
+  .occasion-market-grid span{font-size:1.0646rem}
+}

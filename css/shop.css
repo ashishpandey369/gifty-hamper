@@ -150,3 +150,48 @@
     -webkit-line-clamp:2;
   }
 }
+
+
+/* Final catalog polish: 15% typography for filters and a clean two-row price block. */
+.filters,
+.filter-group label,
+.filter-group input + span{font-size:0.897rem}
+.filter-group h3{font-size:1.0494rem}
+.clear-filters{font-size:1.095rem}
+.search-box input{font-size:0.943rem}
+.shop-toolbar{font-size:0.92rem}
+.shop-controls label{font-size:0.92rem}
+.catalog-grid .product-card-price{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:flex-end;
+  column-gap:7px;
+  row-gap:3px;
+}
+.catalog-grid .product-card-price del{font-size:0.828rem}
+.catalog-grid .product-card-price strong{font-size:1.2167rem;line-height:1.15}
+.catalog-grid .product-card-price span{
+  flex-basis:100%;
+  width:max-content;
+  margin-left:auto;
+  font-size:0.736rem;
+  line-height:1.1;
+  padding:3px 6px;
+}
+@media(max-width:760px){
+  .filters,
+  .filter-group label,
+  .filter-group input + span{font-size:0.862rem}
+  .filter-group h3{font-size:1rem}
+  .search-box input{font-size:0.9rem}
+  .catalog-grid .product-card-price{justify-content:flex-start}
+  .catalog-grid .product-card-price span{margin-left:0}
+}
+@media(max-width:430px){
+  .filter-group label{font-size:0.828rem}
+  .filter-group h3{font-size:0.955rem}
+  .catalog-grid .product-card-price strong{font-size:0.897rem}
+  .catalog-grid .product-card-price del{font-size:0.633rem}
+  .catalog-grid .product-card-price span{font-size:0.661rem;padding:3px 5px}
+}

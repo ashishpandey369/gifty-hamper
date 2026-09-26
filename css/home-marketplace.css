@@ -246,3 +246,25 @@
   .quick-link-grid small{font-size:.6996rem}
   .occasion-market-grid span{font-size:1.0646rem}
 }
+
+
+/* Final 15% typography pass for homepage support rows, category labels and section controls. */
+.trust-row strong{font-size:.851rem}
+.trust-row small{font-size:.9125rem}
+.trust-row>div>span{font-size:1rem}
+.marketplace-section-head .eyebrow{font-size:.667rem}
+.marketplace-section-head h2{font-size:2.3574rem}
+.marketplace-section-head>a{font-size:1.156rem}
+.quick-link-grid strong{font-size:.874rem}
+.quick-link-grid small{font-size:.9125rem}
+.occasion-market-grid span{font-size:.989rem}
+@media(max-width:760px){
+ .trust-row strong{font-size:.851rem}
+ .trust-row small{font-size:.862rem}
+ .marketplace-section-head .eyebrow{font-size:.667rem}
+ .marketplace-section-head h2{font-size:2.15rem}
+ .marketplace-section-head>a{font-size:1rem}
+ .quick-link-grid strong{font-size:.713rem}
+ .quick-link-grid small{font-size:.575rem}
+ .occasion-market-grid span{font-size:1.0646rem}
+}

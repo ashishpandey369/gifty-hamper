@@ -109,3 +109,44 @@
  .catalog-grid .product-sku-label{font-size:0.6612rem;margin-top:2px}
  .catalog-grid .product-card-price{margin-top:2px}
 }
+
+/* Final product-card typography: keep the 15% font scale while preserving a clean 1-line name + 2-line description. */
+.catalog-grid .product-info h3{
+  font-size:1.1373rem;
+  line-height:1.2;
+  min-height:1.2em;
+  max-height:1.2em;
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:1;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:normal;
+}
+.catalog-grid .product-info p{
+  font-size:0.8728rem;
+  line-height:1.2;
+  min-height:2.4em;
+  max-height:2.4em;
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+@media(max-width:430px){
+  .catalog-grid .product-info h3{
+    font-size:1.0183rem;
+    line-height:1.18;
+    min-height:1.18em;
+    max-height:1.18em;
+    -webkit-line-clamp:1;
+  }
+  .catalog-grid .product-info p{
+    font-size:0.7671rem;
+    line-height:1.15;
+    min-height:2.3em;
+    max-height:2.3em;
+    -webkit-line-clamp:2;
+  }
+}

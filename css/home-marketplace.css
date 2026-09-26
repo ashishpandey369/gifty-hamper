@@ -268,3 +268,8 @@
  .quick-link-grid small{font-size:.575rem}
  .occasion-market-grid span{font-size:1.0646rem}
 }
+
+
+/* Category heading: match View all categories, with 2% extra size. */
+.marketplace-categories .marketplace-section-head h2{font-size:1.1791rem}
+@media(max-width:760px){.marketplace-categories .marketplace-section-head h2{font-size:1.02rem}}

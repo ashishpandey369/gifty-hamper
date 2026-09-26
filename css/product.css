@@ -50,3 +50,44 @@
   .related-products-row .product-info p{font-size:.64rem}
   .related-products-row .product-card-price{font-size:.72rem}
 }
+
+
+/* Related-product typography: preserve the 15% scale and keep cards compact. */
+.related-products-row .product-info h3{
+  font-size:1.2167rem;
+  line-height:1.2;
+  min-height:1.2em;
+  max-height:1.2em;
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:1;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.related-products-row .product-info p{
+  font-size:0.9522rem;
+  line-height:1.25;
+  min-height:2.5em;
+  max-height:2.5em;
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+@media(max-width:600px){
+  .related-products-row .product-info h3{
+    font-size:.8rem;
+    line-height:1.2;
+    min-height:1.2em;
+    max-height:1.2em;
+    -webkit-line-clamp:1;
+  }
+  .related-products-row .product-info p{
+    font-size:.64rem;
+    line-height:1.25;
+    min-height:2.5em;
+    max-height:2.5em;
+    -webkit-line-clamp:2;
+  }
+}

@@ -313,26 +313,11 @@
 
 
 /* Final 15% typography pass for reviews, footer, header/supporting copy. */
-.google-reviews-brand .eyebrow{font-size:1.0342rem}
-.google-reviews-brand h2{font-size:clamp(3.0417rem,4.8668vw,4.5626rem)}
-.google-stars{font-size:1.2075rem}
-.google-review-note{font-size:.828rem}
-.google-review-message strong{font-size:2.2052rem}
-.google-review-message span:last-child{font-size:.805rem}
-.google-review-action .button{font-size:1.246rem}
-.google-review-action small{font-size:.7475rem}
 .footer-brand p,.footer-grid>div:last-child p{font-size:1.1559rem}
 .footer-grid h3{font-size:1.095rem}
 .footer-grid>div:not(:first-child)>a{font-size:1.171rem}
 .footer-bottom{font-size:.7705rem}
 @media(max-width:760px){
- .google-reviews-brand .eyebrow{font-size:.9rem}
- .google-reviews-brand h2{font-size:2.3rem}
- .google-stars{font-size:1.25rem}
- .google-review-note{font-size:.759rem}
- .google-review-message strong{font-size:1.495rem}
- .google-review-message span:last-child{font-size:.805rem}
- .google-review-action small{font-size:.7475rem}
  .footer-brand p,.footer-grid>div:last-child p{font-size:1rem}
  .footer-grid h3{font-size:1rem}
  .footer-grid>div:not(:first-child)>a{font-size:1.05rem}

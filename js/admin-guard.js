@@ -30,6 +30,7 @@ onAuthStateChanged(auth, async (user) => {
     const profile = profileSnapshot.exists() ? profileSnapshot.data() : null;
     const profileRole = profile?.role || "";
     const role = claimRole === "super_admin" ? "super_admin" : (profileRole || "admin");
+    const roleLabel = role === "super_admin" ? "Super Admin" : role === "owner" ? "Owner" : role === "admin" ? "Admin" : role;
     const expiresAt = profile?.expiresAt?.toDate ? profile.expiresAt.toDate() : null;
     const expired = expiresAt ? expiresAt.getTime() <= Date.now() : false;
     const active = profile?.active !== false && !expired;
@@ -38,7 +39,7 @@ onAuthStateChanged(auth, async (user) => {
 
     const email = document.querySelector("#admin-user-email");
     if (email) {
-      email.textContent = `${user.email || "Signed-in admin"} • ${claimRole}`;
+      email.textContent = `${user.email || "Signed-in admin"} • ${roleLabel}`;
     }
 
     let ownerProfile = null;
@@ -80,14 +81,14 @@ onAuthStateChanged(auth, async (user) => {
       setInterval(updateValidity, 60000);
     } else if (validity && role === "super_admin") {
       validity.textContent = "Unlimited access";
-    } else if (validity && role === "admin" && ownerProfile?.expiresAt?.toDate) {
-      const ownerExpiry = ownerProfile.expiresAt.toDate();
-      const updateOwnerValidity = () => {
-        const diff = ownerExpiry.getTime() - Date.now();
-        validity.textContent = diff <= 0 ? "Owner expired" : ("Owner: " + Math.ceil(diff / 86400000) + " days left");
+    } else if (validity && expiresAt) {
+      // Show the signed-in account's own validity, not the linked Owner's role.
+      const updateAccountValidity = () => {
+        const diff = expiresAt.getTime() - Date.now();
+        validity.textContent = diff <= 0 ? "Expired" : (Math.ceil(diff / 86400000) + " days left");
       };
-      updateOwnerValidity();
-      setInterval(updateOwnerValidity, 60000);
+      updateAccountValidity();
+      setInterval(updateAccountValidity, 60000);
     }
 
     console.log("Gifty Hamper admin:", {

@@ -987,7 +987,7 @@ onAuthStateChanged(auth, async (user) => {
     const effectiveRole = claimRole === "super_admin" ? "super_admin" : profileRole;
 
     $("#admin-user-email").textContent =
-      (user.email || "Signed-in admin") + " • " + (effectiveRole || "unknown");
+      (user.email || "Signed-in admin") + " • " + roleLabel(effectiveRole || "unknown");
 
     const managerExpiry = profile?.expiresAt?.toDate ? profile.expiresAt.toDate() : null;
     const managerExpired = managerExpiry ? managerExpiry.getTime() <= Date.now() : false;

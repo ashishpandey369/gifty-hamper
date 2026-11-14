@@ -1,6 +1,6 @@
 const STORE = {
   name: "Gifty Hamper",
-  address: "49/1/19, 4th Cross Magadi main road, Bengaluru, Karnataka, 560091",
+  address: "ACS College of Engineering, #207, Kambipura, Mysore Road, Bengaluru, Karnataka, 560074",
   phone: "+91 8667298505",
   email: "Info@giftyhamper.com",
   logo: "assets/gifty-hampers-landscape.png"

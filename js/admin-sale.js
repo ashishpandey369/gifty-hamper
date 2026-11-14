@@ -536,7 +536,7 @@ function sendQuickOrderToWhatsApp() {
   ].join("\n");
 
   window.open(
-    "https://wa.me/918667298505?text=" + encodeURIComponent(message),
+    "https://wa.me/918667298507?text=" + encodeURIComponent(message),
     "_blank",
     "noopener"
   );

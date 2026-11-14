@@ -1,7 +1,7 @@
 const STORE = {
   name: "Gifty Hamper",
   address: "49/1/19, 4th Cross Magadi main road, Bengaluru, Karnataka, 560091",
-  phone: "+91 94485 88793",
+  phone: "+91 8667298505",
   email: "Info@giftyhamper.com",
   logo: "assets/gifty-hampers-landscape.png"
 };
